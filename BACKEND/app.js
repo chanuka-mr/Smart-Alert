@@ -1,19 +1,31 @@
-//username = Admin
-//pass = n3AK0A9ujJWgb9dD
-
+// app.js
 const express = require("express");
 const mongoose = require("mongoose");
-const router = require("./Routes/userRoutes")
+
+// Routes
+const userRoutes = require("./Routes/userRoutes");
+const authRoutes = require("./Routes/authRoutes");
 
 const app = express();
 
-//Middleware
-app.use(express.json());
-app.use("/users", router);
+// Middleware
+app.use(express.json()); // parse JSON bodies
 
-mongoose.connect("mongodb+srv://Admin:n3AK0A9ujJWgb9dD@cluster0.rejzequ.mongodb.net/")
-.then(() => console.log("Connected to MongoDB"))
-.then(() => {
-    app.listen(5000);
-})
-.catch((err) => console.log((err)));
+// Mount routes
+app.use("/users", userRoutes); // protected CRUD routes
+app.use("/auth", authRoutes);  // login route
+
+// Connect to MongoDB
+mongoose
+  .connect(
+    "mongodb+srv://Admin:n3AK0A9ujJWgb9dD@cluster0.rejzequ.mongodb.net/yourDBName"
+  )
+  .then(() => {
+    console.log("Connected to MongoDB");
+
+    // Start server
+    app.listen(5000, () => {
+      console.log("Server running on http://localhost:5000");
+    });
+  })
+  .catch((err) => console.log(err));

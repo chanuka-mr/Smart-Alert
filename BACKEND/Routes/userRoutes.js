@@ -1,14 +1,15 @@
 const express = require("express");
 const router = express.Router();
+const {verifyToken, verifyAdmin} = require("../Middleware/auth");
 
-//insert model and controller
+//insert controller
 const UserController = require("../Controllers/userControllers");
 
-router.get("/", UserController.getAllUsers);
-router.post("/", UserController.createUser);
-router.get("/:id", UserController.getById);
-router.put("/:id", UserController.updateUser);
-router.delete("/:id", UserController.deleteUser);
+router.get("/", verifyToken, verifyAdmin, UserController.getAllUsers);
+router.post("/", verifyToken, verifyAdmin, UserController.createUser);
+router.get("/:id", verifyToken, verifyAdmin, UserController.getById);
+router.put("/:id", verifyToken, verifyAdmin, UserController.updateUser);
+router.delete("/:id", verifyToken, verifyAdmin, UserController.deleteUser);
 
 //export
 module.exports = router;
