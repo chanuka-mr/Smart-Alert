@@ -1,0 +1,111 @@
+const Attendance = require("../Model/AttendanceModel");
+const Student = require("../Model/StudentModel");
+
+// Helper: check if string looks like a Mongo ObjectId
+const looksLikeObjectId = (s) => typeof s === "string" && s.match(/^[0-9a-fA-F]{24}$/);
+
+// Get all attendance
+const getAllAttendance = async (req, res) => {
+    try {
+        const records = await Attendance.find().populate("student");
+        return res.status(200).json({ records });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Mark attendance by studentId or std_index
+const markAttendance = async (req, res) => {
+    const { studentId, std_index, date, status } = req.body;
+
+    if (!studentId && !std_index) {
+        return res.status(400).json({ message: "Provide studentId or std_index" });
+    }
+
+    try {
+        let student;
+        if (studentId) {
+            if (!looksLikeObjectId(studentId)) return res.status(400).json({ message: "Invalid studentId" });
+            student = await Student.findById(studentId);
+        } else {
+            student = await Student.findOne({ std_index });
+        }
+        if (!student) return res.status(404).json({ message: "Student not found" });
+
+        const record = new Attendance({
+            student: student._id,
+            date: date ? new Date(date) : new Date(),
+            status: status || "Present"
+        });
+
+        await record.save();
+        const populated = await Attendance.findById(record._id).populate("student");
+        return res.status(200).json({ record: populated });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Get attendance by studentId or std_index
+const getAttendanceByStudent = async (req, res) => {
+    const param = req.params.studentId;
+    try {
+        let student;
+        if (looksLikeObjectId(param)) {
+            student = await Student.findById(param);
+        } else {
+            student = await Student.findOne({ std_index: param });
+        }
+        if (!student) return res.status(404).json({ message: "Student not found" });
+
+        const records = await Attendance.find({ student: student._id }).populate("student");
+        return res.status(200).json({ records });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Update attendance by attendance _id
+const updateAttendance = async (req, res) => {
+    const id = req.params.id;
+    const { status, justification, notifiedParent, date } = req.body;
+
+    try {
+        const update = {};
+        if (status) update.status = status;
+        if (typeof justification !== "undefined") update.justification = justification;
+        if (typeof notifiedParent !== "undefined") update.notifiedParent = notifiedParent;
+        if (date) update.date = new Date(date);
+
+        const record = await Attendance.findByIdAndUpdate(id, update, { new: true, runValidators: true }).populate("student");
+        if (!record) return res.status(404).json({ message: "Attendance not found" });
+        return res.status(200).json({ record });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Delete attendance
+const deleteAttendance = async (req, res) => {
+    const id = req.params.id;
+    try {
+        const record = await Attendance.findByIdAndDelete(id);
+        if (!record) return res.status(404).json({ message: "Attendance not found" });
+        return res.status(200).json({ record });
+    } catch (err) {
+        console.error(err.message);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+module.exports = {
+    getAllAttendance,
+    markAttendance,
+    getAttendanceByStudent,
+    updateAttendance,
+    deleteAttendance
+};
