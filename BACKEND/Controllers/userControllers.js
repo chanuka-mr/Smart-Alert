@@ -110,8 +110,4 @@ const deleteUser = async (req, res, next) => {
   return res.status(200).json({ user });
 };
 
-exports.getAllUsers = getAllUsers;
-exports.createUser = createUser;
-exports.getById = getById;
-exports.updateUser = updateUser;
-exports.deleteUser = deleteUser;
+module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser };

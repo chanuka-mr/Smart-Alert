@@ -89,4 +89,31 @@ const verifyOtp = async (req, res) => {
     }
 };
 
-module.exports = { login, verifyOtp };
+const setPassword = async (req, res) => {
+    const { std_index, newPassword } = req.body;
+
+    try {
+        const user = await User.findOne({ std_index });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Hash and update password
+        user.password = newPassword; // will be hashed by pre-save hook
+        user.isVerified = true;      // first-time verification complete
+        await user.save();
+
+        // Issue JWT token
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            "your_jwt_secret_key",
+            { expiresIn: "1h" }
+        );
+
+        res.status(200).json({ message: "Password set successfully", token });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+
+module.exports = { login, verifyOtp, setPassword };
