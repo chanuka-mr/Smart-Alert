@@ -3,7 +3,6 @@ const User = require("../Model/userModel");
 // ✅ Get all users
 const getAllUsers = async (req, res, next) => {
   let users;
-
   try {
     users = await User.find();
   } catch (err) {
@@ -19,10 +18,9 @@ const getAllUsers = async (req, res, next) => {
 
 // ✅ Add a new user
 const createUser = async (req, res, next) => {
-  const { std_index, name, bday, age, address, password, role } = req.body;
+  const { std_index, name, bday, age, address, email, password, role } = req.body;
 
   let user;
-
   try {
     user = new User({
       std_index,
@@ -30,6 +28,7 @@ const createUser = async (req, res, next) => {
       bday,
       age,
       address,
+      email,
       password,
       role
     });
@@ -48,9 +47,7 @@ const createUser = async (req, res, next) => {
 // ✅ Get user by ID
 const getById = async (req, res, next) => {
   const id = req.params.id;
-
   let user;
-
   try {
     user = await User.findById(id);
   } catch (err) {
@@ -67,10 +64,9 @@ const getById = async (req, res, next) => {
 // ✅ Update user details
 const updateUser = async (req, res, next) => {
   const id = req.params.id;
-  const { std_index, name, bday, age, address, password, role } = req.body;
+  const { std_index, name, bday, age, address, email, password, role } = req.body;
 
   let user;
-
   try {
     user = await User.findByIdAndUpdate(
       id,
@@ -80,10 +76,11 @@ const updateUser = async (req, res, next) => {
         bday,
         age,
         address,
+        email,
         password,
         role
       },
-      { new: true } // return updated document
+      { new: true }
     );
   } catch (err) {
     console.log(err);
@@ -99,9 +96,7 @@ const updateUser = async (req, res, next) => {
 // ✅ Delete user
 const deleteUser = async (req, res, next) => {
   const id = req.params.id;
-
   let user;
-
   try {
     user = await User.findByIdAndDelete(id);
   } catch (err) {
