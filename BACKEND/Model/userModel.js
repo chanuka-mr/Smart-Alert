@@ -24,7 +24,7 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
-    email: {   // ✅ Added email field for OTP
+    email: {
         type: String,
         required: true,
         unique: true
@@ -38,14 +38,14 @@ const userSchema = new Schema({
         enum: ["Admin", "Teacher", "Parent", "ShuttleStaff"],
         required: true
     },
-    isVerified: {   // ✅ Track first-time login verification
+    isVerified: {
         type: Boolean,
         default: false
     },
-    otp: {   // ✅ Temporary OTP storage
+    otp: {
         type: String
     },
-    otpExpiry: {   // ✅ Expiration timestamp for OTP
+    otpExpiry: {
         type: Date
     }
 });
