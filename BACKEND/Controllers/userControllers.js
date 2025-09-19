@@ -1,113 +1,87 @@
-const User = require("../Model/userModel");
+const { User, Login } = require("../Model/userModel");
 
-// ✅ Get all users
-const getAllUsers = async (req, res, next) => {
-  let users;
+// Get all users
+const getAllUsers = async (req, res) => {
   try {
-    users = await User.find();
+    const users = await User.find();
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: "No users found." });
+    }
+    return res.status(200).json({ users });
   } catch (err) {
     console.log(err);
+    res.status(500).json({ message: "Server error" });
   }
-
-  if (!users || users.length === 0) {
-    return res.status(404).json({ message: "No users found." });
-  }
-
-  return res.status(200).json({ users });
 };
 
-// ✅ Add a new user
-const createUser = async (req, res, next) => {
-  const { std_index, name, bday, age, address, email, password, role } = req.body;
+// Add a new user (Admin only)
+const createUser = async (req, res) => {
+  const { userID, fullName, birthday, address, email, role } = req.body;
 
-  let user;
   try {
-    user = new User({
-      std_index,
-      name,
-      bday,
-      age,
-      address,
-      email,
-      password,
-      role
-    });
+    // Create User profile
+    const user = new User({ userID, fullName, birthday, address, email, role });
     await user.save();
+
+    // Create Login record (default password = email)
+    const login = new Login({
+      userID,
+      username: email,
+      password: email, // pre-save hook will hash
+      isVerified: false
+    });
+    await login.save();
+
+    return res.status(201).json({ user, login });
   } catch (err) {
     console.log(err);
+    res.status(400).json({ message: "Unable to add user." });
   }
-
-  if (!user) {
-    return res.status(400).json({ message: "Unable to add user." });
-  }
-
-  return res.status(201).json({ user });
 };
 
-// ✅ Get user by ID
-const getById = async (req, res, next) => {
-  const id = req.params.id;
-  let user;
+// Get user by MongoDB ID
+const getById = async (req, res) => {
   try {
-    user = await User.findById(id);
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found." });
+    return res.status(200).json({ user });
   } catch (err) {
     console.log(err);
+    res.status(500).json({ message: "Server error" });
   }
-
-  if (!user) {
-    return res.status(404).json({ message: "User not found." });
-  }
-
-  return res.status(200).json({ user });
 };
 
-// ✅ Update user details
-const updateUser = async (req, res, next) => {
-  const id = req.params.id;
-  const { std_index, name, bday, age, address, email, password, role } = req.body;
-
-  let user;
+// Update user details
+const updateUser = async (req, res) => {
   try {
-    user = await User.findByIdAndUpdate(
-      id,
-      {
-        std_index,
-        name,
-        bday,
-        age,
-        address,
-        email,
-        password,
-        role
-      },
+    const { fullName, birthday, address, email, role } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { fullName, birthday, address, email, role },
       { new: true }
     );
+    if (!user) return res.status(404).json({ message: "Unable to update user." });
+    return res.status(200).json({ user });
   } catch (err) {
     console.log(err);
+    res.status(500).json({ message: "Server error" });
   }
-
-  if (!user) {
-    return res.status(404).json({ message: "Unable to update user details." });
-  }
-
-  return res.status(200).json({ user });
 };
 
-// ✅ Delete user
-const deleteUser = async (req, res, next) => {
-  const id = req.params.id;
-  let user;
+// Delete user
+const deleteUser = async (req, res) => {
   try {
-    user = await User.findByIdAndDelete(id);
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: "Unable to delete user." });
+
+    // Also delete Login record
+    await Login.deleteOne({ userID: user.userID });
+
+    return res.status(200).json({ user });
   } catch (err) {
     console.log(err);
+    res.status(500).json({ message: "Server error" });
   }
-
-  if (!user) {
-    return res.status(404).json({ message: "Unable to delete user details." });
-  }
-
-  return res.status(200).json({ user });
 };
 
 module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser };

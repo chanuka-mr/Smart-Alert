@@ -1,18 +1,17 @@
-// middleware/auth.js
 const jwt = require("jsonwebtoken");
-const User = require("../Model/userModel");
+const { User, Login } = require("../Model/userModel");
 
-// Verify JWT token and attach user info to req.user
+// Verify JWT token
 const verifyToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"]; // Expected format: "Bearer <token>"
+  const authHeader = req.headers["authorization"];
   if (!authHeader) return res.status(401).json({ message: "No token provided" });
 
   const token = authHeader.split(" ")[1];
   if (!token) return res.status(401).json({ message: "No token provided" });
 
   try {
-    const decoded = jwt.verify(token, "your_jwt_secret_key"); // Replace with your secret
-    req.user = decoded; // { id, role }
+    const decoded = jwt.verify(token, "your_jwt_secret_key");
+    req.user = decoded; // contains { id, role }
     next();
   } catch (err) {
     console.log(err);
@@ -20,15 +19,14 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Middleware to allow only Admin users
+// Allow only Admins
 const verifyAdmin = async (req, res, next) => {
   try {
-    // Make sure verifyToken ran first
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized: No user info found" });
     }
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findOne({ userID: req.user.id });
     if (!user) {
       return res.status(401).json({ message: "Unauthorized: User not found" });
     }
@@ -37,7 +35,6 @@ const verifyAdmin = async (req, res, next) => {
       return res.status(403).json({ message: "Forbidden: Admins only" });
     }
 
-    // User is admin → proceed
     next();
   } catch (err) {
     console.log(err);
