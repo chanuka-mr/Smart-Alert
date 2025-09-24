@@ -1,0 +1,25 @@
+.home-container {
+  max-width: 600px;
+  margin: 60px auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  padding: 40px 32px;
+  text-align: center;
+}
+.home-container h1 {
+  margin-bottom: 32px;
+  font-size: 2rem;
+  color: #1976d2;
+}
+.home-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.home-buttons button {
+  @extend .btn-primary;
+}
+.home-buttons button:hover {
+  background: #1565c0;
+}

@@ -1,113 +1,136 @@
+
+// Import the Notice model and required modules for file handling
 const Notice = require("../Model/NoticeModel");
+const fs = require('fs'); // For file system operations
+const path = require('path'); // For file path handling
 
-//Display Data
+// Get all notices from the database
 const getAllNotice = async (req, res, next) => {
-    
-    let Notices;
-
-    try{
-        notices = await Notice.find();
-    }catch(err) {
-        console.log(err);
-    }
-    //not found
-    if(!notices){
-        return res.status(404).json({message:"Notice not found"});
-    }
-
-    //Display all Notices
-    return res.status(200).json({notices});
-};
-
-//Data Insert
-const addNotices = async(req, res, next) => {
-    
-    const {title,notice,attachment,createdBy,category,publishedAt,updatedAt} =  req.body;
-    
     let notices;
-
-    try{
-        notices = new Notice({title,notice,attachment,createdBy,category,publishedAt,updatedAt});
-        await notices.save();
-    }catch (err){
+    try {
+        notices = await Notice.find(); // Fetch all notices
+    } catch (err) {
         console.log(err);
     }
-    //not inserting
-    if (!notices){
-        return res.status(404).json({massage:"unable to add Notice"});
+    // If no notices found, return 404
+    if (!notices) {
+        return res.status(404).json({ message: "Notice not found" });
     }
-    return res.status(200).json({notices});
+    // Return all notices
+    return res.status(200).json({ notices });
 };
 
-//Get by Id(Display data)
-const getById = async(req, res, next) => {
-    
-    const id = req.params.id;
-
-    let notice;
-
-    try{
-        notice = await Notice.findById(id);
-    }catch (err) {
+// Add a new notice to the database
+const addNotices = async (req, res, next) => {
+    const { title, notice, createdBy, category, publishedAt, updatedAt } = req.body;
+    let attachment = null;
+    // Handle file upload if present
+    if (req.file) {
+        attachment = '/uploads/' + req.file.filename;
+    } else if (req.body.attachment) {
+        attachment = req.body.attachment;
+    }
+    let notices;
+    try {
+        notices = new Notice({ title, notice, attachment, createdBy, category, publishedAt, updatedAt });
+        await notices.save(); // Save new notice
+    } catch (err) {
         console.log(err);
     }
-     //not avilable notice inserting
-    if (!notice){
-        return res.status(404).json({massage:"Notice not found"});
+    // If not inserted, return error
+    if (!notices) {
+        return res.status(404).json({ massage: "unable to add Notice" });
     }
-    return res.status(200).json({notice});
+    return res.status(200).json({ notices });
+};
+
+// Get a notice by its ID
+const getById = async (req, res, next) => {
+    const id = req.params.id;
+    let notice;
+    try {
+        notice = await Notice.findById(id); // Find notice by ID
+    } catch (err) {
+        console.log(err);
+    }
+    // If not found, return error
+    if (!notice) {
+        return res.status(404).json({ massage: "Notice not found" });
+    }
+    return res.status(200).json({ notice });
 }
 
-//Update notice 
-const updateNotice = async(req, res, next) => {
-
+// Update an existing notice
+const updateNotice = async (req, res, next) => {
     const id = req.params.id;
-    const {title,notice,attachment,createdBy,category,publishedAt,updatedAt} =  req.body;
+    let { title, notice, attachment, createdBy, category, publishedAt, updatedAt } = req.body;
 
-    let notices;
+    // Find existing notice for attachment deletion
+    let existingNotice = await Notice.findById(id);
+    if (!existingNotice) {
+        return res.status(404).json({ massage: "Notice not found" });
+    }
 
-    try{
-        notices = await Notice.findByIdAndUpdate(id,
-            { 
-                title: title, 
-                notice: notice, 
-                attachment: attachment, 
-                createdBy: createdBy, 
-                category: category, 
-                publishedAt: publishedAt, 
-                updatedAt: updatedAt
-            });
-            notices = await notices.save();
-    }catch(err){
+    // If a new file is uploaded, replace old attachment
+    if (req.file) {
+        // Delete old attachment if exists
+        if (existingNotice.attachment) {
+            const filePath = path.join(__dirname, '..', existingNotice.attachment);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+        attachment = '/uploads/' + req.file.filename;
+    } else if (attachment === "" && existingNotice.attachment) {
+        // Delete attachment file if removed
+        const filePath = path.join(__dirname, '..', existingNotice.attachment);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        attachment = null;
+    }
+
+    let updatedNotice;
+    try {
+        updatedNotice = await Notice.findByIdAndUpdate(
+            id,
+            {
+                title,
+                notice,
+                attachment,
+                createdBy,
+                category,
+                publishedAt,
+                updatedAt
+            },
+            { new: true }
+        ); // Update notice in DB
+    } catch (err) {
         console.log(err);
     }
-      //not avilable notice inserting
-    if (!notices){
-        return res.status(404).json({massage:"Unable to update notice Details"});
+    if (!updatedNotice) {
+        return res.status(404).json({ massage: "Unable to update notice Details" });
     }
-    return res.status(200).json({notices});
-
+    return res.status(200).json({ notices: updatedNotice });
 };
 
-//Delete Notice
-const deletenotice = async(req, res, next) => {
+// Delete a notice and its attachment
+const deletenotice = async (req, res, next) => {
     const id = req.params.id;
-
     let notice;
-
-    try{
-        notice = await Notice.findByIdAndDelete(id);
-    }catch(err){
+    try {
+        notice = await Notice.findByIdAndDelete(id); // Delete notice from DB
+        // Delete attachment file if exists
+        if (notice && notice.attachment) {
+            const filePath = path.join(__dirname, '..', notice.attachment);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+    } catch (err) {
         console.log(err)
     }
-       //not avilable notice inserting
-    if (!notice){
-        return res.status(404).json({massage:"Unable to Delete notice Details"});
+    if (!notice) {
+        return res.status(404).json({ massage: "Unable to Delete notice Details" });
     }
-    return res.status(200).json({notice});
-
+    return res.status(200).json({ notice });
 }
 
+// Export controller functions for use in routes
 exports.getAllNotice = getAllNotice;
 exports.addNotice = addNotices;
 exports.getById = getById;

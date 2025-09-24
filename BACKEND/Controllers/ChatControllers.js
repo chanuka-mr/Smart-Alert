@@ -1,75 +1,83 @@
 // BACKEND/Controllers/ChatControllers.js
-const ChatMessage = require('../Model/ChatModel');
 
-// CREATE
-exports.createMessage = async (req, res) => {
+// Import the Chat model
+const Chat = require("../Model/ChatModel");
+
+// Get all chat messages from the database
+const getAllMessages = async (req, res, next) => {
+  let messages;
   try {
-    const { fromUserId, toUserId, classId, messageContent } = req.body;
-    const message = new ChatMessage({ fromUserId, toUserId, classId, messageContent });
-    await message.save();
-    res.status(201).json(message);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    messages = await Chat.find(); // Fetch all messages
+  } catch (err) {
+    console.log(err);
   }
+  // If no messages found, return 404
+  if (!messages) {
+    return res.status(404).json({ message: "Messages not found" });
+  }
+  // Return all messages
+  return res.status(200).json({ messages });
 };
 
-// READ ALL (admin/testing)
-exports.getAllMessages = async (req, res) => {
+// Add a new chat message to the database
+const addMessage = async (req, res, next) => {
+  const { sender, receiver, message, time } = req.body;
+  let chat;
   try {
-    const messages = await ChatMessage.find().sort({ createdAt: 1 });
-    res.status(200).json(messages);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    chat = new Chat({ sender, receiver, message, time });
+    await chat.save(); // Save new message
+  } catch (err) {
+    console.log(err);
   }
+  // If not inserted, return error
+  if (!chat) {
+    return res.status(404).json({ message: "Unable to add message" });
+  }
+  return res.status(200).json({ chat });
 };
 
-// READ (by conversation)
-exports.getConversation = async (req, res) => {
+// Get messages between two users (sender or receiver)
+const getMessagesByUser = async (req, res, next) => {
+  const { user1, user2 } = req.params;
+  let messages;
   try {
-    const { classId, parentId, teacherId } = req.params;
-    const messages = await ChatMessage.find({
-      classId,
+    messages = await Chat.find({
       $or: [
-        { fromUserId: parentId, toUserId: teacherId },
-        { fromUserId: teacherId, toUserId: parentId }
+        { sender: user1, receiver: user2 },
+        { sender: user2, receiver: user1 }
       ]
-    }).sort({ createdAt: 1 });
-    res.status(200).json(messages);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    }); // Find messages between user1 and user2
+  } catch (err) {
+    console.log(err);
   }
+  // If not found, return error
+  if (!messages) {
+    return res.status(404).json({ message: "Messages not found" });
+  }
+  return res.status(200).json({ messages });
 };
 
-// GET by ID (single message)
-exports.getMessageById = async (req, res, next) => {
+// Delete a chat message by its ID
+const deleteMessage = async (req, res, next) => {
+  const id = req.params.id;
+  let message;
   try {
-    const  id  = req.params.id;
-    const message = await ChatMessage.findById(id);
-
-    if (!message) {
-      return res.status(404).json({ error: "Message not found" });
-    }
-
-    res.status(200).json(message);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    message = await Chat.findByIdAndDelete(id); // Delete message from DB
+  } catch (err) {
+    console.log(err);
   }
+  // If not deleted, return error
+  if (!message) {
+    return res.status(404).json({ message: "Unable to delete message" });
+  }
+  return res.status(200).json({ message });
 };
 
-// UPDATE
-exports.updateMessage = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { messageContent } = req.body;
-    const updated = await ChatMessage.findByIdAndUpdate(
-      id,
-      { messageContent, edited: true },
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ error: 'Message not found' });
-    res.status(200).json(updated);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+// Export controller functions for use in routes
+exports.getAllMessages = getAllMessages;
+exports.addMessage = addMessage;
+exports.getMessagesByUser = getMessagesByUser;
+exports.deleteMessage = deleteMessage;
   }
 };
 
