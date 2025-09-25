@@ -1,25 +1,23 @@
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Students from "./pages/Students";
+import Attendance from "./pages/Attendance";
+import AttendanceRecords from "./pages/AttendanceRecords";
+import ParentView from "./pages/ParentView";
+import './index.css';
 
-function App() {
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="fade-in">
+      <Routes>
+        <Route path="/" element={<Students />} />
+        <Route path="/attendance" element={<Attendance />} />
+        <Route path="/records" element={<AttendanceRecords />} />
+        <Route path="/parent" element={<ParentView />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
-}
+};
 
 export default App;

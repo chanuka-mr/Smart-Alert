@@ -7,5 +7,5 @@ router.post("/", AttendanceController.markAttendance);
 router.get("/:studentId", AttendanceController.getAttendanceByStudent);
 router.put("/:id", AttendanceController.updateAttendance);
 router.delete("/:id", AttendanceController.deleteAttendance);
-
+router.post("/notify-parents", AttendanceController.notifyParentsForAbsents);
 module.exports = router;
