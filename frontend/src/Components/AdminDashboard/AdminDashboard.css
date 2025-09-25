@@ -182,6 +182,19 @@
   color: var(--primary-light);
 }
 
+/* Form validation styles */
+.admin-dashboard .form-group input.error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(239, 83, 80, 0.2);
+}
+
+.admin-dashboard .error-message {
+  color: var(--danger);
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
 .admin-dashboard .notifications {
   position: relative;
   margin-right: 20px;

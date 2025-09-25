@@ -67,6 +67,10 @@ const createUser = async (req, res) => {
     return res.status(201).json({ user, login });
   } catch (err) {
     console.log(err);
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ message: "Validation failed", errors });
+    }
     res.status(400).json({ message: "Unable to add user." });
   }
 };
@@ -112,6 +116,10 @@ const updateUser = async (req, res) => {
     return res.status(200).json({ user });
   } catch (err) {
     console.log(err);
+    if (err.name === 'ValidationError') {
+      const errors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({ message: "Validation failed", errors });
+    }
     res.status(500).json({ message: "Server error" });
   }
 };

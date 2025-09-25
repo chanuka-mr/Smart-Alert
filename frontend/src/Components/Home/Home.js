@@ -245,9 +245,9 @@ const Home = () => {
       {/* Hero Section */}
       <section className="hero">
         <div className="container">
-          <h2>Streamline Your School Management</h2>
-          <p>Smart Alert is a comprehensive school management system designed to simplify administrative tasks, enhance communication, and improve educational outcomes.</p>
-          <a href="#" className="btn-hero" onClick={handleGetStarted}>Get Started Today</a>
+          <h2>Under Development</h2>
+          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.</p>
+          <a href="#" className="btn-hero" onClick={handleGetStarted}>Button</a>
         </div>
       </section>
 
@@ -328,14 +328,13 @@ const Home = () => {
           <div className="footer-content">
             <div className="footer-column">
               <h3>Smart Alert</h3>
-              <p>Transforming education through innovative technology solutions that simplify school management and enhance learning experiences.</p>
+              <p>lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.</p>
             </div>
             <div className="footer-column">
               <h3>Quick Links</h3>
               <ul>
                 <li><a href="#" onClick={handleNavClick}>Home</a></li>
                 <li><a href="#features" onClick={handleNavClick}>Features</a></li>
-                <li><a href="#" onClick={handleNavClick}>Pricing</a></li>
                 <li><a href="#about" onClick={handleNavClick}>About Us</a></li>
                 <li><a href="#contact" onClick={handleNavClick}>Contact</a></li>
               </ul>
@@ -353,9 +352,9 @@ const Home = () => {
             <div className="footer-column">
               <h3>Contact Us</h3>
               <ul>
-                <li><i className="fas fa-map-marker-alt"></i> 123 Education Street, Learn City</li>
-                <li><i className="fas fa-phone"></i> (555) 123-4567</li>
-                <li><i className="fas fa-envelope"></i> info@smartalert.edu</li>
+                <li><i className="fas fa-map-marker-alt"></i> Hatton</li>
+                <li><i className="fas fa-phone"></i> 0123456789</li>
+                <li><i className="fas fa-envelope"></i> info@webster.edu</li>
               </ul>
             </div>
           </div>

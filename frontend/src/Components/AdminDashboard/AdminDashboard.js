@@ -34,6 +34,7 @@ const AdminDashboard = () => {
     email: '',
     role: 'Parent'
   });
+  const [studentFormErrors, setStudentFormErrors] = useState({});
 
   // Teacher management state
   const [teachers, setTeachers] = useState([]);
@@ -50,6 +51,7 @@ const AdminDashboard = () => {
     email: '',
     role: 'Teacher'
   });
+  const [teacherFormErrors, setTeacherFormErrors] = useState({});
 
   // Shuttle Staff management state
   const [shuttleStaff, setShuttleStaff] = useState([]);
@@ -66,6 +68,7 @@ const AdminDashboard = () => {
     email: '',
     role: 'ShuttleStaff'
   });
+  const [shuttleFormErrors, setShuttleFormErrors] = useState({});
 
   // Admin management state
   const [admins, setAdmins] = useState([]);
@@ -82,6 +85,7 @@ const AdminDashboard = () => {
     email: '',
     role: 'Admin'
   });
+  const [adminFormErrors, setAdminFormErrors] = useState({});
 
   // Load user data and dashboard statistics
   useEffect(() => {
@@ -449,6 +453,30 @@ const AdminDashboard = () => {
   const handleSaveStudent = async (e) => {
     e.preventDefault();
     
+    // Clear previous errors
+    setStudentFormErrors({});
+    
+    // Validate form
+    const birthdayValidation = validateBirthday(studentForm.birthday, studentForm.role);
+    if (!birthdayValidation.isValid) {
+      setStudentFormErrors({ birthday: birthdayValidation.message });
+      return;
+    }
+    
+    // Basic validation
+    if (!studentForm.fullName.trim()) {
+      setStudentFormErrors({ fullName: 'Full name is required' });
+      return;
+    }
+    if (!studentForm.email.trim()) {
+      setStudentFormErrors({ email: 'Email is required' });
+      return;
+    }
+    if (!studentForm.address.trim()) {
+      setStudentFormErrors({ address: 'Address is required' });
+      return;
+    }
+    
     try {
       if (editingStudent) {
         // Update existing user - use MongoDB _id for updates
@@ -472,10 +500,28 @@ const AdminDashboard = () => {
       }
       
       setShowStudentModal(false);
+      setStudentFormErrors({});
       filterAndSortStudents();
     } catch (error) {
       console.error('Failed to save user:', error);
-      alert('Failed to save user. Please try again.');
+      if (error.errors && Array.isArray(error.errors)) {
+        // Handle backend validation errors
+        const errorObj = {};
+        error.errors.forEach(err => {
+          if (err.includes('birthday') || err.includes('Birthday')) {
+            errorObj.birthday = err;
+          } else if (err.includes('email') || err.includes('Email')) {
+            errorObj.email = err;
+          } else if (err.includes('name') || err.includes('Name')) {
+            errorObj.fullName = err;
+          } else if (err.includes('address') || err.includes('Address')) {
+            errorObj.address = err;
+          }
+        });
+        setStudentFormErrors(errorObj);
+      } else {
+        alert('Failed to save user. Please try again.');
+      }
     }
   };
 
@@ -748,6 +794,35 @@ const AdminDashboard = () => {
 
   const handleBackToHome = () => {
     navigate('/');
+  };
+
+  // Validation functions
+  const validateBirthday = (birthday, role) => {
+    if (!birthday) return { isValid: false, message: 'Birthday is required' };
+    
+    const today = new Date();
+    const birthDate = new Date(birthday);
+    
+    // Check if birthday is in the future
+    if (birthDate > today) {
+      return { isValid: false, message: 'Birthday cannot be in the future' };
+    }
+    
+    // Check age limits for Parent role (students should be 5-17 years old)
+    if (role === 'Parent') {
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+      
+      if (actualAge < 5) {
+        return { isValid: false, message: 'Student must be at least 5 years old' };
+      }
+      if (actualAge > 17) {
+        return { isValid: false, message: 'Student cannot be older than 17 years' };
+      }
+    }
+    
+    return { isValid: true, message: '' };
   };
 
   // Enhanced search handler with debouncing
@@ -1728,10 +1803,19 @@ const AdminDashboard = () => {
                   type="text" 
                   id="fullName" 
                   value={studentForm.fullName}
-                  onChange={(e) => setStudentForm({...studentForm, fullName: e.target.value})}
+                  onChange={(e) => {
+                    setStudentForm({...studentForm, fullName: e.target.value});
+                    if (studentFormErrors.fullName) {
+                      setStudentFormErrors({...studentFormErrors, fullName: ''});
+                    }
+                  }}
                   required 
                   placeholder="e.g., John Doe"
+                  className={studentFormErrors.fullName ? 'error' : ''}
                 />
+                {studentFormErrors.fullName && (
+                  <div className="error-message">{studentFormErrors.fullName}</div>
+                )}
               </div>
               
               <div className="form-group">
@@ -1740,10 +1824,19 @@ const AdminDashboard = () => {
                   type="email" 
                   id="email" 
                   value={studentForm.email}
-                  onChange={(e) => setStudentForm({...studentForm, email: e.target.value})}
+                  onChange={(e) => {
+                    setStudentForm({...studentForm, email: e.target.value});
+                    if (studentFormErrors.email) {
+                      setStudentFormErrors({...studentFormErrors, email: ''});
+                    }
+                  }}
                   required 
                   placeholder="e.g., john.doe@school.edu"
+                  className={studentFormErrors.email ? 'error' : ''}
                 />
+                {studentFormErrors.email && (
+                  <div className="error-message">{studentFormErrors.email}</div>
+                )}
               </div>
               
               <div className="form-group">
@@ -1752,9 +1845,19 @@ const AdminDashboard = () => {
                   type="date" 
                   id="birthday" 
                   value={studentForm.birthday}
-                  onChange={(e) => setStudentForm({...studentForm, birthday: e.target.value})}
+                  onChange={(e) => {
+                    setStudentForm({...studentForm, birthday: e.target.value});
+                    if (studentFormErrors.birthday) {
+                      setStudentFormErrors({...studentFormErrors, birthday: ''});
+                    }
+                  }}
                   required 
+                  max={new Date().toISOString().split('T')[0]}
+                  className={studentFormErrors.birthday ? 'error' : ''}
                 />
+                {studentFormErrors.birthday && (
+                  <div className="error-message">{studentFormErrors.birthday}</div>
+                )}
               </div>
               
               <div className="form-group">
@@ -1763,10 +1866,19 @@ const AdminDashboard = () => {
                   type="text" 
                   id="address" 
                   value={studentForm.address}
-                  onChange={(e) => setStudentForm({...studentForm, address: e.target.value})}
+                  onChange={(e) => {
+                    setStudentForm({...studentForm, address: e.target.value});
+                    if (studentFormErrors.address) {
+                      setStudentFormErrors({...studentFormErrors, address: ''});
+                    }
+                  }}
                   required 
                   placeholder="e.g., 123 Main St, City, State"
+                  className={studentFormErrors.address ? 'error' : ''}
                 />
+                {studentFormErrors.address && (
+                  <div className="error-message">{studentFormErrors.address}</div>
+                )}
               </div>
               
               <div className="form-actions">

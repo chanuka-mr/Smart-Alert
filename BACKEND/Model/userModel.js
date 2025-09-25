@@ -61,7 +61,52 @@ const userSchema = new Schema({
     },
     birthday: {
         type: Date,
-        required: true
+        required: true,
+        validate: {
+            validator: function(value) {
+                const today = new Date();
+                const birthDate = new Date(value);
+                
+                // Check if birthday is in the future
+                if (birthDate > today) {
+                    return false;
+                }
+                
+                // Check age limits for Parent role (students should be 5-17 years old)
+                if (this.role === 'Parent') {
+                    const age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+                    
+                    return actualAge >= 5 && actualAge <= 17;
+                }
+                
+                return true;
+            },
+            message: function(props) {
+                const today = new Date();
+                const birthDate = new Date(props.value);
+                
+                if (birthDate > today) {
+                    return 'Birthday cannot be in the future';
+                }
+                
+                if (this.role === 'Parent') {
+                    const age = today.getFullYear() - birthDate.getFullYear();
+                    const monthDiff = today.getMonth() - birthDate.getMonth();
+                    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+                    
+                    if (actualAge < 5) {
+                        return 'Student must be at least 5 years old';
+                    }
+                    if (actualAge > 17) {
+                        return 'Student cannot be older than 17 years';
+                    }
+                }
+                
+                return 'Invalid birthday';
+            }
+        }
     },
     address: {
         type: String,
