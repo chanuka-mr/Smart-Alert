@@ -8,7 +8,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
 
 const MAIL_USER = process.env.MAIL_USER || "jayalathchanuka2003@gmail.com";
-// App passwords are required for Gmail. You can also set MAIL_PASS in .env.
 const MAIL_PASS = process.env.MAIL_PASS || "cpze qnal ybej icgg";
 
 // Create one transporter (reuse across requests)
@@ -25,11 +24,8 @@ function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
-// ==========================================
 // Step 1: Login with userID/email and password
 // POST /auth/login
-// body: { userID, password } (userID can be either UserID or Email)
-// ==========================================
 const login = async (req, res) => {
   const { userID, password } = req.body;
 
@@ -82,7 +78,7 @@ const login = async (req, res) => {
     const user = await User.findOne({ userID: loginRecord.userID }).lean();
     const token = signToken({ id: loginRecord.userID, role: user?.role });
 
-    // Log login activity for admin users
+    // Log login activity for admin users - not finished yet
     if (user?.role?.toLowerCase() === 'admin') {
       await activityController.logActivity(
         loginRecord.userID,
@@ -104,11 +100,8 @@ const login = async (req, res) => {
   }
 };
 
-// ==========================================
 // Step 2: Verify OTP
 // POST /auth/verify-otp
-// body: { userID, otp }
-// ==========================================
 const verifyOtp = async (req, res) => {
   const { userID, otp } = req.body;
 
@@ -135,11 +128,8 @@ const verifyOtp = async (req, res) => {
   }
 };
 
-// ==========================================
 // Step 3: Set new password after first login
 // POST /auth/set-password
-// body: { userID, newPassword }
-// ==========================================
 const setPassword = async (req, res) => {
   const { userID, newPassword } = req.body;
 
@@ -165,10 +155,8 @@ const setPassword = async (req, res) => {
   }
 };
 
-// ==========================================
 // NEW: Get current logged-in user's profile
-// GET /auth/me   (expects Authorization: Bearer <token>)
-// ==========================================
+// GET /auth/me
 const me = async (req, res) => {
   try {
     // Extract & verify the JWT from Authorization header
@@ -209,11 +197,8 @@ const me = async (req, res) => {
   }
 };
 
-// ==========================================
 // Reset Password (for logged-in users)
 // POST /auth/reset-password
-// body: { currentPassword, newPassword }
-// ==========================================
 const resetPassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   
@@ -253,11 +238,8 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// ==========================================
 // Forgot Password (send reset link)
 // POST /auth/forgot-password
-// body: { userIdentifier }
-// ==========================================
 const forgotPassword = async (req, res) => {
   const { userIdentifier } = req.body;
   
@@ -332,11 +314,8 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// ==========================================
 // Reset Password via Email Token
 // POST /auth/reset-password-via-email
-// body: { token, newPassword }
-// ==========================================
 const resetPasswordViaEmail = async (req, res) => {
   const { token, newPassword } = req.body;
   

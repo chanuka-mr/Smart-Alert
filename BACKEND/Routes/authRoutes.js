@@ -10,10 +10,10 @@ router.post("/login", login);
 router.post("/verify-otp", verifyOtp);
 router.post("/set-password", setPassword);
 
-// Forgot password (public route)
+// Forgot password
 router.post("/forgot-password", forgotPassword);
 
-// Reset password via email token (public route)
+// Reset password via email token
 router.post("/reset-password-via-email", resetPasswordViaEmail);
 
 // Current user (protected)

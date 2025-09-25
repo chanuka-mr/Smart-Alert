@@ -44,12 +44,12 @@ const createUser = async (req, res) => {
     const login = new Login({
       userID,
       username: email,
-      password: email, // pre-save hook will hash
+      password: email,
       isVerified: false
     });
     await login.save();
 
-    // Log activity
+    // Log activity - not finished yet
     const adminId = req.user?.id || 'unknown';
     const adminName = req.user?.name || 'Unknown Admin';
     await activityController.logActivity(
@@ -75,7 +75,7 @@ const createUser = async (req, res) => {
   }
 };
 
-// Get user by MongoDB ID
+// Get user by ID
 const getById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -98,7 +98,7 @@ const updateUser = async (req, res) => {
     );
     if (!user) return res.status(404).json({ message: "Unable to update user." });
     
-    // Log activity
+    // Log activity - not finished yet
     const adminId = req.user?.id || 'unknown';
     const adminName = req.user?.name || 'Unknown Admin';
     await activityController.logActivity(
@@ -133,7 +133,7 @@ const deleteUser = async (req, res) => {
     // Also delete Login record
     await Login.deleteOne({ userID: user.userID });
 
-    // Log activity
+    // Log activity - not finished yet
     const adminId = req.user?.id || 'unknown';
     const adminName = req.user?.name || 'Unknown Admin';
     await activityController.logActivity(
@@ -155,7 +155,7 @@ const deleteUser = async (req, res) => {
   }
 };
 
-// Get user statistics
+// Get users count
 const getUserStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();

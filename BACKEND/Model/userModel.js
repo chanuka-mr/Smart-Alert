@@ -2,10 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const bcrypt = require("bcryptjs");
 
-/* ==============================
-   Login Schema
-   Stores authentication details
-   ============================== */
+// Login Schema
 const loginSchema = new Schema({
     userID: { // must match User.userID
         type: String,
@@ -45,10 +42,7 @@ loginSchema.methods.comparePassword = async function (password) {
     return await bcrypt.compare(password, this.password);
 };
 
-/* ==============================
-   User Profile Schema
-   Stores general information
-   ============================== */
+// User Profile Schema
 const userSchema = new Schema({
     userID: {
         type: String,
@@ -136,10 +130,8 @@ userSchema.virtual("age").get(function () {
     return age;
 });
 
-/* ==============================
-   Academic Schema
-   Stores grade and class for parents and teachers
-   ============================== */
+
+// Academic Schema - not finished yet
 const academicSchema = new Schema({
     userID: {
         type: String,
