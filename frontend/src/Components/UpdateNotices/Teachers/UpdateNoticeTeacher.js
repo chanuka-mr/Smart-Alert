@@ -15,10 +15,15 @@ const UpdateNoticeTeacher = ({ teacherId }) => {
   const [deleteId, setDeleteId] = useState(null);
 
   const navigate = useNavigate();
-  // Backspace navigation
+  // Backspace navigation: only trigger when not editing (not focused on input/textarea)
   useEffect(() => {
     const handleBackspace = (e) => {
-      if (e.key === 'Backspace') {
+      if (
+        e.key === 'Backspace' &&
+        document.activeElement &&
+        document.activeElement.tagName !== 'INPUT' &&
+        document.activeElement.tagName !== 'TEXTAREA'
+      ) {
         e.preventDefault();
         navigate(-1);
       }
