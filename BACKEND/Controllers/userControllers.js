@@ -1,4 +1,5 @@
 const { User, Login } = require("../Model/userModel");
+const { generateUserID } = require("../utils/userIDGenerator");
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -7,7 +8,19 @@ const getAllUsers = async (req, res) => {
     if (!users || users.length === 0) {
       return res.status(404).json({ message: "No users found." });
     }
-    return res.status(200).json({ users });
+
+    // Get email verification status for each user
+    const usersWithVerification = await Promise.all(
+      users.map(async (user) => {
+        const login = await Login.findOne({ userID: user.userID });
+        return {
+          ...user.toObject(),
+          isEmailVerified: login ? login.isVerified : false
+        };
+      })
+    );
+
+    return res.status(200).json({ users: usersWithVerification });
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Server error" });
@@ -16,9 +29,12 @@ const getAllUsers = async (req, res) => {
 
 // Add a new user (Admin only)
 const createUser = async (req, res) => {
-  const { userID, fullName, birthday, address, email, role } = req.body;
+  const { fullName, birthday, address, email, role } = req.body;
 
   try {
+    // Generate automatic userID based on role
+    const userID = await generateUserID(role);
+
     // Create User profile
     const user = new User({ userID, fullName, birthday, address, email, role });
     await user.save();
@@ -84,4 +100,22 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser };
+// Get user statistics
+const getUserStats = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const parents = await User.countDocuments({ role: { $regex: /parent/i } });
+    const teachers = await User.countDocuments({ role: { $regex: /teacher/i } });
+
+    return res.status(200).json({
+      totalUsers,
+      parents,
+      teachers
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser, getUserStats };

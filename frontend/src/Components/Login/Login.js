@@ -1,95 +1,39 @@
-import React, { useEffect, useState } from "react";
+// src/Components/Login/Login.js
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Login.css";
+import { api, setToken } from "../../utils/api"; // centralized helper (relative URLs via dev proxy)
 
-/* ========= CONFIG =========
-   1) Put REACT_APP_API_BASE in your frontend .env (e.g., http://localhost:5000)
-   2) We include credentials: "include" because most auth APIs set HttpOnly cookies
-*/
-const API_BASE = (process.env.REACT_APP_API_BASE || "http://localhost:5000").replace(/\/+$/, "");
+export default function Login() {
+  const navigate = useNavigate();
 
-/* ========= helper: fetch with timeout + better errors ========= */
-async function fetchJson(path, { method = "GET", body, headers, timeoutMs = 12000 } = {}) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), timeoutMs);
-
-  let res, data;
-  try {
-    res = await fetch(`${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        ...(headers || {}),
-      },
-      credentials: "include", // important if backend sets cookies
-      body: body ? JSON.stringify(body) : undefined,
-      signal: ctrl.signal,
-    });
-  } catch (err) {
-    clearTimeout(t);
-    // Classic “Failed to fetch” / CORS / network
-    throw new Error(
-      "Network error: Failed to reach API. Check that the backend is running, CORS is enabled, and REACT_APP_API_BASE is correct."
-    );
-  }
-
-  clearTimeout(t);
-
-  try {
-    data = await res.json();
-  } catch {
-    data = null;
-  }
-
-  if (!res.ok) {
-    const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
-    throw new Error(msg);
-  }
-  return data ?? {};
-}
-
-function Login() {
-  // form + ui
   const [form, setForm] = useState({ userID: "", password: "" });
   const [errors, setErrors] = useState({ userID: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // flow: login | otp | setpw
+  // "login" | "otp"
   const [step, setStep] = useState("login");
   const [info, setInfo] = useState("");
-
-  // otp + set password
   const [otp, setOtp] = useState("");
-  const [newPw, setNewPw] = useState({ a: "", b: "" });
-  const [savingPw, setSavingPw] = useState(false);
-
-  // Health ping so you SEE if API is reachable (helps debug “Failed to fetch”)
-  useEffect(() => {
-    (async () => {
-      try {
-        await fetchJson("/"); // your backend root often returns a small message
-        setInfo(""); // reachable
-      } catch (e) {
-        setInfo(
-          `API not reachable at ${API_BASE}. Fix CORS / URL / server. (${e.message})`
-        );
-      }
-    })();
-  }, []);
 
   const onChange = (e) => {
     const { name, value } = e.target;
-    const cleaned = /\s/.test(value) ? value.replace(/\s/g, "") : value; // block spaces
+    // strip spaces (same behavior as your HTML)
+    const cleaned = /\s/.test(value) ? value.replace(/\s/g, "") : value;
     setForm((f) => ({ ...f, [name]: cleaned }));
     setErrors((er) => ({ ...er, [name]: "" }));
+  };
+
+  const onKeyDownNoSpace = (e) => {
+    if (e.key === " ") e.preventDefault();
   };
 
   const onPasteNoSpaces = (e) => {
     const pasted = (e.clipboardData || window.clipboardData).getData("text");
     if (/\s/.test(pasted)) {
       e.preventDefault();
-      const cleaned = pasted.replace(/\s/g, "");
-      document.execCommand("insertText", false, cleaned);
+      document.execCommand("insertText", false, pasted.replace(/\s/g, ""));
     }
   };
 
@@ -101,18 +45,6 @@ function Login() {
     return !next.userID && !next.password;
   };
 
-  const saveTokenIfAny = (data) => {
-    const token =
-      data?.token ||
-      data?.accessToken ||
-      data?.jwt ||
-      (data?.data && (data.data.token || data.data.accessToken));
-    if (token) {
-      try { localStorage.setItem("token", token); } catch {}
-    }
-  };
-
-  // ---- Login submit
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
@@ -120,18 +52,25 @@ function Login() {
     setLoading(true);
     setInfo("");
     try {
-      const res = await fetchJson("/auth/login", {
+      const res = await api("/auth/login", {
         method: "POST",
         body: { userID: form.userID, password: form.password },
       });
+
+      // remember last login id for any fallback logic
+      try { localStorage.setItem("lastUserID", form.userID); } catch {}
 
       if (res?.otpRequired || res?.requiresOtp || res?.next === "otp") {
         setStep("otp");
         setInfo(res?.message || "OTP sent to your email. Please verify.");
       } else {
-        saveTokenIfAny(res);
-        setInfo(res?.message || "Login successful!");
-        // navigate('/dashboard') if you use react-router
+        const token =
+          res?.token ||
+          res?.accessToken ||
+          res?.jwt ||
+          (res?.data && (res.data.token || res.data.accessToken));
+        if (token) setToken(token);
+        navigate("/", { replace: true });
       }
     } catch (err) {
       setInfo(err.message || "Login failed");
@@ -140,47 +79,28 @@ function Login() {
     }
   };
 
-  // ---- Verify OTP
   const onVerifyOtp = async () => {
     if (!otp.trim()) return setInfo("Please enter the OTP sent to your email.");
     setLoading(true);
     setInfo("");
     try {
-      const res = await fetchJson("/auth/verify-otp", {
+      const res = await api("/auth/verify-otp", {
         method: "POST",
         body: { userID: form.userID, otp },
       });
-      saveTokenIfAny(res);
-      setInfo(res?.message || "OTP verified! You are now logged in.");
+      const token =
+        res?.token ||
+        res?.accessToken ||
+        res?.jwt ||
+        (res?.data && (res.data.token || res.data.accessToken));
+      if (token) setToken(token);
       setStep("login");
       setOtp("");
+      navigate("/", { replace: true });
     } catch (err) {
       setInfo(err.message || "OTP verification failed");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // ---- Set/Reset password (demo flow)
-  const onSetPassword = async () => {
-    if (!newPw.a || !newPw.b) return setInfo("Please fill both password fields.");
-    if (newPw.a !== newPw.b) return setInfo("Passwords do not match.");
-
-    setSavingPw(true);
-    setInfo("");
-    try {
-      const res = await fetchJson("/auth/set-password", {
-        method: "POST",
-        body: { userID: form.userID, newPassword: newPw.a },
-      });
-      saveTokenIfAny(res);
-      setInfo(res?.message || "Password set. You are now logged in.");
-      setStep("login");
-      setNewPw({ a: "", b: "" });
-    } catch (err) {
-      setInfo(err.message || "Failed to set password");
-    } finally {
-      setSavingPw(false);
     }
   };
 
@@ -199,20 +119,21 @@ function Login() {
 
           {step === "login" && (
             <>
-              {/* User ID */}
+              {/* User ID or Email */}
               <div className={`input-group ${errors.userID ? "has-error" : ""}`}>
                 <input
                   type="text"
                   id="userid"
                   name="userID"
-                  placeholder="User ID"
+                  placeholder="User ID or Email"
                   value={form.userID}
                   onChange={onChange}
+                  onKeyDown={onKeyDownNoSpace}
                   onPaste={onPasteNoSpaces}
                   autoComplete="username"
                   required
                 />
-                <label htmlFor="userid">User ID</label>
+                <label htmlFor="userid">User ID or Email</label>
                 {errors.userID && <div className="error-message">{errors.userID}</div>}
               </div>
 
@@ -225,6 +146,7 @@ function Login() {
                   placeholder="Password"
                   value={form.password}
                   onChange={onChange}
+                  onKeyDown={onKeyDownNoSpace}
                   onPaste={onPasteNoSpaces}
                   autoComplete="current-password"
                   required
@@ -246,14 +168,19 @@ function Login() {
               <button
                 type="button"
                 className="forgot-password"
-                onClick={() => setStep("setpw")}
-                title="Set/Reset password"
+                onClick={() => navigate('/forgot-password')}
               >
                 Forgot Password?
               </button>
 
               <button type="submit" className="login-button" disabled={loading}>
-                {loading ? (<><i className="fa-solid fa-spinner fa-spin"></i> AUTHENTICATING</>) : ("LOGIN")}
+                {loading ? (
+                  <>
+                    <i className="fa-solid fa-spinner fa-spin"></i> AUTHENTICATING
+                  </>
+                ) : (
+                  "LOGIN"
+                )}
               </button>
             </>
           )}
@@ -276,56 +203,26 @@ function Login() {
               </div>
               <div className="row">
                 <button type="button" className="login-button" disabled={loading} onClick={onVerifyOtp}>
-                  {loading ? (<><i className="fa-solid fa-spinner fa-spin"></i> VERIFYING</>) : ("VERIFY OTP")}
+                  {loading ? (
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin"></i> VERIFYING
+                    </>
+                  ) : (
+                    "VERIFY OTP"
+                  )}
                 </button>
-                <button type="button" className="link-btn" onClick={() => setStep("login")}>← Back to login</button>
-              </div>
-            </div>
-          )}
-
-          {step === "setpw" && (
-            <div className="otp-panel">
-              <p className="otp-info">Set a new password for <b>{form.userID || "your account"}</b>.</p>
-              <div className="input-group">
-                <input
-                  type="password"
-                  placeholder="New password"
-                  value={newPw.a}
-                  onChange={(e) => setNewPw((p) => ({ ...p, a: e.target.value }))}
-                  required
-                />
-                <label>New Password</label>
-              </div>
-              <div className="input-group">
-                <input
-                  type="password"
-                  placeholder="Confirm new password"
-                  value={newPw.b}
-                  onChange={(e) => setNewPw((p) => ({ ...p, b: e.target.value }))}
-                  required
-                />
-                <label>Confirm New Password</label>
-              </div>
-              <div className="row">
-                <button type="button" className="login-button" disabled={savingPw} onClick={onSetPassword}>
-                  {savingPw ? (<><i className="fa-solid fa-spinner fa-spin"></i> SAVING</>) : ("SET PASSWORD")}
+                <button type="button" className="link-btn" onClick={() => setStep("login")}>
+                  ← Back to login
                 </button>
-                <button type="button" className="link-btn" onClick={() => setStep("login")}>← Back to login</button>
               </div>
             </div>
           )}
 
           <div className="system-info">
-            <p>{info || `EduManage School System v4.1 • Authorized Access Only • API ${API_BASE}`}</p>
+            <p>{info || "Smart Alert v1.0 • Authorized Access Only"}</p>
           </div>
         </form>
       </div>
     </div>
   );
 }
-
-/* You asked for no export.
-   If you need to import this component elsewhere later, add:
-   export default Login;
-*/
-export default Login;

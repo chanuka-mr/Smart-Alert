@@ -91,8 +91,46 @@ userSchema.virtual("age").get(function () {
     return age;
 });
 
-// Export both models
+/* ==============================
+   Academic Schema
+   Stores grade and class for parents and teachers
+   ============================== */
+const academicSchema = new Schema({
+    userID: {
+        type: String,
+        required: true,
+        unique: true,
+        ref: 'User'
+    },
+    grade: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 11
+    },
+    class: {
+        type: String,
+        required: true,
+        enum: ['A', 'B', 'C'],
+        uppercase: true
+    },
+    assignedBy: {
+        type: String,
+        required: true,
+        ref: 'User'
+    },
+    assignedAt: {
+        type: Date,
+        default: Date.now
+    }
+}, { timestamps: true });
+
+// Index for efficient queries
+academicSchema.index({ grade: 1, class: 1 });
+
+// Export all models
 module.exports = {
     User: mongoose.model("User", userSchema),
-    Login: mongoose.model("Login", loginSchema)
+    Login: mongoose.model("Login", loginSchema),
+    Academic: mongoose.model("Academic", academicSchema)
 };

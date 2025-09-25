@@ -1,5 +1,6 @@
-/* Font Awesome v6 (make sure you added the CDN in public/index.html) */
-/* <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" /> */
+/* Make sure Font Awesome v6 is loaded in public/index.html:
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+*/
 
 /* Scoped styles */
 .login-page * {
@@ -64,7 +65,8 @@
 
 .input-group input {
   width: 100%;
-  padding: 18px 50px 18px 20px; /* room for the eye icon */
+  padding: 18px 50px 18px 20px;
+  /* room for the eye icon */
   font-size: 18px;
   border: 2px solid #e0e0e0;
   border-radius: 10px;
@@ -96,8 +98,8 @@
 }
 
 /* float when focused or has content */
-.input-group input:focus + label,
-.input-group input:not(:placeholder-shown) + label {
+.input-group input:focus+label,
+.input-group input:not(:placeholder-shown)+label {
   top: -20px;
   left: 10px;
   font-size: 14px;
@@ -121,7 +123,8 @@
   background: none;
   border: none;
   padding: 0;
-  z-index: 2; /* keep it above the input */
+  z-index: 2;
+  /* keep it above the input */
 }
 
 .password-toggle:hover {
@@ -186,14 +189,23 @@
 }
 
 /* Extra styles for OTP / set password panels */
-.otp-panel { margin-top: 10px; }
+.otp-panel {
+  margin-top: 10px;
+}
+
 .otp-info {
   text-align: center;
   color: #00695c;
   margin-bottom: 15px;
   font-weight: 600;
 }
-.row { display: flex; flex-direction: column; gap: 12px; }
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .link-btn {
   background: none;
   border: none;
@@ -204,23 +216,62 @@
   padding: 6px 0;
   text-align: center;
 }
-.link-btn:hover { color: #00695c; }
+
+.link-btn:hover {
+  color: #00695c;
+}
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 /* Mobile tweaks */
 @media (max-width: 480px) {
-  .login-container { border-radius: 10px; }
-  .login-form { padding: 30px 20px; }
-  .login-header { padding: 25px 20px; }
-  .login-header h1 { font-size: 28px; }
+  .login-container {
+    border-radius: 10px;
+  }
+
+  .login-form {
+    padding: 30px 20px;
+  }
+
+  .login-header {
+    padding: 25px 20px;
+  }
+
+  .login-header h1 {
+    font-size: 28px;
+  }
 }

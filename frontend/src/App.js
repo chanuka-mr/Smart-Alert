@@ -1,14 +1,252 @@
-import './App.css';
-import { Routes, Route, Link } from 'react-router-dom';
-import Login from '../src/Components/Login/Login';
-import Home from './Components/Home/Home';
+// src/App.js
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Home from "./Components/Home/Home";
+import Login from "./Components/Login/Login";
+import Profile from "./Components/Profile/Profile";
+import OtpVerification from "./Components/OtpVerification/OtpVerification";
+import ResetPassword from "./Components/ResetPassword/ResetPassword";
+import ForgotPassword from "./Components/ForgotPassword/ForgotPassword";
+import ResetPasswordViaEmail from "./Components/ResetPasswordViaEmail/ResetPasswordViaEmail";
+import AdminDashboard from "./Components/AdminDashboard/AdminDashboard";
+import { api } from "./utils/api";
 
-function App() {
-  return (
-    <div className="App">
-      <Login />
-    </div>
-  );
+// ✅ Enhanced guard: checks token in localStorage and validates it
+function RequireAuth({ children }) {
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [authChecked, setAuthChecked] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkAuth = async () => {
+      // First check: Is there a token?
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        console.log('❌ No token found');
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        setAuthChecked(true);
+        return;
+      }
+
+      try {
+        // Second check: Is the token valid with backend?
+        const response = await api('/auth/me', { method: 'GET' });
+        
+        if (response && response.user) {
+          console.log('✅ Valid authentication');
+          setIsAuthenticated(true);
+        } else {
+          console.log('❌ Invalid response from backend');
+          localStorage.removeItem("token");
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.log('❌ Backend authentication failed:', error.message);
+        
+        // If it's a network error, show a message about backend not running
+        if (error.message.includes('Network error') || error.message.includes('fetch')) {
+          console.log('🔧 Backend appears to be down');
+        }
+        
+        localStorage.removeItem("token");
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+        setAuthChecked(true);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Show loading while checking authentication
+  if (isLoading || !authChecked) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px',
+        color: '#00897b',
+        flexDirection: 'column'
+      }}>
+        <div>
+          <i className="fas fa-spinner fa-spin" style={{ marginRight: '10px' }}></i>
+          Verifying authentication...
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, show access denied message and redirect
+  if (!isAuthenticated) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px',
+        color: '#d32f2f',
+        flexDirection: 'column',
+        textAlign: 'center'
+      }}>
+        <div>
+          <i className="fas fa-lock" style={{ marginRight: '10px', fontSize: '24px' }}></i>
+          <div style={{ marginTop: '10px' }}>Access Denied</div>
+          <div style={{ fontSize: '14px', marginTop: '5px', color: '#666' }}>
+            Please log in to access this page
+          </div>
+        </div>
+        <Navigate to="/login" replace />
+      </div>
+    );
+  }
+
+  // If authenticated, render the protected component
+  console.log('✅ Access granted');
+  return children;
 }
 
-export default App;
+// Guard for OTP stage: checks if otpPending flag exists
+function RequireOtp({ children }) {
+  const otpPending = typeof window !== "undefined" ? localStorage.getItem("otpPending") : null;
+  return otpPending ? children : <Navigate to="/login" replace />;
+}
+
+export default function App() {
+  // Global authentication state
+  const [globalAuth, setGlobalAuth] = React.useState({
+    isChecking: true,
+    isAuthenticated: false
+  });
+
+  // Check authentication on app load
+  React.useEffect(() => {
+    const checkGlobalAuth = async () => {
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        setGlobalAuth({ isChecking: false, isAuthenticated: false });
+        return;
+      }
+
+      try {
+        const response = await api('/auth/me', { method: 'GET' });
+        if (response && response.user) {
+          setGlobalAuth({ isChecking: false, isAuthenticated: true });
+        } else {
+          localStorage.removeItem("token");
+          setGlobalAuth({ isChecking: false, isAuthenticated: false });
+        }
+      } catch (error) {
+        localStorage.removeItem("token");
+        setGlobalAuth({ isChecking: false, isAuthenticated: false });
+      }
+    };
+
+    checkGlobalAuth();
+  }, []);
+
+  // Show loading screen while checking global auth
+  if (globalAuth.isChecking) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px',
+        color: '#00897b',
+        flexDirection: 'column'
+      }}>
+        <div>
+          <i className="fas fa-spinner fa-spin" style={{ marginRight: '10px' }}></i>
+          Initializing Smart Alert...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Home Page (only if logged in) */}
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <Home />
+            </RequireAuth>
+          }
+        />
+        
+        
+        {/* Login Page */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Forgot Password Page */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Reset Password via Email Page */}
+        <Route path="/reset-password" element={<ResetPasswordViaEmail />} />
+
+        {/* OTP Verification Page (only if otpPending is true) */}
+        <Route
+          path="/verify-otp"
+          element={
+            <RequireOtp>
+              <OtpVerification />
+            </RequireOtp>
+          }
+        />
+
+        {/* Profile Page (only if logged in) */}
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <Profile />
+            </RequireAuth>
+          }
+        />
+
+        {/* Profile Page with User ID (for admin viewing other users) */}
+        <Route
+          path="/profile/:userId"
+          element={
+            <RequireAuth>
+              <Profile />
+            </RequireAuth>
+          }
+        />
+
+        {/* Change Password Page (only if logged in) */}
+        <Route
+          path="/change-password"
+          element={
+            <RequireAuth>
+              <ResetPassword />
+            </RequireAuth>
+          }
+        />
+
+        {/* Admin Dashboard Page (only if logged in) */}
+        <Route
+          path="/admin-dashboard"
+          element={
+            <RequireAuth>
+              <AdminDashboard />
+            </RequireAuth>
+          }
+        />
+
+        {/* Default → Redirect to home (will redirect to login if not authenticated) */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
