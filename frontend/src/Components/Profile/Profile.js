@@ -1,16 +1,21 @@
 // src/Components/Profile/Profile.js
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "./Profile.css";
 import { api } from "../../utils/api";
 
 export default function Profile() {
   const navigate = useNavigate();
   const { userId } = useParams();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [viewingUser, setViewingUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [info, setInfo] = useState("");
+  
+  // Get the 'from' parameter to know which tab to return to
+  const searchParams = new URLSearchParams(location.search);
+  const fromTab = searchParams.get('from') || 'dashboard';
 
   useEffect(() => {
     let cancelled = false;
@@ -37,8 +42,12 @@ export default function Profile() {
             setInfo("User not found");
           }
         } else {
-          // Viewing own profile
-          setUser(currentUserData);
+          // Viewing own profile - get verification status from current user data
+          const userWithVerification = {
+            ...currentUserData,
+            isEmailVerified: currentUserData.isVerified || false
+          };
+          setUser(userWithVerification);
         }
         
         setInfo("");
@@ -145,8 +154,8 @@ export default function Profile() {
             <div className="info-item">
               <div className="info-label">Account Status</div>
               <div className="info-value">
-                <span className={`status-badge ${data.isVerified ? "verified" : "not-verified"}`}>
-                  {data.isVerified ? "Verified" : "Not Verified"}
+                <span className={`status-badge ${data.isEmailVerified ? "verified" : "not-verified"}`}>
+                  {data.isEmailVerified ? "Verified" : "Not Verified"}
                 </span>
               </div>
             </div>
@@ -179,8 +188,8 @@ export default function Profile() {
           ) : (
             // Viewing another user's profile - show limited buttons
             <>
-              <button className="action-button back-button" onClick={() => navigate('/admin-dashboard')}>
-                <i className="fa-solid fa-arrow-left" /> Back to Dashboard
+              <button className="action-button back-button" onClick={() => navigate(`/admin-dashboard?tab=${fromTab}`)}>
+                <i className="fa-solid fa-arrow-left" /> Back to {fromTab === 'students' ? 'Students' : fromTab === 'teachers' ? 'Teachers' : fromTab === 'shuttle-staff' ? 'Shuttle Staff' : fromTab === 'admins' ? 'Admins' : 'Dashboard'}
               </button>
               {/* Only show edit button if current user is admin */}
               {currentUser?.role && currentUser.role.toLowerCase() === "admin" && (

@@ -1,6 +1,7 @@
 const { User, Login } = require("../Model/userModel");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const activityController = require("./activityController");
 
 // ====== Config (uses .env if available, but has safe fallbacks) ======
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key";
@@ -80,6 +81,21 @@ const login = async (req, res) => {
     // If already verified → issue JWT immediately
     const user = await User.findOne({ userID: loginRecord.userID }).lean();
     const token = signToken({ id: loginRecord.userID, role: user?.role });
+
+    // Log login activity for admin users
+    if (user?.role?.toLowerCase() === 'admin') {
+      await activityController.logActivity(
+        loginRecord.userID,
+        user.fullName || user.name || 'Admin',
+        'login',
+        'system',
+        null,
+        null,
+        `Admin logged in successfully`,
+        { role: user.role, loginTime: new Date() },
+        req
+      );
+    }
 
     return res.status(200).json({ token, otpRequired: false });
   } catch (err) {

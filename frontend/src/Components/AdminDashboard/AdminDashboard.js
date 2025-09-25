@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../utils/api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [user, setUser] = useState(null);
@@ -100,10 +101,10 @@ const AdminDashboard = () => {
       try {
         const stats = await api('/users/stats');
         setDashboardStats({
-          totalStudents: stats.totalUsers || 0,
+          totalStudents: stats.parents || 0,
           totalTeachers: stats.teachers || 0,
-          shuttleStaff: 24, // This would come from a shuttle staff API
-          todayAttendance: 94.5, // This would come from attendance API
+          shuttleStaff: stats.shuttleStaff || 0,
+          todayAttendance: 0, // This would come from attendance API
           activeBuses: 12, // This would come from transport API
           activeAnnouncements: 7 // This would come from announcements API
         });
@@ -114,46 +115,17 @@ const AdminDashboard = () => {
 
     const loadRecentActivity = async () => {
       try {
-        // Mock data for now - in real app this would come from activity API
-        setRecentActivity([
-          {
-            id: 1,
-            type: 'user-plus',
-            title: 'New Student Registered',
-            description: 'Sarah Johnson joined Grade 5',
-            time: '10 min ago'
-          },
-          {
-            id: 2,
-            type: 'bullhorn',
-            title: 'New Announcement',
-            description: 'Parent-Teacher meeting scheduled',
-            time: '1 hour ago'
-          },
-          {
-            id: 3,
-            type: 'bus',
-            title: 'Bus Route Updated',
-            description: 'Route #5 timing changed',
-            time: '2 hours ago'
-          },
-          {
-            id: 4,
-            type: 'chart-line',
-            title: 'Performance Report Generated',
-            description: 'Monthly report for Grade 10',
-            time: '3 hours ago'
-          },
-          {
-            id: 5,
-            type: 'exclamation-triangle',
-            title: 'Attendance Alert',
-            description: '5 students absent today',
-            time: '5 hours ago'
-          }
-        ]);
+        if (user?.userID) {
+          const response = await api(`/activities/recent/${user.userID}`);
+          setRecentActivity(response.activities || []);
+        } else {
+          // Fallback to empty array if no user
+          setRecentActivity([]);
+        }
       } catch (error) {
         console.error('Failed to load recent activity:', error);
+        // Fallback to empty array on error
+        setRecentActivity([]);
       }
     };
 
@@ -168,6 +140,15 @@ const AdminDashboard = () => {
       navigate('/');
     }
   }, [user, navigate]);
+
+  // Handle tab parameter from URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['dashboard', 'students', 'teachers', 'shuttle-staff', 'admins'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location.search]);
 
   const handleMenuToggle = () => {
     setSidebarOpen(!sidebarOpen);
@@ -718,8 +699,30 @@ const AdminDashboard = () => {
       loadShuttleStaff();
     } else if (activeTab === 'admins') {
       loadAdmins();
+    } else if (activeTab === 'dashboard') {
+      // Log dashboard access
+      logDashboardAccess();
     }
   }, [activeTab]);
+
+  // Log dashboard access
+  const logDashboardAccess = async () => {
+    try {
+      await api('/activities/log', {
+        method: 'POST',
+        body: {
+          action: 'dashboard_viewed',
+          targetType: 'dashboard',
+          targetId: null,
+          targetName: 'Admin Dashboard',
+          description: 'Accessed admin dashboard',
+          details: { section: 'dashboard' }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to log dashboard access:', error);
+    }
+  };
 
   // Filter and sort when filters change
   useEffect(() => {
@@ -764,9 +767,27 @@ const AdminDashboard = () => {
     filterAndSortStudents();
   };
 
-  const handleRowClick = (user) => {
-    // Navigate to profile page with user ID as parameter
-    navigate(`/profile/${user._id}`);
+  const handleRowClick = async (user) => {
+    // Log activity for viewing user profile
+    try {
+      await api('/activities/log', {
+        method: 'POST',
+        body: {
+          action: 'user_viewed',
+          targetType: 'user',
+          targetId: user._id,
+          targetName: user.fullName,
+          description: `Viewed ${user.role} profile: ${user.fullName} (${user.userID})`,
+          details: { role: user.role, email: user.email }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to log user view activity:', error);
+      // Continue with navigation even if logging fails
+    }
+    
+    // Navigate to profile page with user ID and current tab as parameters
+    navigate(`/profile/${user._id}?from=${activeTab}`);
   };
 
   // Function to highlight search terms in text
@@ -870,7 +891,30 @@ const AdminDashboard = () => {
               <span className="notification-badge">5</span>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div 
+              className="user-info-clickable"
+              style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} 
+              onClick={async () => {
+                // Log profile view activity
+                try {
+                  await api('/activities/log', {
+                    method: 'POST',
+                    body: {
+                      action: 'profile_viewed',
+                      targetType: 'profile',
+                      targetId: user?.userID,
+                      targetName: user?.name || 'Admin User',
+                      description: 'Viewed own profile',
+                      details: { role: user?.role }
+                    }
+                  });
+                } catch (error) {
+                  console.error('Failed to log profile view activity:', error);
+                }
+                navigate('/profile');
+              }}
+              title="View Profile"
+            >
               <div className="user-avatar">
                 <i className="fas fa-user fa-lg"></i>
               </div>
@@ -926,7 +970,7 @@ const AdminDashboard = () => {
               <div className="card">
                 <div className="card-header">
                   <div>
-                    <h3>{dashboardStats.todayAttendance}%</h3>
+                    <h3>0%</h3>
                     <p>Today's Attendance</p>
                   </div>
                   <div className="card-icon attendance">
@@ -938,7 +982,7 @@ const AdminDashboard = () => {
               <div className="card">
                 <div className="card-header">
                   <div>
-                    <h3>{dashboardStats.activeBuses}</h3>
+                    <h3>0</h3>
                     <p>Active Buses</p>
                   </div>
                   <div className="card-icon transport">
@@ -950,7 +994,7 @@ const AdminDashboard = () => {
               <div className="card">
                 <div className="card-header">
                   <div>
-                    <h3>{dashboardStats.activeAnnouncements}</h3>
+                    <h3>0</h3>
                     <p>Active Announcements</p>
                   </div>
                   <div className="card-icon announcements">
@@ -1734,7 +1778,7 @@ const AdminDashboard = () => {
                   Cancel
                 </button>
                 <button type="submit" className="modal-btn btn-submit">
-                  {editingStudent ? 'Update Parent' : 'Save Parent'}
+                  {editingStudent ? 'Update Parent' : 'Save Student'}
                 </button>
               </div>
             </form>

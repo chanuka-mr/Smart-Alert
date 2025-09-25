@@ -166,6 +166,22 @@
   color: var(--text-light);
 }
 
+/* Clickable user info hover effects */
+.admin-dashboard .user-info-clickable {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.admin-dashboard .user-info-clickable:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.admin-dashboard .user-info-clickable:hover .user-details h4 {
+  color: var(--primary-light);
+}
+
 .admin-dashboard .notifications {
   position: relative;
   margin-right: 20px;

@@ -1,5 +1,6 @@
 const { User, Login } = require("../Model/userModel");
 const { generateUserID } = require("../utils/userIDGenerator");
+const activityController = require("./activityController");
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -48,6 +49,21 @@ const createUser = async (req, res) => {
     });
     await login.save();
 
+    // Log activity
+    const adminId = req.user?.id || 'unknown';
+    const adminName = req.user?.name || 'Unknown Admin';
+    await activityController.logActivity(
+      adminId,
+      adminName,
+      'user_created',
+      'user',
+      user._id.toString(),
+      user.fullName,
+      `Created new ${role} user: ${user.fullName} (${user.userID})`,
+      { role, email: user.email },
+      req
+    );
+
     return res.status(201).json({ user, login });
   } catch (err) {
     console.log(err);
@@ -77,6 +93,22 @@ const updateUser = async (req, res) => {
       { new: true }
     );
     if (!user) return res.status(404).json({ message: "Unable to update user." });
+    
+    // Log activity
+    const adminId = req.user?.id || 'unknown';
+    const adminName = req.user?.name || 'Unknown Admin';
+    await activityController.logActivity(
+      adminId,
+      adminName,
+      'user_updated',
+      'user',
+      user._id.toString(),
+      user.fullName,
+      `Updated ${user.role} user: ${user.fullName} (${user.userID})`,
+      { role: user.role, email: user.email, changes: { fullName, birthday, address, email, role } },
+      req
+    );
+    
     return res.status(200).json({ user });
   } catch (err) {
     console.log(err);
@@ -93,6 +125,21 @@ const deleteUser = async (req, res) => {
     // Also delete Login record
     await Login.deleteOne({ userID: user.userID });
 
+    // Log activity
+    const adminId = req.user?.id || 'unknown';
+    const adminName = req.user?.name || 'Unknown Admin';
+    await activityController.logActivity(
+      adminId,
+      adminName,
+      'user_deleted',
+      'user',
+      user._id.toString(),
+      user.fullName,
+      `Deleted ${user.role} user: ${user.fullName} (${user.userID})`,
+      { role: user.role, email: user.email },
+      req
+    );
+
     return res.status(200).json({ user });
   } catch (err) {
     console.log(err);
@@ -106,11 +153,15 @@ const getUserStats = async (req, res) => {
     const totalUsers = await User.countDocuments();
     const parents = await User.countDocuments({ role: { $regex: /parent/i } });
     const teachers = await User.countDocuments({ role: { $regex: /teacher/i } });
+    const shuttleStaff = await User.countDocuments({ role: { $regex: /shuttlestaff/i } });
+    const admins = await User.countDocuments({ role: { $regex: /admin/i } });
 
     return res.status(200).json({
       totalUsers,
       parents,
-      teachers
+      teachers,
+      shuttleStaff,
+      admins
     });
   } catch (err) {
     console.log(err);
