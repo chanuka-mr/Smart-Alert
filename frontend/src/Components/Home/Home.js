@@ -255,7 +255,7 @@ const Home = () => {
       <section className="features" id="features">
         <div className="container">
           <div className="section-title">
-            <h2>Powerful Features</h2>
+            <h2>Features</h2>
             <p>lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.</p>
           </div>
           <div className="features-grid">
