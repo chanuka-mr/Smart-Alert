@@ -4,21 +4,27 @@ const Schema = mongoose.Schema;
 const timeTableSchema = new Schema({
     examName: {
         type: String,
-        required: true
+        required: true,
+        enum: ["1st Term", "2nd Term", "3rd Term"]
     },
-    section: {
-        type: String, // e.g., "A", "B"
-        required: true
+    class: {
+        type: String, // e.g., "A", "B", "C"
+        required: true,
+        enum: ["A", "B", "C"]
     },
-    classLevel: {
+    grade: {
         type: Number, // e.g., 1-11
         required: true,
         min: 1,
         max: 11
     },
+    classSection: {
+        type: String, // e.g., "1-A", "2-B", "6-C"
+        required: true
+    },
     category: {
         type: String,
-        enum: ["Primary", "Ordinary"], // auto-handled
+        enum: ["Primary", "Secondary"], // Primary: 1-5, Secondary: 6-11
         required: true
     },
     subject: {
@@ -39,13 +45,19 @@ const timeTableSchema = new Schema({
     }
 });
 
-// Auto-assign category based on classLevel
+// Auto-assign category based on grade
 timeTableSchema.pre("save", function (next) {
-    if (this.classLevel >= 1 && this.classLevel <= 5) {
+    if (this.grade >= 1 && this.grade <= 5) {
         this.category = "Primary";
-    } else {
-        this.category = "Ordinary";
+    } else if (this.grade >= 6 && this.grade <= 11) {
+        this.category = "Secondary";
     }
+    
+    // Auto-generate classSection if not provided
+    if (!this.classSection) {
+        this.classSection = `${this.grade}-${this.class}`;
+    }
+    
     next();
 });
 

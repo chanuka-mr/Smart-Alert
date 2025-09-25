@@ -11,21 +11,21 @@ const examSchema = new Schema({
         type: String, // Student name
         required: true
     },
-    classLevel: {
+    grade: {
         type: Number, // e.g. 1–11
         required: true,
         index: true
     },
     term: {
-        type: String, // e.g. "Term 1", "Final"
+        type: String, // e.g. "Term 1.."
         required: true
     },
     subjects: [
         {
-            subject: { type: String, required: true },
-            term1: { type: Number, min: 0, max: 100, default: 0 },
-            term2: { type: Number, min: 0, max: 100, default: 0 },
-            term3: { type: Number, min: 0, max: 100, default: 0 }
+            subject: { type: String, required: false },
+            term1: { type: Number, min: 0, max: 100 },
+            term2: { type: Number, min: 0, max: 100 },
+            term3: { type: Number, min: 0, max: 100 }
         }
     ],
     totalMarks: {
@@ -36,43 +36,67 @@ const examSchema = new Schema({
         type: Number,
         default: 0
     },
-    grade: {
-        type: String
+    letterGrade: {
+        type: String,
+        validate: {
+            validator: function(v) {
+                // letterGrade must be a string that is not a purely numeric value
+                if (v === null || v === undefined) return true;
+                if (typeof v !== 'string') return false;
+                return !/^\d+$/.test(v.trim());
+            },
+            message: props => `${props.value} is not a valid letter grade string`
+        }
     },
     rank: {
         type: Number, // Student’s position in the class
         default: null
+    },
+    feedback: {
+        type: String,
+        default: ""
     }
 });
 
 // --- Helper function to calculate grade ---
 function calculateGrade(avg) {
-    if (avg >= 75) return "A";
-    if (avg >= 65) return "B";
-    if (avg >= 50) return "C";
-    if (avg >= 35) return "S";
+    if (avg >= 97) return "A+";
+    if (avg >= 94) return "A";
+    if (avg >= 90) return "A-";
+    if (avg >= 87) return "B+";
+    if (avg >= 84) return "B";
+    if (avg >= 80) return "B-";
+    if (avg >= 77) return "C+";
+    if (avg >= 74) return "C";
+    if (avg >= 70) return "C-";
+    if (avg >= 67) return "D+";
+    if (avg >= 64) return "D";
+    if (avg >= 60) return "D-";
     return "F";
 }
 
-// --- Pre-save middleware: calculate total, average, and grade ---
+// Pre-save middleware: calculate total, average, and grade 
 examSchema.pre("save", function (next) {
-    // Total of all terms for all subjects
-    this.totalMarks = this.subjects.reduce(
-        (sum, subj) => sum + (subj.term1 + subj.term2 + subj.term3),
-        0
-    );
+    // Calculate final mark per subject as average of available term marks,
+    // then totalMarks is sum of those final marks (each subject out of 100)
+    let total = 0;
+    this.subjects.forEach(subj => {
+        const marks = [subj.term1, subj.term2, subj.term3].filter(m => typeof m === 'number');
+        const subjFinal = marks.length > 0 ? Math.round(marks.reduce((a, b) => a + b, 0) / marks.length) : 0;
+        total += subjFinal;
+    });
+    this.totalMarks = total;
 
-    // Average = total / number of marks (3 terms * subjects)
-    const marksCount = this.subjects.length * 3;
-    this.average = marksCount > 0 ? this.totalMarks / marksCount : 0;
+    // Average = total / number of subjects (each subject final mark is out of 100)
+    this.average = this.subjects.length > 0 ? this.totalMarks / this.subjects.length : 0;
 
-    this.grade = calculateGrade(this.average);
+    this.letterGrade = calculateGrade(this.average);
     next();
 });
 
 // --- Static method: recalculate ranks for a class ---
-examSchema.statics.updateClassRanks = async function (classLevel, term) {
-    const exams = await this.find({ classLevel, term }).sort({ totalMarks: -1 });
+examSchema.statics.updateClassRanks = async function (grade, term) {
+    const exams = await this.find({ grade, term }).sort({ totalMarks: -1 });
 
     let rank = 1;
     for (let i = 0; i < exams.length; i++) {
