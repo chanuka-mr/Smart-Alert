@@ -1,13 +1,20 @@
+
 import React, { useEffect, useRef, useState } from "react";
-import "./OtpVerification.css"; // we'll keep CSS separate for readability
+import "./OtpVerification.css";
+import { post } from "../../utils/api";
 
 export default function OtpVerification() {
   const [otp, setOtp] = useState(new Array(6).fill(""));
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
   const [isExpired, setIsExpired] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const inputRefs = useRef([]);
+
+  // Get userID from localStorage (adjust if needed)
+  const userID = localStorage.getItem("userID");
 
   // Timer
   useEffect(() => {
@@ -62,32 +69,58 @@ export default function OtpVerification() {
     }
   };
 
-  // Submit OTP
-  const handleSubmit = (e) => {
+
+  // Submit OTP (call backend)
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
     if (isExpired) {
-      alert("OTP has expired. Please request a new one.");
+      setError("OTP has expired. Please request a new one.");
       return;
     }
-
+    if (!userID) {
+      setError("User ID not found. Please login again.");
+      return;
+    }
     const enteredOtp = otp.join("");
-    if (enteredOtp.length !== 6) return;
-
+    if (enteredOtp.length !== 6) {
+      setError("Please enter the 6-digit OTP.");
+      return;
+    }
     setVerifying(true);
-
-    setTimeout(() => {
-      alert("OTP Verified Successfully!");
-      setVerifying(false);
-    }, 1500);
+    try {
+      const res = await post("/auth/verify-otp", { userID, otp: enteredOtp });
+      setSuccess("OTP Verified Successfully!");
+      setError("");
+      // Optionally, redirect or store token: localStorage.setItem("token", res.token);
+    } catch (err) {
+      setError(err.message || "Verification failed");
+      setSuccess("");
+    }
+    setVerifying(false);
   };
 
-  // Resend OTP
-  const handleResend = () => {
-    setOtp(new Array(6).fill(""));
-    setTimeLeft(600);
-    setIsExpired(false);
-    inputRefs.current[0].focus();
-    alert("A new OTP has been sent to your email.");
+
+  // Resend OTP (call backend)
+  const handleResend = async () => {
+    setError("");
+    setSuccess("");
+    if (!userID) {
+      setError("User ID not found. Please login again.");
+      return;
+    }
+    try {
+      // Assuming backend triggers OTP resend on login endpoint
+      await post("/auth/login", { userID });
+      setOtp(new Array(6).fill(""));
+      setTimeLeft(600);
+      setIsExpired(false);
+      inputRefs.current[0].focus();
+      setSuccess("A new OTP has been sent to your email.");
+    } catch (err) {
+      setError(err.message || "Failed to resend OTP");
+    }
   };
 
   const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
@@ -137,10 +170,14 @@ export default function OtpVerification() {
           )}
         </div>
 
-        {isExpired && (
-          <div className="timeout-warning">
-            <i className="fas fa-exclamation-circle"></i> OTP has expired. Please
-            request a new one.
+        {error && (
+          <div className="timeout-warning" style={{ color: "red" }}>
+            <i className="fas fa-exclamation-circle"></i> {error}
+          </div>
+        )}
+        {success && (
+          <div className="timeout-warning" style={{ color: "green" }}>
+            <i className="fas fa-check-circle"></i> {success}
           </div>
         )}
 
