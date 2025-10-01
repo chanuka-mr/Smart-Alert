@@ -1235,7 +1235,7 @@ const AdminDashboard = () => {
                   {filteredStudents.length === 0 ? (
                     <tr>
                       <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
-                        No parents found matching your criteria.
+                        No Students found matching your criteria.
                       </td>
                     </tr>
                   ) : (
@@ -1786,7 +1786,7 @@ const AdminDashboard = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h2 className="modal-title">
-                {editingStudent ? 'Edit Parent' : 'Add New Parent'}
+                {editingStudent ? 'Edit Student' : 'Add New Student'}
               </h2>
               <button 
                 className="close-modal" 
@@ -1890,7 +1890,7 @@ const AdminDashboard = () => {
                   Cancel
                 </button>
                 <button type="submit" className="modal-btn btn-submit">
-                  {editingStudent ? 'Update Parent' : 'Save Student'}
+                  {editingStudent ? 'Update Student' : 'Save Student'}
                 </button>
               </div>
             </form>
