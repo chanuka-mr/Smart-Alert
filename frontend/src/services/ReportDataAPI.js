@@ -216,6 +216,10 @@ class ReportDataAPI {
       }
     }
 
+    if (!formData.academicYear) {
+      errors.push('Academic Year is required');
+    }
+
     if (!formData.subjects || !Array.isArray(formData.subjects) || formData.subjects.length === 0) {
       errors.push('At least one subject is required');
     } else {
@@ -256,7 +260,7 @@ class ReportDataAPI {
       studentName: formData.studentName,
       grade: parseInt(formData.grade),
       class: formData.class || '',
-      academicYear: formData.academicYear || new Date().getFullYear().toString(),
+      academicYear: formData.academicYear,
       teacherComments: formData.teacherComments || '',
       subjects: formData.subjects.map(subject => ({
         subjectName: subject.subjectName,

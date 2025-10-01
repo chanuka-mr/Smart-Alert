@@ -162,8 +162,13 @@ const downloadReport = async (req, res) => {
         classmates.sort((a, b) => b.totalMarks - a.totalMarks);
         const rank = classmates.findIndex(e => e.studentId === exam.studentId) + 1;
 
-        // Create PDF
-        const doc = new PDFDocument({ margin: 50 });
+        // Create PDF with modern settings
+        const doc = new PDFDocument({ 
+            margin: 30, 
+            size: 'A4',
+            layout: 'portrait',
+            compress: true
+        });
         const fileName = `Report_${exam.studentId}.pdf`;
 
         //Set headers for PDF
@@ -171,142 +176,296 @@ const downloadReport = async (req, res) => {
         res.setHeader("Content-Type", "application/pdf");
         doc.pipe(res);
 
-        // --- Header ---
-        doc.fontSize(22).fillColor("#1F4E79").text("WEBSTER INTERNATIONAL SCHOOL", { align: "center" });
-        doc.fontSize(14).fillColor("black").text("Report Card", { align: "center" });
-        doc.moveDown(2);
+        // Modern color scheme matching frontend
+        const colors = {
+            primary: '#00897b',        // Teal - main color
+            secondary: '#00bfa5',      // Light teal - secondary color
+            accent: '#e74c3c',         // Red - for warnings/errors
+            warning: '#f39c12',       // Orange - for warnings
+            text: '#2c3e50',          // Dark blue-gray - text color
+            lightGray: '#f9f9f9',     // Light gray - alternating rows
+            border: '#dee2e6',        // Light border
+            cardBg: '#f0f9ff',        // Light blue - card backgrounds
+            success: '#2e7d32',      // Green - for success states
+            info: '#1976d2'           // Blue - for info states
+        };
 
-        // --- Student Info ---
-        doc.fontSize(11).fillColor("black");
-        doc.text(`Name of Student: ${exam.name}`);
-        doc.text(`Student ID: ${exam.studentId}`);
-        doc.text(`Class: ${exam.grade}`);
-        doc.text(`School Year: ${new Date().getFullYear()}`);
-        doc.moveDown(2);
-
-        // --- Subjects Table ---
+        // Page dimensions
         const pageWidth = doc.page.width;
         const pageHeight = doc.page.height;
-        const margins = doc.page.margins || { top: 50, bottom: 50, left: 50, right: 50 };
-        const contentWidth = pageWidth - margins.left - margins.right;
-        const contentHeight = pageHeight - margins.top - margins.bottom;
+        const margin = 30;
+        const contentWidth = pageWidth - (margin * 2);
+        const contentHeight = pageHeight - (margin * 2);
 
-        const reservedHeight = 90 + 20 + 110;
-        const availableTableHeight = Math.max(80, contentHeight - reservedHeight);
-
-        const subjectsCount = Math.max(1, exam.subjects.length);
-        const maxRowHeight = 28;
-        const minRowHeight = 14;
-        let rowHeight = Math.floor(availableTableHeight / (subjectsCount + 1));
-        if (rowHeight > maxRowHeight) rowHeight = maxRowHeight;
-        if (rowHeight < minRowHeight) rowHeight = minRowHeight;
-
-        const tableLeft = margins.left;
-        const tableW = contentWidth;
-        const headerH = rowHeight;
-        let y = doc.y;
-
-        // Header Row
-        doc.rect(tableLeft, y, tableW, headerH).fill("#1F4E79");
-        const tableFontSize = Math.max(8, Math.min(11, rowHeight - 10));
-        doc.fillColor("white").fontSize(tableFontSize);
+        // --- Professional Header Section ---
+        doc.rect(margin, margin, contentWidth, 80)
+           .fill(colors.cardBg)
+           .stroke(colors.border, 1);
         
-        const colSubjectX = tableLeft + 10;
-        const col1X = tableLeft + Math.floor(tableW * 0.45);
-        const colGap = Math.floor((tableW - (col1X - tableLeft) - 20) / 6);
-        doc.text("Subjects", colSubjectX, y + (headerH / 2) - 6);
-        doc.text("1st", col1X, y + (headerH / 2) - 6);
-        doc.text("G", col1X + colGap, y + (headerH / 2) - 6);
-        doc.text("2nd", col1X + colGap * 2, y + (headerH / 2) - 6);
-        doc.text("G", col1X + colGap * 3, y + (headerH / 2) - 6);
-        doc.text("3rd", col1X + colGap * 4, y + (headerH / 2) - 6);
-        doc.text("G", col1X + colGap * 5, y + (headerH / 2) - 6);
+        // School logo placeholder
+        doc.circle(margin + 25, margin + 25, 20)
+           .fill(colors.primary)
+           .stroke(colors.primary, 2);
+        
+        // School name
+        doc.fillColor(colors.primary)
+           .fontSize(24)
+           .font('Helvetica-Bold')
+           .text('WEBSTER INTERNATIONAL SCHOOL', margin + 60, margin + 15);
+        
+        // Report title
+        doc.fillColor(colors.text)
+           .fontSize(18)
+           .font('Helvetica-Bold')
+           .text('STUDENT REPORT CARD', margin + 60, margin + 40);
+        
+        // Academic year
+        doc.fillColor(colors.text)
+           .fontSize(12)
+           .font('Helvetica')
+           .text(`Academic Year: ${exam.academicYear || new Date().getFullYear().toString()}`, margin + 60, margin + 60);
+        
+        // Generation date
+        doc.fillColor(colors.text)
+           .fontSize(10)
+           .font('Helvetica')
+           .text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth - margin - 150, margin + 60);
 
-        y += headerH;
-
-        // Subject Rows & total calculation
-        let totalFinalMarks = 0;
-        doc.fillColor("black").fontSize(tableFontSize);
-        exam.subjects.forEach((s, i) => {
-            const bgColor = i % 2 === 0 ? "#F2F6FB" : "#FFFFFF";
-            doc.rect(tableLeft, y, tableW, rowHeight).fill(bgColor);
-            doc.fillColor("black");
-            doc.text(s.subject || "", colSubjectX, y + (rowHeight / 2) - 6, { width: col1X - colSubjectX - 4 });
-
-            const val1 = typeof s.term1 === 'number' ? s.term1 : '';
-            const val2 = typeof s.term2 === 'number' ? s.term2 : '';
-            const val3 = typeof s.term3 === 'number' ? s.term3 : '';
-            doc.text(val1, col1X, y + (rowHeight / 2) - 6);
-            doc.text(getGrade(val1), col1X + colGap, y + (rowHeight / 2) - 6);
-            doc.text(val2, col1X + colGap * 2, y + (rowHeight / 2) - 6);
-            doc.text(getGrade(val2), col1X + colGap * 3, y + (rowHeight / 2) - 6);
-            doc.text(val3, col1X + colGap * 4, y + (rowHeight / 2) - 6);
-            doc.text(getGrade(val3), col1X + colGap * 5, y + (rowHeight / 2) - 6);
-
-            const marks = [s.term1, s.term2, s.term3].filter(m => typeof m === 'number');
-            const subjectFinal = marks.length > 0 ? Math.round(marks.reduce((a, b) => a + b, 0) / marks.length) : 0;
-            totalFinalMarks += subjectFinal;
-
-            y += rowHeight;
+        // --- Student Information Section ---
+        const studentY = margin + 100;
+        doc.rect(margin, studentY, contentWidth, 60)
+           .fill('#ffffff')
+           .stroke(colors.border, 1);
+        
+        // Student info grid
+        const infoItems = [
+            { label: 'Student Name', value: exam.name },
+            { label: 'Student ID', value: exam.studentId },
+            { label: 'Class', value: exam.grade },
+            { label: 'Term', value: exam.term },
+            { label: 'Class Rank', value: `${rank} of ${classmates.length}` },
+            { label: 'Academic Year', value: exam.academicYear || new Date().getFullYear().toString() }
+        ];
+        
+        const infoCols = 3;
+        const infoColWidth = contentWidth / infoCols;
+        const infoRowHeight = 20;
+        
+        infoItems.forEach((item, index) => {
+            const col = index % infoCols;
+            const row = Math.floor(index / infoCols);
+            const x = margin + (col * infoColWidth) + 10;
+            const y = studentY + (row * infoRowHeight) + 10;
+            
+            doc.fillColor(colors.text)
+               .fontSize(10)
+               .font('Helvetica-Bold')
+               .text(`${item.label}:`, x, y);
+            
+            doc.fillColor(colors.text)
+               .fontSize(10)
+               .font('Helvetica')
+               .text(item.value, x + 80, y);
         });
 
-        // Term-wise boxes
-        const gap = 10;
-        const boxesTotalWidth = contentWidth;
-        let boxW = Math.floor((boxesTotalWidth - gap * 2) / 3);
-        if (boxW > 200) boxW = 200;
-        const boxX = tableLeft;
-        const boxY = y + 12;
-        const boxH = 68;
-        //Calculate term-wise totals
+        // --- Professional Subjects Table ---
+        const tableY = studentY + 80;
+        const rowHeight = 25;
+        const maxTableHeight = Math.min(300, contentHeight - (tableY - margin) - 200);
+        const maxRows = Math.floor(maxTableHeight / rowHeight);
+        
+        // Table header
+        doc.rect(margin, tableY, contentWidth, rowHeight)
+           .fill(colors.primary);
+        
+        const colWidths = {
+            subject: contentWidth * 0.30,
+            term1: contentWidth * 0.12,
+            grade1: contentWidth * 0.08,
+            term2: contentWidth * 0.12,
+            grade2: contentWidth * 0.08,
+            term3: contentWidth * 0.12,
+            grade3: contentWidth * 0.08,
+            average: contentWidth * 0.10
+        };
+        
+        const headers = ['Subject', '1st Term', 'Grade', '2nd Term', 'Grade', '3rd Term', 'Grade', 'Average'];
+        let currentX = margin;
+        
+        headers.forEach((header, index) => {
+            const width = Object.values(colWidths)[index];
+            doc.fillColor('white')
+               .fontSize(10)
+               .font('Helvetica-Bold')
+               .text(header, currentX + 5, tableY + 8, { width: width - 10, align: 'center' });
+            currentX += width;
+        });
+
+        // Table rows
+        const displaySubjects = exam.subjects.slice(0, Math.min(maxRows - 1, exam.subjects.length));
+        let totalFinalMarks = 0;
+        
+        displaySubjects.forEach((subject, index) => {
+            const rowY = tableY + rowHeight + (index * rowHeight);
+            const rowColor = index % 2 === 0 ? '#ffffff' : colors.lightGray;
+            
+            doc.rect(margin, rowY, contentWidth, rowHeight)
+               .fill(rowColor)
+               .stroke(colors.border, 0.5);
+            
+            currentX = margin;
+            const val1 = typeof subject.term1 === 'number' ? subject.term1 : '';
+            const val2 = typeof subject.term2 === 'number' ? subject.term2 : '';
+            const val3 = typeof subject.term3 === 'number' ? subject.term3 : '';
+            
+            const marks = [subject.term1, subject.term2, subject.term3].filter(m => typeof m === 'number');
+            const subjectAverage = marks.length > 0 ? Math.round(marks.reduce((a, b) => a + b, 0) / marks.length) : 0;
+            totalFinalMarks += subjectAverage;
+            
+            const rowData = [
+                subject.subject || '',
+                val1,
+                getGrade(val1),
+                val2,
+                getGrade(val2),
+                val3,
+                getGrade(val3),
+                subjectAverage
+            ];
+            
+            rowData.forEach((data, dataIndex) => {
+                const width = Object.values(colWidths)[dataIndex];
+                doc.fillColor(colors.text)
+                   .fontSize(9)
+                   .font('Helvetica')
+                   .text(data, currentX + 5, rowY + 8, { width: width - 10, align: 'center' });
+                currentX += width;
+            });
+        });
+        
+        // Add note if subjects were truncated
+        if (exam.subjects.length > maxRows - 1) {
+            const noteY = tableY + (maxRows - 1) * rowHeight + rowHeight;
+            doc.fillColor(colors.warning)
+               .fontSize(8)
+               .font('Helvetica-Bold')
+               .text(`Note: Showing ${maxRows - 1} of ${exam.subjects.length} subjects.`, margin, noteY, { width: contentWidth, align: 'center' });
+        }
+
+        // --- Performance Summary Cards ---
+        const cardsY = tableY + (displaySubjects.length + 1) * rowHeight + 20;
+        const cardWidth = (contentWidth - 20) / 3;
+        const cardHeight = 80;
+        
+        // Calculate term-wise totals
         const termTotals = { t1: 0, t2: 0, t3: 0 };
         exam.subjects.forEach(s => {
             if (typeof s.term1 === 'number') termTotals.t1 += s.term1;
             if (typeof s.term2 === 'number') termTotals.t2 += s.term2;
             if (typeof s.term3 === 'number') termTotals.t3 += s.term3;
         });
-        //Calculate average per subject
+        
+        // Calculate averages
         const t1AvgPerSubject = exam.subjects.length > 0 ? (termTotals.t1 / exam.subjects.length) : 0;
         const t2AvgPerSubject = exam.subjects.length > 0 ? (termTotals.t2 / exam.subjects.length) : 0;
         const t3AvgPerSubject = exam.subjects.length > 0 ? (termTotals.t3 / exam.subjects.length) : 0;
-        //Create boxes for term-wise totals
-        const boxes = [
-            { title: '1st Term', total: termTotals.t1, avg: t1AvgPerSubject },
-            { title: '2nd Term', total: termTotals.t2, avg: t2AvgPerSubject },
-            { title: '3rd Term', total: termTotals.t3, avg: t3AvgPerSubject }
+        
+        const performanceData = [
+            { 
+                title: '1st Term', 
+                total: termTotals.t1, 
+                average: t1AvgPerSubject,
+                color: colors.success,
+                icon: '📊'
+            },
+            { 
+                title: '2nd Term', 
+                total: termTotals.t2, 
+                average: t2AvgPerSubject,
+                color: colors.info,
+                icon: '📈'
+            },
+            { 
+                title: '3rd Term', 
+                total: termTotals.t3, 
+                average: t3AvgPerSubject,
+                color: colors.warning,
+                icon: '📉'
+            }
         ];
 
-        boxes.forEach((b, idx) => {
-            const x = boxX + idx * (boxW + gap);
-            doc.rect(x, boxY, boxW, boxH).fill('#F7FBFF');
-            doc.rect(x, boxY, boxW, 20).fill('#1F4E79');
-            doc.fillColor('white').fontSize(11).text(b.title, x + 8, boxY + 4);
-            doc.fillColor('black').fontSize(10).text(`Total: ${b.total} / ${exam.subjects.length * 100}`, x + 8, boxY + 26);
-            doc.text(`Average: ${b.avg.toFixed(2)}`, x + 8, boxY + 42);
-            doc.lineWidth(1).strokeColor('#1F4E79').rect(x, boxY, boxW, boxH).stroke();
+        performanceData.forEach((card, index) => {
+            const x = margin + (index * (cardWidth + 10));
+            const y = cardsY;
+            
+            // Card background
+            doc.rect(x, y, cardWidth, cardHeight)
+               .fill(colors.cardBg)
+               .stroke(colors.border, 1);
+            
+            // Card header
+            doc.rect(x, y, cardWidth, 25)
+               .fill(card.color);
+            
+            // Card content
+            doc.fillColor('white')
+               .fontSize(11)
+               .font('Helvetica-Bold')
+               .text(card.title, x + 5, y + 8, { width: cardWidth - 10, align: 'center' });
+            
+            doc.fillColor(card.color)
+               .fontSize(16)
+               .font('Helvetica-Bold')
+               .text(`${card.average.toFixed(1)}%`, x + 5, y + 35, { width: cardWidth - 10, align: 'center' });
+            
+            doc.fillColor(colors.text)
+               .fontSize(9)
+               .font('Helvetica')
+               .text(`Total: ${card.total}/${exam.subjects.length * 100}`, x + 5, y + 55, { width: cardWidth - 10, align: 'center' });
         });
 
-        // Teacher's Comme  nts box
-        const commentsBoxX = tableLeft;
-        const verticalOffset = 24;
-        const commentsBoxY = boxY + boxH + 14 + verticalOffset;
-        const commentsBoxW = Math.min(420, contentWidth * 0.65);
-        const commentsBoxH = 80;
-        doc.fontSize(12).fillColor('black').text("Teacher's Comments & Feedback:", commentsBoxX, commentsBoxY - 18);
-        doc.rect(commentsBoxX, commentsBoxY, commentsBoxW, commentsBoxH).stroke('#1F4E79');
+        // --- Teacher's Comments Section ---
+        const commentsY = cardsY + cardHeight + 20;
+        const commentsWidth = contentWidth * 0.65;
+        const commentsHeight = 80;
+        
+        doc.fillColor(colors.text)
+           .fontSize(12)
+           .font('Helvetica-Bold')
+           .text("Teacher's Comments & Feedback:", margin, commentsY - 20);
+        
+        doc.rect(margin, commentsY, commentsWidth, commentsHeight)
+           .fill('#ffffff')
+           .stroke(colors.primary, 1);
+        
         if (exam.feedback && exam.feedback.trim() !== '') {
-            doc.fontSize(11).fillColor('black').text(exam.feedback, commentsBoxX + 8, commentsBoxY + 8, { width: commentsBoxW - 16 });
+            doc.fillColor(colors.text)
+               .fontSize(10)
+               .font('Helvetica')
+               .text(exam.feedback, margin + 10, commentsY + 10, { 
+                   width: commentsWidth - 20,
+                   lineGap: 2
+               });
+        } else {
+            doc.fillColor(colors.text)
+               .fontSize(10)
+               .font('Helvetica')
+               .text('No comments provided.', margin + 10, commentsY + 10);
         }
 
-        // Grading System box
-        const gradingBoxW = Math.min(220, contentWidth - commentsBoxW - 20);
-        let gradingBoxX = commentsBoxX + commentsBoxW + 12;
-        let gradingBoxY = commentsBoxY + commentsBoxH - 10 + verticalOffset;
-        let placeRight = gradingBoxW > 100 && (gradingBoxX + gradingBoxW <= margins.left + contentWidth + 5);
-        if (!placeRight) {
-            gradingBoxX = commentsBoxX;
-            gradingBoxY = commentsBoxY + commentsBoxH + 10 + verticalOffset;
-        }
+        // --- Grading System Section ---
+        const gradingX = margin + commentsWidth + 20;
+        const gradingWidth = contentWidth - commentsWidth - 20;
+        const gradingHeight = 80;
+        
+        doc.fillColor(colors.text)
+           .fontSize(12)
+           .font('Helvetica-Bold')
+           .text("Grading System:", gradingX, commentsY - 20);
+        
+        doc.rect(gradingX, commentsY, gradingWidth, gradingHeight)
+           .fill(colors.cardBg)
+           .stroke(colors.primary, 1);
 
         const grading = [
             ['A+', '97-100'], ['A', '94-96'], ['A-', '90-93'],
@@ -315,23 +474,45 @@ const downloadReport = async (req, res) => {
             ['D+', '67-69'], ['D', '64-66'], ['D-', '60-63'],
             ['F', '0-59']
         ];
-        const lineHeight = 12;
-        const headerHeight = 20;
-        const padding = 6;
-        const gradingBoxH = padding + headerHeight + grading.length * lineHeight + padding;
-
-        doc.save();
-        doc.rect(gradingBoxX, gradingBoxY - gradingBoxH + (placeRight ? commentsBoxH : 0), gradingBoxW, gradingBoxH).fill('#FBFDFF');
-        doc.rect(gradingBoxX, gradingBoxY - gradingBoxH + (placeRight ? commentsBoxH : 0), gradingBoxW, headerHeight).fill('#1F4E79');
-        doc.fillColor('white').fontSize(11).text('Grading System', gradingBoxX + 10, gradingBoxY - gradingBoxH + (placeRight ? commentsBoxH : 0) + 6);
-        doc.lineWidth(1).strokeColor('#1F4E79').rect(gradingBoxX, gradingBoxY - gradingBoxH + (placeRight ? commentsBoxH : 0), gradingBoxW, gradingBoxH).stroke();
-        doc.fillColor('black').fontSize(10);
-        let gy2 = gradingBoxY - gradingBoxH + (placeRight ? commentsBoxH : 0) + headerHeight + 2;
-        grading.forEach(([grade, range]) => {
-            doc.text(`${grade}: ${range}`, gradingBoxX + 8, gy2);
-            gy2 += lineHeight;
+        
+        const gradingCols = 3;
+        const gradingColWidth = gradingWidth / gradingCols;
+        const gradingRowHeight = 12;
+        
+        grading.forEach(([grade, range], index) => {
+            const col = index % gradingCols;
+            const row = Math.floor(index / gradingCols);
+            const x = gradingX + (col * gradingColWidth) + 5;
+            const y = commentsY + (row * gradingRowHeight) + 10;
+            
+            doc.fillColor(colors.text)
+               .fontSize(9)
+               .font('Helvetica-Bold')
+               .text(`${grade}:`, x, y);
+            
+            doc.fillColor(colors.text)
+               .fontSize(9)
+               .font('Helvetica')
+               .text(range, x + 25, y);
         });
-        doc.restore();
+
+        // --- Professional Footer ---
+        const footerY = commentsY + commentsHeight + 30;
+        const footerHeight = 40;
+        
+        doc.rect(margin, footerY, contentWidth, footerHeight)
+           .fill(colors.primary)
+           .stroke(colors.primary, 1);
+        
+        doc.fillColor('white')
+           .fontSize(10)
+           .font('Helvetica')
+           .text('This report card is generated electronically and does not require a signature.', margin + 10, footerY + 10, { width: contentWidth - 20, align: 'center' });
+        
+        doc.fillColor('white')
+           .fontSize(9)
+           .font('Helvetica')
+           .text(`Report generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, margin + 10, footerY + 25, { width: contentWidth - 20, align: 'center' });
 
         doc.end();
     } catch (err) {
@@ -359,11 +540,13 @@ const downloadProgressAnalysis = async (req, res) => {
             console.log('No exams found for student:', studentId);
             return res.status(404).json({ message: 'No exams found for this student' });
         }
-        //Get first exam
+        
+        // Get first exam for student info
         const sample = exams[0];
         const termTotals = { t1: { total: 0, count: 0 }, t2: { total: 0, count: 0 }, t3: { total: 0, count: 0 } };
         const subjectsMap = {};
-        //Calculate term-wise totals
+        
+        // Calculate term-wise totals
         exams.forEach(exam => {
             (exam.subjects || []).forEach(s => {
                 const name = (s.subject || 'Unknown').trim();
@@ -373,7 +556,8 @@ const downloadProgressAnalysis = async (req, res) => {
                 if (typeof s.term3 === 'number') { subjectsMap[name].t3.push(s.term3); termTotals.t3.total += s.term3; termTotals.t3.count++; }
             });
         });
-        //Calculate overall term averages
+        
+        // Calculate overall term averages
         const overallTermAverages = {
             t1: termTotals.t1.count ? Number((termTotals.t1.total / termTotals.t1.count).toFixed(2)) : 0,
             t2: termTotals.t2.count ? Number((termTotals.t2.total / termTotals.t2.count).toFixed(2)) : 0,
@@ -399,151 +583,323 @@ const downloadProgressAnalysis = async (req, res) => {
 
             return { name, a1, a2, a3, trend, recommendation };
         });
-        //Create new PDF document
+
+        // Create new PDF document with optimized settings
         doc = new PDFDocument({ 
-            margin: 40, 
+            margin: 30, 
             size: 'A4',
-            layout: 'portrait'
+            layout: 'portrait',
+            autoFirstPage: true
         });
+        
         const fileName = `ProgressAnalysis_${studentId}.pdf`;
         res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
         res.setHeader('Content-Type', 'application/pdf');
         doc.pipe(res);
-        //Set headers for PDF
-        doc.fillColor('#4CAF50').fontSize(24).font('Helvetica-Bold').text('WEBSTER INTERNATIONAL SCHOOL', { align: 'center', y: 50 });
-        doc.fillColor('#333333').fontSize(18).font('Helvetica').text('Student Progress Analysis', { align: 'center', y: 80 });
-        doc.strokeColor('#4CAF50').lineWidth(1).moveTo(40, 110).lineTo(doc.page.width - 40, 110).stroke();
-        doc.moveDown(3);
  
+        // Page dimensions
         const pageWidth = doc.page.width;
-        const pageMargins = doc.page.margins || { left: 40, right: 40 };
-        const contentW = pageWidth - pageMargins.left - pageMargins.right;
-        const startX = pageMargins.left;
+        const pageHeight = doc.page.height;
+        const margin = 30;
+        const contentWidth = pageWidth - (margin * 2);
+        const contentHeight = pageHeight - (margin * 2);
 
-        // Student Info Section
-        const infoY = doc.y;
-        doc.fillColor('#4CAF50').fontSize(12).font('Helvetica-Bold');
-        doc.text('Name of Student:', startX, infoY);
-        doc.fillColor('#333333').fontSize(12).font('Helvetica').text(sample.name, startX + 120, infoY);
-        doc.fillColor('#4CAF50').fontSize(12).font('Helvetica-Bold');
-        doc.text('Student ID:', startX, infoY + 20);
-        doc.fillColor('#333333').fontSize(12).font('Helvetica').text(sample.studentId, startX + 120, infoY + 20);
-        doc.fillColor('#4CAF50').fontSize(12).font('Helvetica-Bold');
-        doc.text('Class:', startX, infoY + 40);
-        doc.fillColor('#333333').fontSize(12).font('Helvetica').text(`Class ${sample.grade}`, startX + 120, infoY + 40);
+        // Color scheme matching frontend Progress Analysis page
+        const colors = {
+            primary: '#00897b',        // Teal - main color
+            secondary: '#00bfa5',      // Light teal - secondary color
+            accent: '#e74c3c',         // Red - for warnings/errors
+            warning: '#f39c12',       // Orange - for warnings
+            text: '#2c3e50',          // Dark blue-gray - text color
+            lightGray: '#f9f9f9',     // Light gray - alternating rows
+            border: '#dee2e6',        // Light border
+            cardBg: '#f0f9ff',        // Light blue - card backgrounds
+            chartLine: '#00897b',     // Teal - chart line color
+            chartFill: 'rgba(0, 137, 123, 0.1)', // Teal with transparency
+            success: '#2e7d32',      // Green - for success states
+            info: '#1976d2'           // Blue - for info states
+        };
 
-        doc.moveDown(2.5);
-
-        // Term Summary Cards
-        const cardY = doc.y;
-        const cardW = Math.floor((contentW - 30) / 4);
-        const cardH = 60;
+        // Header Section
+        doc.rect(margin, margin, contentWidth, 80)
+           .fill(colors.cardBg)
+           .stroke(colors.border, 1);
         
-        const cardData = [
-            { title: '1st Term Average', value: overallTermAverages.t1, color: '#4CAF50', bgColor: '#f0f9ff' },
-            { title: '2nd Term Average', value: overallTermAverages.t2, color: '#2196F3', bgColor: '#f0f9ff' },
-            { title: '3rd Term Average', value: overallTermAverages.t3, color: '#FFC107', bgColor: '#f0f9ff' },
-            { title: 'Overall Progress', value: ((overallTermAverages.t3 - overallTermAverages.t1) / overallTermAverages.t1 * 100), color: '#4CAF50', bgColor: '#f0f9ff' }
+        // School logo placeholder (you can add actual logo here)
+        doc.circle(margin + 25, margin + 25, 20)
+           .fill(colors.primary)
+           .stroke(colors.primary, 2);
+        
+        doc.fillColor('white')
+           .fontSize(16)
+           .font('Helvetica-Bold')
+           .text('W', margin + 20, margin + 18, { width: 10, align: 'center' });
+
+        // School name and title
+        doc.fillColor(colors.primary)
+           .fontSize(20)
+           .font('Helvetica-Bold')
+           .text('WEBSTER INTERNATIONAL SCHOOL', margin + 60, margin + 15);
+        
+        doc.fillColor(colors.text)
+           .fontSize(16)
+           .font('Helvetica')
+           .text('Student Progress Analysis Report', margin + 60, margin + 40);
+        
+        doc.fillColor(colors.secondary)
+           .fontSize(12)
+           .text(`Generated on: ${new Date().toLocaleDateString()}`, margin + 60, margin + 60);
+
+        // Student Information Section
+        const studentY = margin + 100;
+        doc.fillColor(colors.text)
+           .fontSize(14)
+           .font('Helvetica-Bold')
+           .text('Student Information', margin, studentY);
+        
+        // Student info box
+        doc.rect(margin, studentY + 20, contentWidth, 50)
+           .fill('#ffffff')
+           .stroke(colors.border, 1);
+        
+        const infoItems = [
+            { label: 'Student Name:', value: sample.name },
+            { label: 'Student ID:', value: sample.studentId },
+            { label: 'Class:', value: `Grade ${sample.grade}` }
         ];
- 
-        cardData.forEach((card, i) => {
-            const x = startX + i * (cardW + 10);
-            doc.rect(x, cardY, cardW, cardH).fill(card.bgColor).stroke('#e8f5e8', 1);
-            doc.rect(x, cardY, cardW, 4).fill(card.color);
-            doc.fillColor('#4CAF50').fontSize(10).font('Helvetica-Bold');
-            doc.text(card.title, x + 8, cardY + 12, { width: cardW - 16, align: 'center' });
-            doc.fillColor(card.color).fontSize(18).font('Helvetica-Bold');
-            const displayValue = i === 3 ? `${card.value.toFixed(1)}%` : card.value.toFixed(2);
-            doc.text(displayValue, x + 8, cardY + 28, { width: cardW - 16, align: 'center' });
+        
+        const itemWidth = contentWidth / 3;
+        infoItems.forEach((item, index) => {
+            const x = margin + (index * itemWidth) + 15;
+            doc.fillColor(colors.text)
+               .fontSize(11)
+               .font('Helvetica-Bold')
+               .text(item.label, x, studentY + 35);
+            doc.fillColor(colors.text)
+               .fontSize(11)
+               .font('Helvetica')
+               .text(item.value, x, studentY + 50);
         });
 
-        doc.moveDown(2);
-
-        // Table
-        const tableY = doc.y;
-        const colWidths = { 
-            subject: Math.floor(contentW * 0.18), 
-            term1: Math.floor(contentW * 0.12), 
-            term2: Math.floor(contentW * 0.12), 
-            term3: Math.floor(contentW * 0.12), 
-            trend: Math.floor(contentW * 0.16),
-            recommendation: Math.floor(contentW * 0.30)
-        };
-        const headerH = 40;
-        const rowH = 35;
+        // Performance Summary Cards
+        const cardsY = studentY + 90;
+        const cardWidth = (contentWidth - 30) / 4;
+        const cardHeight = 70;
         
-        doc.rect(startX, tableY, contentW, headerH).fill('#4CAF50');
-        doc.fillColor('white').fontSize(12).font('Helvetica-Bold');
-        doc.text('Subject', startX + 10, tableY + 15, { width: colWidths.subject - 20, align: 'left' });
-        doc.text('1st Term', startX + colWidths.subject + 10, tableY + 15, { width: colWidths.term1 - 20, align: 'center' });
-        doc.text('2nd Term', startX + colWidths.subject + colWidths.term1 + 10, tableY + 15, { width: colWidths.term2 - 20, align: 'center' });
-        doc.text('3rd Term', startX + colWidths.subject + colWidths.term1 + colWidths.term2 + 10, tableY + 15, { width: colWidths.term3 - 20, align: 'center' });
-        doc.text('Trend', startX + colWidths.subject + colWidths.term1 + colWidths.term2 + colWidths.term3 + 10, tableY + 15, { width: colWidths.trend - 20, align: 'center' });
-        doc.text('Recommendation', startX + colWidths.subject + colWidths.term1 + colWidths.term2 + colWidths.term3 + colWidths.trend + 10, tableY + 15, { width: colWidths.recommendation - 20, align: 'left' });
+        const performanceData = [
+            { 
+                title: '1st Term', 
+                value: overallTermAverages.t1 || 0, 
+                color: colors.success,  // Green for 1st term
+                icon: '📊'
+            },
+            { 
+                title: '2nd Term', 
+                value: overallTermAverages.t2 || 0, 
+                color: colors.info,     // Blue for 2nd term
+                icon: '📈'
+            },
+            { 
+                title: '3rd Term', 
+                value: overallTermAverages.t3 || 0, 
+                color: colors.warning,  // Orange for 3rd term
+                icon: '📉'
+            },
+            { 
+                title: 'Overall', 
+                value: ((overallTermAverages.t1 || 0) + (overallTermAverages.t2 || 0) + (overallTermAverages.t3 || 0)) / 3, 
+                color: colors.primary,  // Teal for overall
+                icon: '🎯'
+            }
+        ];
 
-        let currentY = tableY + headerH;
-        for (let i = 0; i < subjects.length; i++) {
-            const s = subjects[i];
-            const rowColor = i % 2 === 0 ? '#ffffff' : '#f8fffe';
-            doc.rect(startX, currentY, contentW, rowH).fill(rowColor);
-            doc.rect(startX, currentY, contentW, rowH).stroke('#e0e0e0', 0.5);
+        performanceData.forEach((card, index) => {
+            const x = margin + (index * (cardWidth + 10));
+            const y = cardsY;
             
-            doc.fillColor('black').fontSize(11).font('Helvetica-Bold');
-            doc.text(s.name, startX + 10, currentY + 12, { width: colWidths.subject - 20, align: 'left' });
+            // Card background - matching frontend gradient style
+            doc.rect(x, y, cardWidth, cardHeight)
+               .fill(colors.cardBg)
+               .stroke(colors.border, 1);
             
-            doc.fillColor('black').fontSize(11).font('Helvetica');
-            doc.text(s.a1 !== null ? s.a1.toString() : '-', startX + colWidths.subject + 10, currentY + 12, { width: colWidths.term1 - 20, align: 'center' });
-            doc.text(s.a2 !== null ? s.a2.toString() : '-', startX + colWidths.subject + colWidths.term1 + 10, currentY + 12, { width: colWidths.term2 - 20, align: 'center' });
-            doc.text(s.a3 !== null ? s.a3.toString() : '-', startX + colWidths.subject + colWidths.term1 + colWidths.term2 + 10, currentY + 12, { width: colWidths.term3 - 20, align: 'center' });
-            doc.text(s.trend, startX + colWidths.subject + colWidths.term1 + colWidths.term2 + colWidths.term3 + 10, currentY + 12, { width: colWidths.trend - 20, align: 'center' });
-            doc.text(s.recommendation, startX + colWidths.subject + colWidths.term1 + colWidths.term2 + colWidths.term3 + colWidths.trend + 10, currentY + 12, { width: colWidths.recommendation - 20, align: 'left' });
+            // Card header
+            doc.rect(x, y, cardWidth, 20)
+               .fill(card.color);
             
-            currentY += rowH;
+            // Card content
+            doc.fillColor('white')
+               .fontSize(10)
+               .font('Helvetica-Bold')
+               .text(card.title, x + 5, y + 6, { width: cardWidth - 10, align: 'center' });
+            
+            doc.fillColor(card.color)
+               .fontSize(24)
+               .font('Helvetica-Bold')
+               .text(typeof card.value === 'number' ? card.value.toFixed(1) : '0.0', x + 5, y + 30, { width: cardWidth - 10, align: 'center' });
+            
+            doc.fillColor(colors.text)
+               .fontSize(8)
+               .font('Helvetica')
+               .text('Average Score', x + 5, y + 55, { width: cardWidth - 10, align: 'center' });
+        });
+
+        // Subject Performance Table
+        const tableY = cardsY + 90;
+        const baseRowHeight = 20; // Base row height
+        const maxTableHeight = Math.min(300, contentHeight - (tableY - margin) - 200); // Reserve space for chart and recommendations
+        const maxRows = Math.floor(maxTableHeight / baseRowHeight);
+        
+        // Table header
+        doc.rect(margin, tableY, contentWidth, baseRowHeight)
+           .fill(colors.primary);
+        
+        const colWidths = { 
+            subject: contentWidth * 0.20,
+            term1: contentWidth * 0.12,
+            term2: contentWidth * 0.12,
+            term3: contentWidth * 0.12,
+            trend: contentWidth * 0.12,
+            recommendation: contentWidth * 0.32
+        };
+        
+        const headers = ['Subject', '1st Term', '2nd Term', '3rd Term', 'Trend', 'Recommendation'];
+        let currentX = margin;
+        
+        headers.forEach((header, index) => {
+            const width = Object.values(colWidths)[index];
+            doc.fillColor('white')
+               .fontSize(9)
+               .font('Helvetica-Bold')
+               .text(header, currentX + 5, tableY + 6, { width: width - 10, align: 'center' });
+            currentX += width;
+        });
+
+        // Table rows - Show ALL subjects, but limit if too many to fit
+        const displaySubjects = subjects.slice(0, Math.min(maxRows - 1, subjects.length));
+        let currentTableY = tableY + baseRowHeight;
+        
+        displaySubjects.forEach((subject, index) => {
+            const rowColor = index % 2 === 0 ? '#ffffff' : colors.lightGray;
+            
+            // Calculate dynamic row height based on recommendation text length
+            const recommendationWidth = colWidths.recommendation - 10;
+            const estimatedLines = Math.ceil(subject.recommendation.length / 40); // Rough estimate
+            const dynamicRowHeight = Math.max(baseRowHeight, estimatedLines * 12);
+            
+            doc.rect(margin, currentTableY, contentWidth, dynamicRowHeight)
+               .fill(rowColor)
+               .stroke(colors.border, 0.5);
+            
+            currentX = margin;
+            const rowData = [
+                subject.name,
+                subject.a1 !== null ? subject.a1.toString() : '-',
+                subject.a2 !== null ? subject.a2.toString() : '-',
+                subject.a3 !== null ? subject.a3.toString() : '-',
+                subject.trend,
+                subject.recommendation // Full recommendation text, no truncation
+            ];
+            
+            rowData.forEach((data, dataIndex) => {
+                const width = Object.values(colWidths)[dataIndex];
+                const isRecommendation = dataIndex === 5; // Recommendation column
+                
+                if (isRecommendation) {
+                    // For recommendation column, allow text wrapping
+                    doc.fillColor(colors.text)
+                       .fontSize(8)
+                       .font('Helvetica')
+                       .text(data, currentX + 5, currentTableY + 4, { 
+                           width: width - 10, 
+                           align: 'left',
+                           lineGap: 1
+                       });
+                } else {
+                    // For other columns, center align
+                    doc.fillColor(colors.text)
+                       .fontSize(8)
+                       .font('Helvetica')
+                       .text(data, currentX + 5, currentTableY + (dynamicRowHeight / 2) - 4, { width: width - 10, align: 'center' });
+                }
+                currentX += width;
+            });
+            
+            currentTableY += dynamicRowHeight;
+        });
+        
+        // Add note if subjects were truncated
+        if (subjects.length > maxRows - 1) {
+            const noteY = currentTableY + 10;
+            doc.fillColor(colors.warning)
+               .fontSize(8)
+               .font('Helvetica-Bold')
+               .text(`Note: Showing ${maxRows - 1} of ${subjects.length} subjects. Additional subjects available in detailed report.`, margin, noteY, { width: contentWidth, align: 'center' });
         }
 
-        // Progress Chart
-        const chartY = currentY + 20;
-        const chartHeight = 150;
-        const chartWidth = contentW;
-        const chartInnerHeight = chartHeight - 20;
-
-        doc.fillColor('#4CAF50').fontSize(14).font('Helvetica-Bold').text('Overall Progress Trend', startX, chartY);
+        // Progress Chart (Line Chart) - Positioned higher
+        const chartY = subjects.length > maxRows - 1 ? 
+            currentTableY + 45 : // Account for note - further reduced spacing
+            currentTableY + 35; // Further reduced spacing from table
+        const chartHeight = 120;
         
-        const chartStartY = chartY + 20;
-        const chartEndY = chartStartY + chartInnerHeight;
-
-        doc.rect(startX, chartStartY, chartWidth, chartInnerHeight).fill('#ffffff').stroke('#e0e0e0', 1);
-
-        const maxScore = 100;
-        const ticks = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-        doc.lineWidth(0.5).strokeColor('#cccccc');
-        
-        ticks.forEach(t => {
-            const ty = chartEndY - Math.round((t / maxScore) * chartInnerHeight);
-            doc.moveTo(startX, ty).lineTo(startX + chartWidth, ty).stroke();
-        });
-
-        doc.fillColor('#666666').fontSize(9);
-        ticks.forEach(t => {
-            const ty = chartEndY - Math.round((t / maxScore) * chartInnerHeight);
-            doc.text(String(t), startX - 25, ty - 4, { width: 20, align: 'right' });
-        });
-        
+        if (chartY + chartHeight < pageHeight - margin) {
+            doc.fillColor(colors.text)
+               .fontSize(12)
+               .font('Helvetica-Bold')
+               .text('Overall Progress Trend', margin, chartY - 5);
+            
+            // Chart background - matching frontend
+            doc.rect(margin, chartY + 15, contentWidth, chartHeight)
+               .fill(colors.cardBg)
+               .stroke(colors.border, 1);
+            
+            // Chart dimensions
+            const chartInnerWidth = contentWidth - 40;
+            const chartInnerHeight = chartHeight - 40;
+            const chartStartX = margin + 20;
+            const chartStartY = chartY + 15 + 20; // Adjusted for new background position
+            const chartEndX = chartStartX + chartInnerWidth;
+            const chartEndY = chartStartY + chartInnerHeight;
+            
+            // Y-axis grid lines and labels
+            const maxValue = Math.max(overallTermAverages.t1 || 0, overallTermAverages.t2 || 0, overallTermAverages.t3 || 0, 50);
+            const minValue = Math.min(overallTermAverages.t1 || 0, overallTermAverages.t2 || 0, overallTermAverages.t3 || 0, 0);
+            const valueRange = Math.max(maxValue - minValue, 20); // Ensure minimum range of 20
+            
+            // Draw horizontal grid lines
+            doc.lineWidth(0.5).strokeColor('#e5e7eb');
+            for (let i = 0; i <= 10; i++) {
+                const y = chartEndY - (i / 10) * chartInnerHeight;
+                doc.moveTo(chartStartX, y).lineTo(chartEndX, y).stroke();
+                
+                // Y-axis labels
+                const value = minValue + (i / 10) * valueRange;
+                doc.fillColor('#6b7280')
+                   .fontSize(8)
+                   .font('Helvetica')
+                   .text(value.toFixed(0), chartStartX - 25, y - 4, { width: 20, align: 'right' });
+            }
+            
+            // X-axis labels
         const termLabels = ['1st Term', '2nd Term', '3rd Term'];
-        const labelSpacing = chartWidth / 3;
-        doc.fillColor('#666666').fontSize(9);
+            const labelSpacing = chartInnerWidth / 2;
+            doc.fillColor('#6b7280')
+               .fontSize(9)
+               .font('Helvetica');
         termLabels.forEach((label, index) => {
-            const labelX = startX + (index * labelSpacing) + (labelSpacing / 2);
+                const labelX = chartStartX + (index * labelSpacing);
             doc.text(label, labelX - 20, chartEndY + 8, { width: 40, align: 'center' });
         });
-        //Calculate term values
-        const termValues = [overallTermAverages.t1, overallTermAverages.t2, overallTermAverages.t3];
+            
+            // Calculate data points
+            const termValues = [overallTermAverages.t1 || 0, overallTermAverages.t2 || 0, overallTermAverages.t3 || 0];
         const points = termValues.map((value, index) => {
-            const x = startX + (index * labelSpacing) + (labelSpacing / 2);
-            const y = chartEndY - Math.round((value / maxScore) * chartInnerHeight);
+                const x = chartStartX + (index * labelSpacing);
+                const y = chartEndY - ((value - minValue) / valueRange) * chartInnerHeight;
             return { x, y, value };
         });
 
+            // Draw area fill
         doc.save();
         doc.moveTo(points[0].x, chartEndY);
         points.forEach(point => {
@@ -551,43 +907,71 @@ const downloadProgressAnalysis = async (req, res) => {
         });
         doc.lineTo(points[points.length - 1].x, chartEndY);
         doc.closePath();
-        doc.fill('#4CAF50', 0.1);
+            doc.fill(colors.primary, 0.1);
         doc.restore();
 
-        doc.lineWidth(3).strokeColor('#4CAF50');
+            // Draw trend line
+            doc.lineWidth(3).strokeColor(colors.primary);
         doc.moveTo(points[0].x, points[0].y);
         for (let i = 1; i < points.length; i++) {
             doc.lineTo(points[i].x, points[i].y);
         }
         doc.stroke();
-        //Create points for chart
+            
+            // Draw data points
         points.forEach(point => {
-            doc.circle(point.x, point.y, 6).fill('#ffffff').stroke('#4CAF50', 2);
-            doc.circle(point.x, point.y, 3).fill('#4CAF50');
-            doc.fillColor('#4CAF50').fontSize(8).font('Helvetica-Bold');
-            doc.text(point.value.toFixed(1), point.x - 10, point.y - 15, { width: 20, align: 'center' });
-        });
+                doc.circle(point.x, point.y, 6).fill('#ffffff').stroke(colors.primary, 2);
+                doc.circle(point.x, point.y, 3).fill(colors.primary);
+                
+                // Value labels above points
+                doc.fillColor(colors.primary)
+                   .fontSize(8)
+                   .font('Helvetica-Bold')
+                   .text(point.value.toFixed(1), point.x - 10, point.y - 20, { width: 20, align: 'center' });
+            });
+        }
 
-        const recY = chartEndY + 30;
-        doc.fillColor('#4CAF50').fontSize(14).font('Helvetica-Bold').text('Overall Recommendations', startX, recY);
-        //Calculate overall recommendations
-        let overallRec = 'Keep monitoring progress and provide targeted support where needed.';
+        // Overall Recommendations
+        const recY = Math.min(chartY + chartHeight + 30, pageHeight - margin - 60);
+        
+        doc.fillColor(colors.text)
+           .fontSize(12)
+           .font('Helvetica-Bold')
+           .text('Overall Recommendations', margin, recY);
+        
+        // Calculate overall recommendations
+        let overallRec = 'Continue monitoring progress and provide targeted support where needed.';
         const vals = [overallTermAverages.t1, overallTermAverages.t2, overallTermAverages.t3].filter(v => v !== 0);
         if (vals.length >= 2) {
-            if (vals[vals.length - 1] > vals[0]) overallRec = 'Student shows improvement — reinforce successful study habits.';
-            else if (vals[vals.length - 1] < vals[0]) overallRec = 'Performance declined — consider remediation and extra tutoring.';
+            if (vals[vals.length - 1] > vals[0]) overallRec = 'Student shows improvement — reinforce successful study habits and maintain current strategies.';
+            else if (vals[vals.length - 1] < vals[0]) overallRec = 'Performance declined — consider remediation, extra tutoring, and review study methods.';
         }
-        //Calculate low subjects
+        
         const lowSubjects = subjects.filter(s => {
             const latest = [s.a3, s.a2, s.a1].find(v => v !== null);
             return latest !== undefined && latest !== null && latest < 65;
         }).map(s => s.name);
-        if (lowSubjects.length) overallRec += ` Focus on: ${lowSubjects.join(', ')}.`;
+        
+        if (lowSubjects.length) overallRec += ` Focus areas: ${lowSubjects.join(', ')}.`;
 
-        doc.fillColor('#333333').fontSize(11).font('Helvetica').text(overallRec, startX, recY + 20, { width: contentW });
+        // Recommendations box - matching frontend
+        doc.rect(margin, recY + 20, contentWidth, 40)
+           .fill(colors.cardBg)
+           .stroke(colors.primary, 1);
+        
+        doc.fillColor(colors.text)
+           .fontSize(10)
+           .font('Helvetica')
+           .text(overallRec, margin + 10, recY + 30, { width: contentWidth - 20 });
+
+        // Footer
+        doc.fillColor(colors.text)
+           .fontSize(8)
+           .font('Helvetica')
+           .text('This report was generated automatically by the Smart Alert System', margin, pageHeight - margin - 10, { width: contentWidth, align: 'center' });
 
         doc.end();
-        console.log('Clean frontend-matching PDF generation completed successfully');
+        console.log('Modern single-page PDF generation completed successfully');
     } catch (err) {
         console.error('Error in PDF generation:', err);
         try {

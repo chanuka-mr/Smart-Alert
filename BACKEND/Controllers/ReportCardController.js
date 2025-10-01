@@ -87,7 +87,7 @@ const getFilteredReportCards = async (req, res, next) => {
 
 // Add a new report card
 const addReportCard = async (req, res, next) => {
-    const { studentId, studentName, grade, class: classSection, subjects, teacherComments } = req.body;
+    const { studentId, studentName, grade, class: classSection, subjects, teacherComments, academicYear } = req.body;
 
     // Validate required fields
     if (!studentId || !studentName || !grade || !subjects || !Array.isArray(subjects)) {
@@ -142,7 +142,8 @@ const addReportCard = async (req, res, next) => {
         grade,
         class: classSection,
         subjects,
-        teacherComments: teacherComments || ""
+        teacherComments: teacherComments || "",
+        academicYear: academicYear || new Date().getFullYear().toString()
     });
 
     try {
@@ -197,7 +198,7 @@ const addReportCard = async (req, res, next) => {
 // Update report card
 const updateReportCard = async (req, res, next) => {
     const { id } = req.params;
-    const { studentName, grade, class: classSection, subjects, teacherComments } = req.body;
+    const { studentName, grade, class: classSection, subjects, teacherComments, academicYear } = req.body;
 
     let reportCard;
     try {
@@ -217,6 +218,7 @@ const updateReportCard = async (req, res, next) => {
     if (classSection) reportCard.class = classSection;
     if (subjects) reportCard.subjects = subjects;
     if (teacherComments !== undefined) reportCard.teacherComments = teacherComments;
+    if (academicYear) reportCard.academicYear = academicYear;
 
     try {
         await reportCard.save();
@@ -299,24 +301,107 @@ const downloadReportCardPDF = async (req, res, next) => {
             return res.status(404).json({ message: "Report card not found" });
         }
 
-        // Create PDF
-        const doc = new PDFDocument();
+        // Create PDF with modern settings
+        const doc = new PDFDocument({ 
+            margin: 30, 
+            size: 'A4',
+            layout: 'portrait',
+            compress: true
+        });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="report-card-${studentId}.pdf"`);
         doc.pipe(res);
 
-        // School header
-        doc.fontSize(20).font('Helvetica-Bold').text('WEBSTER INTERNATIONAL SCHOOL', 50, 50, { align: 'center' });
-        doc.fontSize(16).font('Helvetica').text('Report Card', 50, 80, { align: 'center' });
+        // Modern color scheme matching frontend
+        const colors = {
+            primary: '#00897b',        // Teal - main color
+            secondary: '#00bfa5',      // Light teal - secondary color
+            accent: '#e74c3c',         // Red - for warnings/errors
+            warning: '#f39c12',       // Orange - for warnings
+            text: '#2c3e50',          // Dark blue-gray - text color
+            lightGray: '#f9f9f9',     // Light gray - alternating rows
+            border: '#dee2e6',        // Light border
+            cardBg: '#f0f9ff',        // Light blue - card backgrounds
+            success: '#2e7d32',      // Green - for success states
+            info: '#1976d2'           // Blue - for info states
+        };
+
+        // Page dimensions
+        const pageWidth = doc.page.width;
+        const pageHeight = doc.page.height;
+        const margin = 30;
+        const contentWidth = pageWidth - (margin * 2);
+        const contentHeight = pageHeight - (margin * 2);
+
+        // --- Professional Header Section ---
+        doc.rect(margin, margin, contentWidth, 80)
+           .fill(colors.cardBg)
+           .stroke(colors.border, 1);
         
-        // Student information
-        doc.fontSize(12).font('Helvetica-Bold').text('Student Information:', 50, 120);
-        doc.fontSize(10).font('Helvetica');
-        doc.text(`Name: ${reportCard.studentName}`, 50, 140);
-        doc.text(`Student ID: ${reportCard.studentId}`, 50, 155);
-        doc.text(`Class: ${reportCard.class}`, 50, 170);
-        doc.text(`Grade: ${reportCard.grade}`, 50, 185);
-        doc.text(`Academic Year: ${reportCard.academicYear}`, 50, 200);
+        // School logo placeholder
+        doc.circle(margin + 25, margin + 25, 20)
+           .fill(colors.primary)
+           .stroke(colors.primary, 2);
+        
+        // School name
+        doc.fillColor(colors.primary)
+           .fontSize(24)
+           .font('Helvetica-Bold')
+           .text('WEBSTER INTERNATIONAL SCHOOL', margin + 60, margin + 15);
+        
+        // Report title
+        doc.fillColor(colors.text)
+           .fontSize(18)
+           .font('Helvetica-Bold')
+           .text('STUDENT REPORT CARD', margin + 60, margin + 40);
+        
+        // Academic year
+        doc.fillColor(colors.text)
+           .fontSize(12)
+           .font('Helvetica')
+           .text(`Academic Year: ${reportCard.academicYear || new Date().getFullYear().toString()}`, margin + 60, margin + 60);
+        
+        // Generation date
+        doc.fillColor(colors.text)
+           .fontSize(10)
+           .font('Helvetica')
+           .text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth - margin - 150, margin + 60);
+
+        // --- Student Information Section ---
+        const studentY = margin + 100;
+        doc.rect(margin, studentY, contentWidth, 60)
+           .fill('#ffffff')
+           .stroke(colors.border, 1);
+        
+        // Student info grid
+        const infoItems = [
+            { label: 'Student Name', value: reportCard.studentName },
+            { label: 'Student ID', value: reportCard.studentId },
+            { label: 'Class', value: reportCard.class },
+            { label: 'Grade', value: reportCard.grade },
+            { label: 'Academic Year', value: reportCard.academicYear || new Date().getFullYear().toString() }
+        ];
+        
+        const infoCols = 3;
+        const infoColWidth = contentWidth / infoCols;
+        const infoRowHeight = 20;
+        
+        infoItems.forEach((item, index) => {
+            const col = index % infoCols;
+            const row = Math.floor(index / infoCols);
+            const x = margin + (col * infoColWidth) + 10;
+            const y = studentY + (row * infoRowHeight) + 10;
+            
+            doc.fillColor(colors.text)
+               .fontSize(10)
+               .font('Helvetica-Bold')
+               .text(`${item.label}:`, x, y);
+            
+            doc.fillColor(colors.text)
+               .fontSize(10)
+               .font('Helvetica')
+               .text(item.value, x + 80, y);
+        });
 
         // Table setup
         const startX = 50;
@@ -422,20 +507,87 @@ const downloadReportCardPDF = async (req, res, next) => {
         doc.strokeColor('#000000').lineWidth(1);
         doc.rect(startX, startY, totalWidth, (reportCard.subjects.length + 2) * rowHeight).stroke();
 
-        // Summary section
+        // --- Professional Summary Table ---
         const summaryY = currentY + 20;
-        doc.fontSize(12).font('Helvetica-Bold').text('Summary:', 50, summaryY);
+        const summaryTableHeight = 80;
+        const summaryTableWidth = contentWidth;
         
-        doc.fontSize(10).font('Helvetica');
-        doc.text(`1st Term Total: ${termTotals.term1}`, 50, summaryY + 20);
-        doc.text(`2nd Term Total: ${termTotals.term2}`, 50, summaryY + 35);
-        doc.text(`3rd Term Total: ${termTotals.term3}`, 50, summaryY + 50);
-        doc.text(`Overall Average: ${reportCard.overallAverage.toFixed(2)}`, 50, summaryY + 65);
+        // Summary table background
+        doc.rect(margin, summaryY, summaryTableWidth, summaryTableHeight)
+           .fill(colors.cardBg)
+           .stroke(colors.primary, 1);
+        
+        // Summary table header
+        doc.rect(margin, summaryY, summaryTableWidth, 25)
+           .fill(colors.primary);
+        
+        doc.fillColor('white')
+           .fontSize(12)
+           .font('Helvetica-Bold')
+           .text('ACADEMIC SUMMARY', margin + 10, summaryY + 8, { width: summaryTableWidth - 20, align: 'center' });
+        
+        // Summary content in grid format
+        const summaryItems = [
+            { label: '1st Term Total', value: termTotals.term1 },
+            { label: '2nd Term Total', value: termTotals.term2 },
+            { label: '3rd Term Total', value: termTotals.term3 },
+            { label: 'Overall Average', value: `${reportCard.overallAverage.toFixed(2)}%` }
+        ];
+        
+        const summaryCols = 2;
+        const summaryColWidth = summaryTableWidth / summaryCols;
+        const summaryRowHeight = 15;
+        
+        summaryItems.forEach((item, index) => {
+            const col = index % summaryCols;
+            const row = Math.floor(index / summaryCols);
+            const x = margin + (col * summaryColWidth) + 10;
+            const y = summaryY + 30 + (row * summaryRowHeight);
+            
+            doc.fillColor(colors.text)
+               .fontSize(10)
+               .font('Helvetica-Bold')
+               .text(`${item.label}:`, x, y);
+            
+            doc.fillColor(colors.primary)
+               .fontSize(10)
+               .font('Helvetica-Bold')
+               .text(item.value, x + 100, y);
+        });
 
-        // Teacher comments
-        if (reportCard.teacherComments) {
-            doc.text('Teacher Comments:', 50, summaryY + 90);
-            doc.text(reportCard.teacherComments, 50, summaryY + 105, { width: 500 });
+        // --- Professional Teacher Comments Box ---
+        const commentsY = summaryY + summaryTableHeight + 20;
+        const commentsBoxHeight = 100;
+        const commentsBoxWidth = contentWidth;
+        
+        // Comments box background
+        doc.rect(margin, commentsY, commentsBoxWidth, commentsBoxHeight)
+           .fill('#ffffff')
+           .stroke(colors.primary, 1);
+        
+        // Comments box header
+        doc.rect(margin, commentsY, commentsBoxWidth, 25)
+           .fill(colors.primary);
+        
+        doc.fillColor('white')
+           .fontSize(12)
+           .font('Helvetica-Bold')
+           .text('TEACHER COMMENTS & FEEDBACK', margin + 10, commentsY + 8, { width: commentsBoxWidth - 20, align: 'center' });
+        
+        // Comments content
+        if (reportCard.teacherComments && reportCard.teacherComments.trim() !== '') {
+            doc.fillColor(colors.text)
+               .fontSize(10)
+               .font('Helvetica')
+               .text(reportCard.teacherComments, margin + 10, commentsY + 35, { 
+                   width: commentsBoxWidth - 20,
+                   lineGap: 3
+               });
+        } else {
+            doc.fillColor(colors.text)
+               .fontSize(10)
+               .font('Helvetica')
+               .text('No comments provided by the teacher.', margin + 10, commentsY + 35);
         }
 
         doc.end();

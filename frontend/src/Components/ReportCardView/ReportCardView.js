@@ -127,7 +127,7 @@ const ReportCardView = () => {
               </div>
               <div className="detail-item">
                 <span className="detail-label">Academic Year:</span>
-                <span className="detail-value">2023</span>
+                <span className="detail-value">{reportData.academicYear || new Date().getFullYear().toString()}</span>
               </div>
             </div>
             
@@ -223,7 +223,7 @@ const ReportCardView = () => {
                 <div className="report-info">
                   <p><strong>Student:</strong> {reportData.studentName}</p>
                   <p><strong>Class:</strong> {reportData.class}</p>
-                  <p><strong>Academic Year:</strong> 2023</p>
+                  <p><strong>Academic Year:</strong> {reportData.academicYear || new Date().getFullYear().toString()}</p>
                 </div>
               </div>
 

@@ -12,6 +12,21 @@ const EditStudentModal = ({ student, onSubmit, onCancel, loading }) => {
     subjects: student.subjects || []
   });
 
+  // Common subjects by class level
+  const subjectsByLevel = {
+    '1': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '2': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '3': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '4': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '5': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '6': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '7': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '8': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '9': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '10': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '11': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies']
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
@@ -65,28 +80,46 @@ const EditStudentModal = ({ student, onSubmit, onCancel, loading }) => {
               <label>Subjects:</label>
               {formData.subjects.map((subject, index) => (
                 <div key={index} className="subject-edit">
-                  <input
-                    type="text"
-                    placeholder="Subject Name"
+                  <select
                     value={subject.subjectName || ''}
                     onChange={(e) => handleSubjectChange(index, 'subjectName', e.target.value)}
                     required
-                  />
+                  >
+                    <option value="">Select Subject</option>
+                    {formData.grade && subjectsByLevel[formData.grade] ? 
+                      subjectsByLevel[formData.grade].map(subjectOption => (
+                        <option 
+                          key={subjectOption} 
+                          value={subjectOption}
+                        >
+                          {subjectOption}
+                        </option>
+                      )) : (
+                        <option value="" disabled>Please select a grade first</option>
+                      )
+                    }
+                  </select>
                   <input
                     type="number"
                     placeholder="Term 1"
+                    min="0"
+                    max="100"
                     value={subject.term1 || ''}
                     onChange={(e) => handleSubjectChange(index, 'term1', parseInt(e.target.value))}
                   />
                   <input
                     type="number"
                     placeholder="Term 2"
+                    min="0"
+                    max="100"
                     value={subject.term2 || ''}
                     onChange={(e) => handleSubjectChange(index, 'term2', parseInt(e.target.value))}
                   />
                   <input
                     type="number"
                     placeholder="Term 3"
+                    min="0"
+                    max="100"
                     value={subject.term3 || ''}
                     onChange={(e) => handleSubjectChange(index, 'term3', parseInt(e.target.value))}
                   />

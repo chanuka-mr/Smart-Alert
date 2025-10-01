@@ -796,8 +796,7 @@ const TimeTableDataEntry = () => {
               </div>
               <div className="form-group" style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600', color: '#00897b' }}>Subject:</label>
-                <input
-                  type="text"
+                <select
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
@@ -809,7 +808,27 @@ const TimeTableDataEntry = () => {
                     borderRadius: '5px',
                     fontSize: '16px'
                   }}
-                />
+                >
+                  <option value="">Select Subject</option>
+                  <option value="English">English</option>
+                  <option value="Science">Science</option>
+                  <option value="Mathematics">Mathematics</option>
+                  <option value="Sinhala">Sinhala</option>
+                  <option value="Tamil">Tamil</option>
+                  <option value="Buddhist">Buddhist</option>
+                  <option value="History">History</option>
+                  <option value="Agriculture">Agriculture</option>
+                  <option value="Home Science">Home Science</option>
+                  <option value="ICT">ICT</option>
+                  <option value="Health and Physical Education">Health and Physical Education</option>
+                  <option value="Art">Art</option>
+                  <option value="Dance">Dance</option>
+                  <option value="Music">Music</option>
+                  <option value="Drama">Drama</option>
+                  <option value="Literature">Literature</option>
+                  <option value="Geography">Geography</option>
+                  <option value="Business and Accounting Studies">Business and Accounting Studies</option>
+                </select>
               </div>
               <div className="form-group" style={{ marginBottom: '15px' }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: '600', color: '#00897b' }}>Exam Date:</label>
@@ -1528,15 +1547,33 @@ const TimeTableDataEntry = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label htmlFor="subject">Subject *</label>
-                      <input 
-                        type="text" 
+                      <select 
                         id="subject" 
                         name="subject" 
                         value={timetableForm.subject}
                         onChange={handleTimetableInputChange}
-                        required 
-                        placeholder="Enter subject name"
-                      />
+                        required
+                      >
+                        <option value="">Select Subject</option>
+                        <option value="English">English</option>
+                        <option value="Science">Science</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Sinhala">Sinhala</option>
+                        <option value="Tamil">Tamil</option>
+                        <option value="Buddhist">Buddhist</option>
+                        <option value="History">History</option>
+                        <option value="Agriculture">Agriculture</option>
+                        <option value="Home Science">Home Science</option>
+                        <option value="ICT">ICT</option>
+                        <option value="Health and Physical Education">Health and Physical Education</option>
+                        <option value="Art">Art</option>
+                        <option value="Dance">Dance</option>
+                        <option value="Music">Music</option>
+                        <option value="Drama">Drama</option>
+                        <option value="Literature">Literature</option>
+                        <option value="Geography">Geography</option>
+                        <option value="Business and Accounting Studies">Business and Accounting Studies</option>
+                      </select>
                     </div>
                     <div className="form-group">
                       <label htmlFor="examDate">Exam Date *</label>

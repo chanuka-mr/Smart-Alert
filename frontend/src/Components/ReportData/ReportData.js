@@ -17,7 +17,7 @@ const ReportData = () => {
     studentName: '',
     grade: '',
     class: '',
-    academicYear: new Date().getFullYear().toString(),
+    academicYear: '',
     teacherComments: ''
   });
 
@@ -32,17 +32,17 @@ const ReportData = () => {
 
   // Common subjects by class level
   const subjectsByLevel = {
-    '1': ['Mathematics', 'English', 'Science', 'Social Studies', 'Art', 'Physical Education'],
-    '2': ['Mathematics', 'English', 'Science', 'Social Studies', 'Art', 'Physical Education'],
-    '3': ['Mathematics', 'English', 'Science', 'Social Studies', 'Art', 'Physical Education'],
-    '4': ['Mathematics', 'English', 'Science', 'Social Studies', 'Art', 'Physical Education'],
-    '5': ['Mathematics', 'English', 'Science', 'Social Studies', 'Art', 'Physical Education'],
-    '6': ['Mathematics', 'English', 'Science', 'Social Studies', 'Art', 'Physical Education', 'Computer Science'],
-    '7': ['Mathematics', 'English', 'Science', 'Social Studies', 'Art', 'Physical Education', 'Computer Science'],
-    '8': ['Mathematics', 'English', 'Science', 'Social Studies', 'Art', 'Physical Education', 'Computer Science'],
-    '9': ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Computer Science'],
-    '10': ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Computer Science'],
-    '11': ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Computer Science']
+    '1': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '2': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '3': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '4': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '5': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
+    '6': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '7': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '8': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '9': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '10': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies'],
+    '11': ['English', 'Science', 'Mathematics', 'Sinhala', 'Tamil', 'Buddhist', 'History', 'Agriculture', 'Home Science', 'ICT', 'Health and Physical Education', 'Art', 'Dance', 'Music', 'Drama', 'Literature', 'Geography', 'Business and Accounting Studies']
   };
 
   // Handle form input changes
@@ -185,7 +185,7 @@ const ReportData = () => {
       studentName: '',
       grade: '',
       class: '',
-      academicYear: new Date().getFullYear().toString(),
+      academicYear: '',
       teacherComments: ''
     });
     setSubjects([]);
