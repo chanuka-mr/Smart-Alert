@@ -1,0 +1,16 @@
+{
+  "name": "smart-alert",
+  "version": "1.0.0",
+  "main": "BACKEND/app.js",
+  "scripts": {
+    "start": "node BACKEND/app.js",
+    "dev": "nodemon BACKEND/app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
