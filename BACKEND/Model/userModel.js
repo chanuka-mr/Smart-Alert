@@ -115,6 +115,16 @@ const userSchema = new Schema({
         type: String,
         enum: ["Admin", "Teacher", "Parent", "ShuttleStaff"],
         required: true
+    },
+    // Parent-specific fields (optional during creation, will be filled later)
+    parentName: {
+        type: String
+    },
+    contactNumber: {
+        type: String
+    },
+    whatsappNumber: {
+        type: String
     }
 }, { timestamps: true });
 

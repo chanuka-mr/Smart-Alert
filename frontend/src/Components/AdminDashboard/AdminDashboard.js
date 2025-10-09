@@ -59,6 +59,15 @@ const AdminDashboard = () => {
   const [assignContext, setAssignContext] = useState({ role: '', user: null });
   const [assignForm, setAssignForm] = useState({ grade: '', class: 'A' });
 
+  // Parent details form states
+  const [showParentDetailsModal, setShowParentDetailsModal] = useState(false);
+  const [parentDetailsForm, setParentDetailsForm] = useState({
+    parentName: '',
+    contactNumber: '',
+    whatsappNumber: ''
+  });
+  const [parentDetailsErrors, setParentDetailsErrors] = useState({});
+
   // Shuttle Staff management state
   const [shuttleStaff, setShuttleStaff] = useState([]);
   const [filteredShuttleStaff, setFilteredShuttleStaff] = useState([]);
@@ -347,6 +356,10 @@ const AdminDashboard = () => {
       // If this was a new student assignment, refresh the students list
       if (assignContext.role === 'Parent') {
         await loadStudents();
+        // Show parent details form after academic assignment
+        setShowAssignModal(false);
+        setShowParentDetailsModal(true);
+        return;
       }
       
       setShowAssignModal(false);
@@ -586,6 +599,7 @@ const AdminDashboard = () => {
           method: 'PUT',
           body: studentForm
         });
+        console.log('Student updated successfully:', response);
         const updatedStudents = students.map(user => 
           user._id === editingStudent._id 
             ? { ...user, ...studentForm }
@@ -598,6 +612,7 @@ const AdminDashboard = () => {
       } else {
         // Add new user
         console.log('Creating new student with data:', studentForm);
+        console.log('Student form validation passed, sending to backend...');
         const response = await api('/users', {
           method: 'POST',
           body: studentForm
@@ -957,6 +972,70 @@ const AdminDashboard = () => {
       console.log('Direct API call result:', res);
     } catch (error) {
       console.error('Direct API call failed:', error);
+    }
+  };
+
+  // Parent details form handlers
+  const handleParentDetailsChange = (field, value) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setParentDetailsForm(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      setParentDetailsForm(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+    // Clear error when user starts typing
+    if (parentDetailsErrors[field]) {
+      setParentDetailsErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const handleSaveParentDetails = async (e) => {
+    e.preventDefault();
+    
+    // Validate form
+    const errors = {};
+    if (!parentDetailsForm.parentName.trim()) errors.parentName = 'Parent name is required';
+    if (!parentDetailsForm.contactNumber.trim()) errors.contactNumber = 'Contact number is required';
+    if (!parentDetailsForm.whatsappNumber.trim()) errors.whatsappNumber = 'WhatsApp number is required';
+
+    if (Object.keys(errors).length > 0) {
+      setParentDetailsErrors(errors);
+      return;
+    }
+
+    try {
+      // Update the parent user with additional details
+      await api(`/users/${assignContext.user.userID}`, {
+        method: 'PUT',
+        body: parentDetailsForm
+      });
+
+      setShowParentDetailsModal(false);
+      setParentDetailsForm({
+        parentName: '',
+        contactNumber: '',
+        whatsappNumber: ''
+      });
+      setParentDetailsErrors({});
+      
+      // Refresh students list
+      await loadStudents();
+      alert('Parent details saved successfully!');
+    } catch (error) {
+      console.error('Failed to save parent details:', error);
+      alert('Failed to save parent details. Please try again.');
     }
   };
 
@@ -2398,6 +2477,86 @@ const AdminDashboard = () => {
                 </button>
                 <button type="submit" className="modal-btn btn-submit">
                   {academicByUserId[assignContext.user?.userID] ? 'Update Assignment' : 'Assign Grade & Class'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Parent Details Modal */}
+      {showParentDetailsModal && (
+        <div className="modal" style={{ display: 'flex' }}>
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2 className="modal-title">Parent Details</h2>
+              <button 
+                className="close-modal" 
+                onClick={() => setShowParentDetailsModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveParentDetails}>
+              <div className="form-group">
+                <label htmlFor="parentName">Parent Name *</label>
+                <input
+                  type="text"
+                  id="parentName"
+                  value={parentDetailsForm.parentName}
+                  onChange={(e) => handleParentDetailsChange('parentName', e.target.value)}
+                  className={parentDetailsErrors.parentName ? 'error' : ''}
+                  placeholder="Enter parent name"
+                />
+                {parentDetailsErrors.parentName && (
+                  <span className="error-message">{parentDetailsErrors.parentName}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="contactNumber">Contact Number *</label>
+                <input
+                  type="tel"
+                  id="contactNumber"
+                  value={parentDetailsForm.contactNumber}
+                  onChange={(e) => handleParentDetailsChange('contactNumber', e.target.value)}
+                  className={parentDetailsErrors.contactNumber ? 'error' : ''}
+                  placeholder="Enter contact number"
+                />
+                {parentDetailsErrors.contactNumber && (
+                  <span className="error-message">{parentDetailsErrors.contactNumber}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="whatsappNumber">WhatsApp Number *</label>
+                <input
+                  type="tel"
+                  id="whatsappNumber"
+                  value={parentDetailsForm.whatsappNumber}
+                  onChange={(e) => handleParentDetailsChange('whatsappNumber', e.target.value)}
+                  className={parentDetailsErrors.whatsappNumber ? 'error' : ''}
+                  placeholder="Enter WhatsApp number"
+                />
+                {parentDetailsErrors.whatsappNumber && (
+                  <span className="error-message">{parentDetailsErrors.whatsappNumber}</span>
+                )}
+              </div>
+
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="modal-btn btn-cancel"
+                  onClick={() => setShowParentDetailsModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="modal-btn btn-submit"
+                >
+                  Save Parent Details
                 </button>
               </div>
             </form>

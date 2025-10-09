@@ -106,20 +106,28 @@ const getById = async (req, res) => {
 // Update user details
 const updateUser = async (req, res) => {
   try {
-    const { fullName, birthday, address, email, role } = req.body;
+    const updateData = req.body;
     const { id } = req.params;
     
-    // Try to find by MongoDB _id first, then by custom userID
-    let user = await User.findByIdAndUpdate(
-      id,
-      { fullName, birthday, address, email, role },
-      { new: true }
-    );
+    console.log('Updating user with ID:', id, 'Data:', updateData);
     
+    // Try to find by MongoDB _id first, then by custom userID
+    let user;
+    
+    // Check if id is a valid MongoDB ObjectId (24 hex characters)
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      user = await User.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true }
+      );
+    }
+    
+    // If not found by _id or id is not a valid ObjectId, try by userID
     if (!user) {
       user = await User.findOneAndUpdate(
         { userID: id },
-        { fullName, birthday, address, email, role },
+        updateData,
         { new: true }
       );
     }
@@ -137,7 +145,7 @@ const updateUser = async (req, res) => {
       user._id.toString(),
       user.fullName,
       `Updated ${user.role} user: ${user.fullName} (${user.userID})`,
-      { role: user.role, email: user.email, changes: { fullName, birthday, address, email, role } },
+      { role: user.role, email: user.email, changes: updateData },
       req
     );
     
