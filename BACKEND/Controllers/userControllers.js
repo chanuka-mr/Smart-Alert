@@ -31,14 +31,19 @@ const getAllUsers = async (req, res) => {
 // Add a new user (Admin only)
 const createUser = async (req, res) => {
   const { fullName, birthday, address, email, role } = req.body;
+  
+  console.log('Creating user with data:', { fullName, birthday, address, email, role });
+  console.log('Admin user:', req.user);
 
   try {
     // Generate automatic userID based on role
     const userID = await generateUserID(role);
+    console.log('Generated userID:', userID);
 
     // Create User profile
     const user = new User({ userID, fullName, birthday, address, email, role });
     await user.save();
+    console.log('User saved successfully:', user);
 
     // Create Login record (default password = email)
     const login = new Login({
@@ -48,10 +53,13 @@ const createUser = async (req, res) => {
       isVerified: false
     });
     await login.save();
+    console.log('Login record saved successfully');
 
     // Log activity - not finished yet
     const adminId = req.user?.id || 'unknown';
     const adminName = req.user?.name || 'Unknown Admin';
+    console.log('Logging activity for admin:', adminId, adminName);
+    
     await activityController.logActivity(
       adminId,
       adminName,
@@ -66,9 +74,10 @@ const createUser = async (req, res) => {
 
     return res.status(201).json({ user, login });
   } catch (err) {
-    console.log(err);
+    console.error('Error creating user:', err);
     if (err.name === 'ValidationError') {
       const errors = Object.values(err.errors).map(e => e.message);
+      console.error('Validation errors:', errors);
       return res.status(400).json({ message: "Validation failed", errors });
     }
     res.status(400).json({ message: "Unable to add user." });
@@ -78,7 +87,14 @@ const createUser = async (req, res) => {
 // Get user by ID
 const getById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const { id } = req.params;
+    
+    // Try to find by MongoDB _id first, then by custom userID
+    let user = await User.findById(id);
+    if (!user) {
+      user = await User.findOne({ userID: id });
+    }
+    
     if (!user) return res.status(404).json({ message: "User not found." });
     return res.status(200).json({ user });
   } catch (err) {
@@ -91,11 +107,23 @@ const getById = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { fullName, birthday, address, email, role } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
+    const { id } = req.params;
+    
+    // Try to find by MongoDB _id first, then by custom userID
+    let user = await User.findByIdAndUpdate(
+      id,
       { fullName, birthday, address, email, role },
       { new: true }
     );
+    
+    if (!user) {
+      user = await User.findOneAndUpdate(
+        { userID: id },
+        { fullName, birthday, address, email, role },
+        { new: true }
+      );
+    }
+    
     if (!user) return res.status(404).json({ message: "Unable to update user." });
     
     // Log activity - not finished yet
@@ -127,7 +155,14 @@ const updateUser = async (req, res) => {
 // Delete user
 const deleteUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    
+    // Try to find by MongoDB _id first, then by custom userID
+    let user = await User.findByIdAndDelete(id);
+    if (!user) {
+      user = await User.findOneAndDelete({ userID: id });
+    }
+    
     if (!user) return res.status(404).json({ message: "Unable to delete user." });
 
     // Also delete Login record

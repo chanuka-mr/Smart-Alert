@@ -7,10 +7,22 @@ export const API_BASE = (process.env.REACT_APP_API_BASE || "").replace(/\/+$/, "
 
 // --- token helpers ---
 export function setToken(token) {
-  try { localStorage.setItem("token", token); } catch {}
+  try { 
+    localStorage.setItem("token", token); 
+    console.log('Token stored:', token);
+  } catch (e) {
+    console.error('Failed to store token:', e);
+  }
 }
 export function getToken() {
-  try { return localStorage.getItem("token"); } catch { return null; }
+  try { 
+    const token = localStorage.getItem("token");
+    console.log('Token retrieved:', token ? 'present' : 'missing');
+    return token;
+  } catch (e) {
+    console.error('Failed to retrieve token:', e);
+    return null;
+  }
 }
 export function clearToken() {
   try { localStorage.removeItem("token"); } catch {}
@@ -44,6 +56,7 @@ export async function api(
   } = {}
 ) {
   const token = skipAuth ? null : getToken();
+  console.log('API call to:', path, 'with token:', token ? 'present' : 'missing');
   const url = buildUrl(path);
 
   const ctrl = new AbortController();

@@ -290,14 +290,22 @@ const AdminDashboard = () => {
   // Load academic assignments by role and index by userID
   const loadAcademicAssignments = async (role) => {
     try {
+      console.log(`Making API call to /academic?role=${encodeURIComponent(role)}`);
       const res = await api(`/academic?role=${encodeURIComponent(role)}`);
+      console.log('API response:', res);
       const list = res.academicRecords || [];
+      console.log(`Loading academic assignments for ${role}:`, list);
       setAcademicByUserId(prev => {
         const copy = { ...prev };
         list.forEach(r => {
-          const uid = typeof r.userID === 'object' ? r.userID.userID : r.userID;
-          copy[uid] = { grade: r.grade, class: r.class };
+          // The userID is now an object with userID, fullName, email, role properties
+          const uid = r.userID?.userID || r.userID;
+          console.log(`Processing academic record for userID: ${uid}, grade: ${r.grade}, class: ${r.class}`);
+          if (uid) {
+            copy[uid] = { grade: r.grade, class: r.class };
+          }
         });
+        console.log('Updated academicByUserId:', copy);
         return copy;
       });
     } catch (e) {
@@ -316,25 +324,37 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!assignForm.grade || !assignForm.class) return;
     try {
-      // If already assigned, we update; else we create
-      const hasExisting = !!academicByUserId[assignContext.user.userID];
-      if (hasExisting) {
-        await api(`/academic/${assignContext.user.userID}`, {
-          method: 'PUT',
-          body: { grade: Number(assignForm.grade), class: assignForm.class }
-        });
-      } else {
+      // Try to create assignment first, if it fails with "already assigned", then update
+      try {
         await api('/academic/assign', {
           method: 'POST',
           body: { userID: assignContext.user.userID, grade: Number(assignForm.grade), class: assignForm.class }
         });
+      } catch (createError) {
+        // If creation fails because already assigned, try to update instead
+        if (createError.message && createError.message.includes('already assigned')) {
+          await api(`/academic/${assignContext.user.userID}`, {
+            method: 'PUT',
+            body: { grade: Number(assignForm.grade), class: assignForm.class }
+          });
+        } else {
+          throw createError; // Re-throw if it's a different error
+        }
       }
       // Refresh cache for the role
       await loadAcademicAssignments(assignContext.role);
+      
+      // If this was a new student assignment, refresh the students list
+      if (assignContext.role === 'Parent') {
+        await loadStudents();
+      }
+      
       setShowAssignModal(false);
     } catch (error) {
       console.error('Failed to save academic assignment:', error);
-      alert('Failed to save assignment. Please try again.');
+      console.error('Error details:', error.message);
+      console.error('Error response:', error);
+      alert(`Failed to save assignment: ${error.message || 'Please try again.'}`);
     }
   };
 
@@ -511,6 +531,26 @@ const AdminDashboard = () => {
     }
   };
 
+  // Calculate grade based on age
+  const calculateGradeFromAge = (birthday) => {
+    if (!birthday) return null;
+    
+    const today = new Date();
+    const birthDate = new Date(birthday);
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+    
+    // Grade calculation: (current year - birth year) - 5 = grade
+    // This means: age 6 = grade 1, age 7 = grade 2, etc.
+    // Ages 6-16 correspond to grades 1-11
+    if (actualAge >= 6 && actualAge <= 16) {
+      return actualAge - 5; // 6 years old = grade 1, 7 years old = grade 2, etc.
+    }
+    
+    return null; // Invalid age range
+  };
+
   const handleSaveStudent = async (e) => {
     e.preventDefault();
     
@@ -541,6 +581,7 @@ const AdminDashboard = () => {
     try {
       if (editingStudent) {
         // Update existing user - use MongoDB _id for updates
+        console.log('Updating student with data:', studentForm);
         const response = await api(`/users/${editingStudent._id}`, {
           method: 'PUT',
           body: studentForm
@@ -551,20 +592,53 @@ const AdminDashboard = () => {
             : user
         );
         setStudents(updatedStudents);
+        setShowStudentModal(false);
+        setStudentFormErrors({});
+        filterAndSortStudents();
       } else {
         // Add new user
+        console.log('Creating new student with data:', studentForm);
         const response = await api('/users', {
           method: 'POST',
           body: studentForm
         });
+        console.log('Student created successfully:', response);
         setStudents([...students, response.user]);
+        
+        // For new students (parents), calculate grade and show assignment modal
+        if (studentForm.role === 'Parent') {
+          const calculatedGrade = calculateGradeFromAge(studentForm.birthday);
+          console.log('Calculated grade for birthday', studentForm.birthday, ':', calculatedGrade);
+          if (calculatedGrade) {
+            console.log('Opening assignment modal with grade:', calculatedGrade);
+            // Set up the assignment modal with calculated grade
+            setAssignContext({ 
+              role: 'Parent', 
+              user: response.user 
+            });
+            setAssignForm({ 
+              grade: calculatedGrade.toString(), 
+              class: 'A' 
+            });
+            setShowStudentModal(false);
+            setShowAssignModal(true);
+            setStudentFormErrors({});
+            console.log('Modal states set - showStudentModal: false, showAssignModal: true');
+            return;
+          } else {
+            console.log('No grade calculated, closing modal');
+          }
+        }
+        
+        setShowStudentModal(false);
+        setStudentFormErrors({});
+        filterAndSortStudents();
       }
-      
-      setShowStudentModal(false);
-      setStudentFormErrors({});
-      filterAndSortStudents();
     } catch (error) {
       console.error('Failed to save user:', error);
+      console.error('Error details:', error.message);
+      console.error('Error response:', error);
+      
       if (error.errors && Array.isArray(error.errors)) {
         // Handle backend validation errors
         const errorObj = {};
@@ -581,7 +655,7 @@ const AdminDashboard = () => {
         });
         setStudentFormErrors(errorObj);
       } else {
-        alert('Failed to save user. Please try again.');
+        alert(`Failed to save user: ${error.message || 'Please try again.'}`);
       }
     }
   };
@@ -800,8 +874,12 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab === 'students') {
       loadStudents();
+      // Also load academic assignments for students
+      loadAcademicAssignments('Parent');
     } else if (activeTab === 'teachers') {
       loadTeachers();
+      // Also load academic assignments for teachers
+      loadAcademicAssignments('Teacher');
     } else if (activeTab === 'assignments') {
       loadAcademicAssignments('Parent');
       loadAcademicAssignments('Teacher');
@@ -814,6 +892,12 @@ const AdminDashboard = () => {
       logDashboardAccess();
     }
   }, [activeTab]);
+
+  // Load academic data on component mount
+  useEffect(() => {
+    loadAcademicAssignments('Parent');
+    loadAcademicAssignments('Teacher');
+  }, []);
 
   // Log dashboard access
   const logDashboardAccess = async () => {
@@ -851,6 +935,31 @@ const AdminDashboard = () => {
     filterAndSortAdmins();
   }, [adminSearchTerm, adminSortBy, adminEmailStatusFilter, admins]);
 
+  // Debug modal state changes
+  useEffect(() => {
+    console.log('Modal state changed - showStudentModal:', showStudentModal, 'showAssignModal:', showAssignModal);
+    if (showAssignModal) {
+      console.log('Assignment modal context:', assignContext);
+      console.log('Assignment form:', assignForm);
+    }
+  }, [showStudentModal, showAssignModal, assignContext, assignForm]);
+
+  // Test function to manually load academic data
+  const testLoadAcademic = async () => {
+    console.log('Testing academic data load...');
+    console.log('Current academicByUserId before load:', academicByUserId);
+    await loadAcademicAssignments('Parent');
+    console.log('Current academicByUserId after load:', academicByUserId);
+    
+    // Also test the API directly
+    try {
+      const res = await api('/academic?role=Parent');
+      console.log('Direct API call result:', res);
+    } catch (error) {
+      console.error('Direct API call failed:', error);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
@@ -872,17 +981,17 @@ const AdminDashboard = () => {
       return { isValid: false, message: 'Birthday cannot be in the future' };
     }
     
-    // Check age limits for Parent role (students should be 5-17 years old)
+    // Check age limits for Parent role (students should be 6-16 years old for grades 1-11)
     if (role === 'Parent') {
       const age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
       const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
       
-      if (actualAge < 5) {
-        return { isValid: false, message: 'Student must be at least 5 years old' };
+      if (actualAge < 6) {
+        return { isValid: false, message: 'Student must be at least 6 years old' };
       }
-      if (actualAge > 17) {
-        return { isValid: false, message: 'Student cannot be older than 17 years' };
+      if (actualAge > 16) {
+        return { isValid: false, message: 'Student cannot be older than 16 years' };
       }
     }
     
@@ -1205,10 +1314,16 @@ const AdminDashboard = () => {
             {/* Page Header */}
             <div className="page-header">
               <h1 className="page-title">Student Management</h1>
-              <button className="btn btn-primary" onClick={handleAddStudent}>
-                <i className="fas fa-plus"></i>
-                <span>Add New Student</span>
-              </button>
+              <div className="header-buttons">
+                <button className="btn btn-info" onClick={testLoadAcademic}>
+                  <i className="fas fa-test-tube"></i>
+                  <span>Test Academic Data</span>
+                </button>
+                <button className="btn btn-primary" onClick={handleAddStudent}>
+                  <i className="fas fa-plus"></i>
+                  <span>Add New Student</span>
+                </button>
+              </div>
             </div>
             
             {/* Controls Section */}
@@ -2228,6 +2343,24 @@ const AdminDashboard = () => {
                 <label>User</label>
                 <input type="text" value={`${assignContext.user?.fullName || ''} (${assignContext.user?.userID || ''})`} readOnly />
               </div>
+              
+              {/* Show auto-calculated grade message for new students */}
+              {!academicByUserId[assignContext.user?.userID] && assignContext.role === 'Parent' && (
+                <div className="form-group" style={{ 
+                  backgroundColor: '#e8f5e8', 
+                  padding: '10px', 
+                  borderRadius: '5px', 
+                  marginBottom: '15px',
+                  border: '1px solid #4caf50'
+                }}>
+                  <p style={{ margin: 0, color: '#2e7d32', fontSize: '14px' }}>
+                    <i className="fas fa-info-circle" style={{ marginRight: '5px' }}></i>
+                    Grade {assignForm.grade} has been automatically calculated based on the student's age. 
+                    You can modify it if needed and select the class.
+                  </p>
+                </div>
+              )}
+              
               <div className="form-group">
                 <label htmlFor="assignGrade">Grade</label>
                 <select
@@ -2264,7 +2397,7 @@ const AdminDashboard = () => {
                   Cancel
                 </button>
                 <button type="submit" className="modal-btn btn-submit">
-                  Save
+                  {academicByUserId[assignContext.user?.userID] ? 'Update Assignment' : 'Assign Grade & Class'}
                 </button>
               </div>
             </form>

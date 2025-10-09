@@ -66,13 +66,13 @@ const userSchema = new Schema({
                     return false;
                 }
                 
-                // Check age limits for Parent role (students should be 5-17 years old)
+                // Check age limits for Parent role (students should be 6-16 years old for grades 1-11)
                 if (this.role === 'Parent') {
                     const age = today.getFullYear() - birthDate.getFullYear();
                     const monthDiff = today.getMonth() - birthDate.getMonth();
                     const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
                     
-                    return actualAge >= 5 && actualAge <= 17;
+                    return actualAge >= 6 && actualAge <= 16;
                 }
                 
                 return true;
@@ -90,11 +90,11 @@ const userSchema = new Schema({
                     const monthDiff = today.getMonth() - birthDate.getMonth();
                     const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
                     
-                    if (actualAge < 5) {
-                        return 'Student must be at least 5 years old';
+                    if (actualAge < 6) {
+                        return 'Student must be at least 6 years old';
                     }
-                    if (actualAge > 17) {
-                        return 'Student cannot be older than 17 years';
+                    if (actualAge > 16) {
+                        return 'Student cannot be older than 16 years';
                     }
                 }
                 
