@@ -53,6 +53,12 @@ const AdminDashboard = () => {
   });
   const [teacherFormErrors, setTeacherFormErrors] = useState({});
 
+  // Academic assignment state
+  const [academicByUserId, setAcademicByUserId] = useState({}); // { [userID]: { grade, class } }
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignContext, setAssignContext] = useState({ role: '', user: null });
+  const [assignForm, setAssignForm] = useState({ grade: '', class: 'A' });
+
   // Shuttle Staff management state
   const [shuttleStaff, setShuttleStaff] = useState([]);
   const [filteredShuttleStaff, setFilteredShuttleStaff] = useState([]);
@@ -175,6 +181,8 @@ const AdminDashboard = () => {
       const parentUsers = users.filter(user => user.role === 'Parent');
       setStudents(parentUsers);
       setFilteredStudents(parentUsers);
+      // Load academic info for parents
+      await loadAcademicAssignments('Parent');
     } catch (error) {
       console.error('Failed to load students:', error);
       // Fallback to empty array if API fails
@@ -191,6 +199,8 @@ const AdminDashboard = () => {
       const teacherUsers = users.filter(user => user.role === 'Teacher');
       setTeachers(teacherUsers);
       setFilteredTeachers(teacherUsers);
+      // Load academic info for teachers
+      await loadAcademicAssignments('Teacher');
     } catch (error) {
       console.error('Failed to load teachers:', error);
       setTeachers([]);
@@ -275,6 +285,57 @@ const AdminDashboard = () => {
     }
     
     setFilteredStudents(filtered);
+  };
+
+  // Load academic assignments by role and index by userID
+  const loadAcademicAssignments = async (role) => {
+    try {
+      const res = await api(`/academic?role=${encodeURIComponent(role)}`);
+      const list = res.academicRecords || [];
+      setAcademicByUserId(prev => {
+        const copy = { ...prev };
+        list.forEach(r => {
+          const uid = typeof r.userID === 'object' ? r.userID.userID : r.userID;
+          copy[uid] = { grade: r.grade, class: r.class };
+        });
+        return copy;
+      });
+    } catch (e) {
+      console.error('Failed to load academic assignments:', e);
+    }
+  };
+
+  const openAssignModal = (user, role) => {
+    const current = academicByUserId[user.userID] || { grade: '', class: 'A' };
+    setAssignContext({ role, user });
+    setAssignForm({ grade: current.grade || '', class: current.class || 'A' });
+    setShowAssignModal(true);
+  };
+
+  const saveAssignment = async (e) => {
+    e.preventDefault();
+    if (!assignForm.grade || !assignForm.class) return;
+    try {
+      // If already assigned, we update; else we create
+      const hasExisting = !!academicByUserId[assignContext.user.userID];
+      if (hasExisting) {
+        await api(`/academic/${assignContext.user.userID}`, {
+          method: 'PUT',
+          body: { grade: Number(assignForm.grade), class: assignForm.class }
+        });
+      } else {
+        await api('/academic/assign', {
+          method: 'POST',
+          body: { userID: assignContext.user.userID, grade: Number(assignForm.grade), class: assignForm.class }
+        });
+      }
+      // Refresh cache for the role
+      await loadAcademicAssignments(assignContext.role);
+      setShowAssignModal(false);
+    } catch (error) {
+      console.error('Failed to save academic assignment:', error);
+      alert('Failed to save assignment. Please try again.');
+    }
   };
 
   // Teacher filter and sort function
@@ -741,6 +802,9 @@ const AdminDashboard = () => {
       loadStudents();
     } else if (activeTab === 'teachers') {
       loadTeachers();
+    } else if (activeTab === 'assignments') {
+      loadAcademicAssignments('Parent');
+      loadAcademicAssignments('Teacher');
     } else if (activeTab === 'shuttle-staff') {
       loadShuttleStaff();
     } else if (activeTab === 'admins') {
@@ -915,6 +979,10 @@ const AdminDashboard = () => {
           <div className={`menu-item ${activeTab === 'admins' ? 'active' : ''}`} onClick={() => handleMenuClick('admins')}>
             <i className="fas fa-user-shield"></i>
             <span>Admins</span>
+          </div>
+          <div className={`menu-item ${activeTab === 'assignments' ? 'active' : ''}`} onClick={() => handleMenuClick('assignments')}>
+            <i className="fas fa-tasks"></i>
+            <span>Assignments</span>
           </div>
           <div className="menu-item" onClick={() => handleMenuClick('attendance')}>
             <i className="fas fa-clipboard-check"></i>
@@ -1220,16 +1288,18 @@ const AdminDashboard = () => {
             <div className="students-table-container">
               <table className="students-table">
                  <thead>
-                   <tr>
-                     <th>#</th>
-                     <th>Student</th>
-                     <th>Email</th>
-                     <th>Email Status</th>
-                     <th>Address</th>
-                     <th>Birthday</th>
-                     <th>Age</th>
-                     <th>Actions</th>
-                   </tr>
+                  <tr>
+                    <th>#</th>
+                    <th>Student</th>
+                    <th>Email</th>
+                    <th>Email Status</th>
+                    <th>Grade</th>
+                    <th>Class</th>
+                    <th>Address</th>
+                    <th>Birthday</th>
+                    <th>Age</th>
+                    <th>Actions</th>
+                  </tr>
                  </thead>
                 <tbody>
                   {filteredStudents.length === 0 ? (
@@ -1264,6 +1334,8 @@ const AdminDashboard = () => {
                               {user.isEmailVerified ? 'Verified' : 'Unverified'}
                             </span>
                           </td>
+                          <td>{academicByUserId[user.userID]?.grade ?? '-'}</td>
+                          <td>{academicByUserId[user.userID]?.class ?? '-'}</td>
                           <td>{searchTerm ? highlightText(user.address, searchTerm) : user.address}</td>
                           <td>{birthday}</td>
                           <td>{age} years old</td>
@@ -1274,6 +1346,12 @@ const AdminDashboard = () => {
                                 onClick={() => handleEditStudent(user)}
                               >
                                 <i className="fas fa-edit"></i> Edit
+                              </button>
+                              <button
+                                className="action-btn"
+                                onClick={() => openAssignModal(user, 'Parent')}
+                              >
+                                <i className="fas fa-tasks"></i> {academicByUserId[user.userID] ? 'Edit Assignment' : 'Assign'}
                               </button>
                               <button 
                                 className="action-btn delete-btn" 
@@ -1387,6 +1465,8 @@ const AdminDashboard = () => {
                     <th>Teacher</th>
                     <th>Email</th>
                     <th>Email Status</th>
+                    <th>Grade</th>
+                    <th>Class</th>
                     <th>Address</th>
                     <th>Birthday</th>
                     <th>Age</th>
@@ -1426,6 +1506,8 @@ const AdminDashboard = () => {
                               {user.isEmailVerified ? 'Verified' : 'Unverified'}
                             </span>
                           </td>
+                          <td>{academicByUserId[user.userID]?.grade ?? '-'}</td>
+                          <td>{academicByUserId[user.userID]?.class ?? '-'}</td>
                           <td>{teacherSearchTerm ? highlightText(user.address, teacherSearchTerm) : user.address}</td>
                           <td>{birthday}</td>
                           <td>{age} years old</td>
@@ -1436,6 +1518,12 @@ const AdminDashboard = () => {
                                 onClick={() => handleEditTeacher(user)}
                               >
                                 <i className="fas fa-edit"></i> Edit
+                              </button>
+                              <button
+                                className="action-btn"
+                                onClick={() => openAssignModal(user, 'Teacher')}
+                              >
+                                <i className="fas fa-tasks"></i> {academicByUserId[user.userID] ? 'Edit Assignment' : 'Assign'}
                               </button>
                               <button 
                                 className="action-btn delete-btn" 
@@ -2113,6 +2201,70 @@ const AdminDashboard = () => {
                   className="modal-btn btn-submit"
                 >
                   {editingAdmin ? 'Update Admin' : 'Save Admin'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Grade/Class Modal */}
+      {showAssignModal && (
+        <div className="modal" style={{ display: 'flex' }}>
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2 className="modal-title">
+                {academicByUserId[assignContext.user?.userID] ? 'Edit Assignment' : 'Assign Grade & Class'}
+              </h2>
+              <button 
+                className="close-modal" 
+                onClick={() => setShowAssignModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={saveAssignment}>
+              <div className="form-group">
+                <label>User</label>
+                <input type="text" value={`${assignContext.user?.fullName || ''} (${assignContext.user?.userID || ''})`} readOnly />
+              </div>
+              <div className="form-group">
+                <label htmlFor="assignGrade">Grade</label>
+                <select
+                  id="assignGrade"
+                  value={assignForm.grade}
+                  onChange={(e) => setAssignForm({ ...assignForm, grade: e.target.value })}
+                  required
+                >
+                  <option value="" disabled>Select Grade</option>
+                  {Array.from({ length: 11 }, (_, i) => i + 1).map(g => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="assignClass">Class</label>
+                <select
+                  id="assignClass"
+                  value={assignForm.class}
+                  onChange={(e) => setAssignForm({ ...assignForm, class: e.target.value })}
+                  required
+                >
+                  {['A','B','C'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="modal-btn btn-cancel" 
+                  onClick={() => setShowAssignModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="modal-btn btn-submit">
+                  Save
                 </button>
               </div>
             </form>
