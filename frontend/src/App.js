@@ -23,6 +23,7 @@ import ReportCardView from './Components/ReportCardView/ReportCardView';
 import ProgressAnalysis from './Components/ProgressAnalysis/ProgressAnalysis';
 import ReportData from './Components/ReportData/ReportData';
 import TimeTableDataEntry from './Components/TimeTableHallArrangementData/TimeTableDataEntry';
+import ShuttleServices from './Components/ShuttleServices/ShuttleServices';
 import { api } from "./utils/api";
 
 // ✅ Enhanced guard: checks token in localStorage and validates it
@@ -313,6 +314,16 @@ export default function App() {
           element={
             <RequireAuth>
               <TimeTableDataEntry />
+            </RequireAuth>
+          } 
+        />
+
+        {/* Shuttle Services Management Routes */}
+        <Route 
+          path="/shuttle-services" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
             </RequireAuth>
           } 
         />

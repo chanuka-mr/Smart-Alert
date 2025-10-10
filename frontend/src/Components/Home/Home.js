@@ -233,6 +233,10 @@ const Home = () => {
                     <i className="fas fa-bullhorn"></i>
                     <span>Notices</span>
                   </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/shuttle-services'); }}>
+                    <i className="fas fa-bus"></i>
+                    <span>Shuttle Services</span>
+                  </a>
                   <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/timetable'); }}>
                     <i className="fas fa-calendar-alt"></i>
                     <span>Timetable</span>

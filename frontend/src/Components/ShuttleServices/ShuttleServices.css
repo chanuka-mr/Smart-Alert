@@ -1,0 +1,16 @@
+.shuttle-services-container {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.shuttle-services-content {
+  padding: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .shuttle-services-content {
+    padding: 10px;
+  }
+}
