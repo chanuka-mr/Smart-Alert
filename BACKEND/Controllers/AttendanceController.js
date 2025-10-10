@@ -1,7 +1,7 @@
 const Attendance = require("../Model/AttendanceModel");
 const Student = require("../Model/StudentModel");
 
-// check if string looks like a Mongo ObjectId
+// Helper: check if string looks like a Mongo ObjectId
 const looksLikeObjectId = (s) => typeof s === "string" && s.match(/^[0-9a-fA-F]{24}$/);
 
 // Normalize any Date to midnight (local time)
@@ -11,7 +11,7 @@ const normalizeToMidnight = (d) => {
   return dt;
 };
 
-// Get all attendance
+// Get all attendance (sorted newest first)
 const getAllAttendance = async (req, res) => {
   try {
     const records = await Attendance.find().populate("student").sort({ date: -1, _id: -1 });
@@ -129,11 +129,6 @@ const deleteAttendance = async (req, res) => {
 const twilio = require("twilio");
 
 const sendWhatsApp = async ({ to, body }) => {
-  // Check if Twilio is configured
-  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_WHATSAPP_FROM) {
-    throw new Error("Twilio WhatsApp is not configured. Please set up your Twilio credentials in .env file");
-  }
-
   const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
   return client.messages.create({
     from: process.env.TWILIO_WHATSAPP_FROM,
@@ -163,7 +158,8 @@ const normalizeParentNumber = (raw) => {
 };
 
 // POST /attendance/notify-parents
- notifyParentsForAbsents = async (req, res) => {
+// Body: { items: [{ studentId, status, date }] }
+const notifyParentsForAbsents = async (req, res) => {
   const { items } = req.body;
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ message: "items required" });
@@ -181,10 +177,7 @@ const normalizeParentNumber = (raw) => {
         if (!student) throw new Error("Student not found");
         
         const phone = normalizeParentNumber(student.parentPhoneNum);
-        if (!phone) throw new Error(`Invalid parent phone number: ${student.parentPhoneNum}`);
-        
-        // Log the phone number being used for debugging
-        console.log(`Attempting to send WhatsApp to: ${phone} for student: ${student.name}`);
+        if (!phone) throw new Error("Invalid parent phone number");
 
         const day = new Date(i.date || Date.now());
         const formattedDate = new Date(day.getTime() - (day.getTimezoneOffset() * 60000))
@@ -231,5 +224,4 @@ module.exports = {
   deleteAttendance,
   notifyParentsForAbsents
 };
-
 

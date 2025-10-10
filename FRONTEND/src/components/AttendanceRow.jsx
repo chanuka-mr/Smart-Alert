@@ -1,10 +1,7 @@
-// Displays individual student row in attendance table with status dropdown
-
 import React from "react";
 import { STATUS_OPTIONS } from "../utils/statusOptions";
 
 const AttendanceRow = ({ student, row, onChange, disabled }) => {
-  // Helper function to update attendance status
   const set = (key) => (e) =>
     onChange(student._id, {
       ...row,
@@ -17,7 +14,6 @@ const AttendanceRow = ({ student, row, onChange, disabled }) => {
       <td><span className="badge">{student.std_index}</span></td>
       <td>{student.section}</td>
       <td>
-        
         <select value={row.status} onChange={set("status")} disabled={disabled}>
           {STATUS_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>

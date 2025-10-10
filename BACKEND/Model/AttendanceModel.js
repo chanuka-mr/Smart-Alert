@@ -1,48 +1,37 @@
-const mongoose = require("mongoose");  
-const Schema = mongoose.Schema;        
-
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 const attendanceSchema = new Schema({
- 
   student: {
-    type: mongoose.Schema.Types.ObjectId,  
-    ref: "StudentModel",                  
-    required: true                      
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "StudentModel",
+    required: true
   },
-  
-  
+  // IMPORTANT: store date normalized to midnight to ensure uniqueness works
   date: {
     type: Date,
-    required: true  
+    required: true
   },
-  
-  
   status: {
     type: String,
-    enum: ["Present", "Absent", "Late", "Excused"],  
-    default: "Present"  
+    enum: ["Present", "Absent", "Late", "Excused"],
+    default: "Present"
   },
-  
-  // Optional justification for absence or lateness
   justification: {
     type: String,
-    default: ""  
+    default: ""
   },
-  
-  // Flag to track if parent was notified about this attendance record
   notifiedParent: {
     type: Boolean,
-    default: false  
+    default: false
   },
-  
-  // Timestamp when the attendance record was created
   createdAt: {
     type: Date,
-    default: Date.now  // Automatically set to current date/time
+    default: Date.now
   }
 });
 
-
-// Prevents duplicate attendance entries
+// Enforce one record per student per day
 attendanceSchema.index({ student: 1, date: 1 }, { unique: true });
+
 module.exports = mongoose.model("AttendanceModel", attendanceSchema);
