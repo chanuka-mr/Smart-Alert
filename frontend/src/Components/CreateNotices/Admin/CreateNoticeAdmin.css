@@ -7,6 +7,7 @@
   border-radius: 8px; /* Rounded corners */
   box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* Subtle shadow for depth */
   padding: 32px 24px; /* Inner spacing */
+  border: 1.5px solid #1976d2;
 }
 
 /* Form layout: vertical stacking of fields */

@@ -36,6 +36,13 @@ const DirectMessages = ({ userType }) => {
     return (now - sent) <= 24 * 60 * 60 * 1000; // 24 hours
   }
 
+  // Show hover actions/drop menu only within 2 hours of sending
+  function canShowActionsMenu(msg) {
+    const now = Date.now();
+    const sent = new Date(msg.sentAt || msg.createdAt).getTime();
+    return (now - sent) <= 2 * 60 * 60 * 1000; // 2 hours
+  }
+
   // Format date for display
   function formatDate(dateStr) {
     const d = new Date(dateStr);
@@ -150,7 +157,7 @@ const DirectMessages = ({ userType }) => {
                           ? 'You'
                           : (userType === 'parent' ? 'Teacher' : 'Parent')}
                       </span>
-                      {((userType === 'parent' && m.fromUserId === DEMO_PARENT_ID) || (userType === 'teacher' && m.fromUserId === DEMO_TEACHER_ID)) && (
+                      {((userType === 'parent' && m.fromUserId === DEMO_PARENT_ID) || (userType === 'teacher' && m.fromUserId === DEMO_TEACHER_ID)) && canShowActionsMenu(m) && (
                         <button
                           className="dm-more-btn"
                           style={{ background: 'none', border: 'none', color: '#1976d2', fontSize: '1em', cursor: 'pointer', padding: 0, display: 'none', verticalAlign: 'middle' }}
@@ -169,7 +176,7 @@ const DirectMessages = ({ userType }) => {
                       <>
                         <span className="dm-text">{m.messageContent}</span>
                         <span className="dm-time" style={{ display: 'block', marginTop: 2, textAlign: 'right', color: '#888', fontSize: '0.95em' }}>{formatTime(m.sentAt || m.createdAt)}</span>
-                        {((userType === 'parent' && m.fromUserId === DEMO_PARENT_ID) || (userType === 'teacher' && m.fromUserId === DEMO_TEACHER_ID)) && showActionsId === m._id && (
+                        {((userType === 'parent' && m.fromUserId === DEMO_PARENT_ID) || (userType === 'teacher' && m.fromUserId === DEMO_TEACHER_ID)) && canShowActionsMenu(m) && showActionsId === m._id && (
                           <div
                             className="dm-actions-hover"
                             style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '8px', marginTop: 8 }}

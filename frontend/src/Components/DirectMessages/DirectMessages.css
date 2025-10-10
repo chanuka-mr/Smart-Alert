@@ -64,6 +64,7 @@
   flex-direction: column;
   height: 600px;
   position: relative;
+  border: 1.5px solid #1976d2;
 }
 
 /* Scrollable chat area */

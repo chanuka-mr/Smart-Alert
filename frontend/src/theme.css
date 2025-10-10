@@ -6,8 +6,8 @@ body, html {
   padding: 0;
   box-sizing: border-box;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%);
-  color: #333;
+  background: transparent;
+  color: #000000;
   min-height: 100vh;
 }
 
@@ -42,6 +42,7 @@ body, html {
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
   margin-bottom: 24px;
+  border: 1.5px solid #1976d2;
 }
 
 .section-title {
