@@ -90,10 +90,9 @@ export default function OtpVerification() {
     }
     setVerifying(true);
     try {
-      const res = await post("/auth/verify-otp", { userID, otp: enteredOtp });
+      await post("/auth/verify-otp", { userID, otp: enteredOtp });
       setSuccess("OTP Verified Successfully!");
       setError("");
-      // Optionally, redirect or store token: localStorage.setItem("token", res.token);
     } catch (err) {
       setError(err.message || "Verification failed");
       setSuccess("");

@@ -9,6 +9,7 @@ export default function Profile() {
   const { userId } = useParams();
   const location = useLocation();
   const [user, setUser] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [viewingUser, setViewingUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [academicInfo, setAcademicInfo] = useState(null);

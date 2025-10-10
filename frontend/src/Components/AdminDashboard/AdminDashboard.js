@@ -51,6 +51,7 @@ const AdminDashboard = () => {
     email: '',
     role: 'Teacher'
   });
+  // eslint-disable-next-line no-unused-vars
   const [teacherFormErrors, setTeacherFormErrors] = useState({});
 
   // Academic assignment state
@@ -83,6 +84,7 @@ const AdminDashboard = () => {
     email: '',
     role: 'ShuttleStaff'
   });
+  // eslint-disable-next-line no-unused-vars
   const [shuttleFormErrors, setShuttleFormErrors] = useState({});
 
   // Admin management state
@@ -100,6 +102,7 @@ const AdminDashboard = () => {
     email: '',
     role: 'Admin'
   });
+  // eslint-disable-next-line no-unused-vars
   const [adminFormErrors, setAdminFormErrors] = useState({});
 
   // Load user data and dashboard statistics
