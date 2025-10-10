@@ -187,9 +187,6 @@ const parentSchema = new Schema({
     }
 }, { timestamps: true });
 
-// Index for efficient queries
-parentSchema.index({ userID: 1 });
-
 // Export all models
 module.exports = {
     User: mongoose.model("User", userSchema),

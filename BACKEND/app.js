@@ -14,7 +14,11 @@ const parentRoutes = require("./Routes/parentRoutes");
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:3000" }));
+// Allow multiple origins for CORS
+app.use(cors({ 
+  origin: ["http://localhost:3000", "http://localhost:3001"],
+  credentials: true
+}));
 
 // Middleware
 app.use(express.json()); // parse JSON bodies
