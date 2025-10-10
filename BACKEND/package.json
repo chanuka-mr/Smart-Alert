@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "itp",
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
@@ -10,8 +10,15 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "mongoose": "^8.18.0",
-    "nodemon": "^3.1.10"
+    "jspdf": "^2.5.2",
+    "mongoose": "^8.16.3",
+    "multer": "^2.0.2",
+    "nodemon": "^3.1.10",
+    "pdfkit": "^0.17.2",
+    "puppeteer": "^21.11.0",
+    "twilio": "^5.9.0"
   }
 }
