@@ -1016,10 +1016,13 @@ const AdminDashboard = () => {
     }
 
     try {
-      // Update the parent user with additional details
-      await api(`/users/${assignContext.user.userID}`, {
-        method: 'PUT',
-        body: parentDetailsForm
+      // Create parent details using the new parent API
+      await api('/parents', {
+        method: 'POST',
+        body: {
+          userID: assignContext.user.userID,
+          ...parentDetailsForm
+        }
       });
 
       setShowParentDetailsModal(false);

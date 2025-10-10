@@ -12,6 +12,7 @@ export default function Profile() {
   const [viewingUser, setViewingUser] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [academicInfo, setAcademicInfo] = useState(null);
+  const [parentInfo, setParentInfo] = useState(null);
   const [info, setInfo] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAcademicModal, setShowAcademicModal] = useState(false);
@@ -56,6 +57,18 @@ export default function Profile() {
             } catch (e) {
               console.log("No academic record found for user");
             }
+
+            // Load parent details for this user
+            if (targetUser.role === 'Parent') {
+              try {
+                const parentResponse = await api(`/parents/${targetUser.userID}`);
+                if (parentResponse.parentDetails) {
+                  setParentInfo(parentResponse.parentDetails);
+                }
+              } catch (e) {
+                console.log("No parent details found for user");
+              }
+            }
           } else {
             setInfo("User not found");
           }
@@ -75,6 +88,18 @@ export default function Profile() {
             }
           } catch (e) {
             console.log("No academic record found for current user");
+          }
+
+          // Load parent details for current user
+          if (currentUserData.role === 'Parent') {
+            try {
+              const parentResponse = await api(`/parents/${currentUserData.userID}`);
+              if (parentResponse.parentDetails) {
+                setParentInfo(parentResponse.parentDetails);
+              }
+            } catch (e) {
+              console.log("No parent details found for current user");
+            }
           }
         }
         
@@ -135,9 +160,9 @@ export default function Profile() {
 
   const openParentModal = () => {
     setParentForm({
-      parentName: user.parentName || '',
-      contactNumber: user.contactNumber || '',
-      whatsappNumber: user.whatsappNumber || ''
+      parentName: parentInfo?.parentName || '',
+      contactNumber: parentInfo?.contactNumber || '',
+      whatsappNumber: parentInfo?.whatsappNumber || ''
     });
     setShowParentModal(true);
     setErrors({});
@@ -208,13 +233,26 @@ export default function Profile() {
 
     try {
       const targetUserId = userId || user.userID;
-      await api(`/users/${targetUserId}`, {
-        method: 'PUT',
-        body: parentForm
-      });
+      
+      // Try to create new parent details first
+      try {
+        await api('/parents', {
+          method: 'POST',
+          body: {
+            userID: targetUserId,
+            ...parentForm
+          }
+        });
+      } catch (createError) {
+        // If creation fails, try to update existing record
+        await api(`/parents/${targetUserId}`, {
+          method: 'PUT',
+          body: parentForm
+        });
+      }
 
-      // Update local user state
-      setUser({ ...user, ...parentForm });
+      // Update local parent state
+      setParentInfo({ ...parentInfo, ...parentForm });
       setShowParentModal(false);
       setInfo("Parent details updated successfully");
       setTimeout(() => setInfo(""), 3000);
@@ -366,17 +404,17 @@ export default function Profile() {
             <div className="info-grid">
               <div className="info-item">
                 <div className="info-label">Parent Name</div>
-                <div className="info-value">{data.parentName || "Not Provided"}</div>
+                <div className="info-value">{parentInfo?.parentName || "Not Provided"}</div>
               </div>
 
               <div className="info-item">
                 <div className="info-label">Contact Number</div>
-                <div className="info-value">{data.contactNumber || "Not Provided"}</div>
+                <div className="info-value">{parentInfo?.contactNumber || "Not Provided"}</div>
               </div>
 
               <div className="info-item">
                 <div className="info-label">WhatsApp Number</div>
-                <div className="info-value">{data.whatsappNumber || "Not Provided"}</div>
+                <div className="info-value">{parentInfo?.whatsappNumber || "Not Provided"}</div>
               </div>
             </div>
           </section>

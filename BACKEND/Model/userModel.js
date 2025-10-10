@@ -115,16 +115,6 @@ const userSchema = new Schema({
         type: String,
         enum: ["Admin", "Teacher", "Parent", "ShuttleStaff"],
         required: true
-    },
-    // Parent-specific fields (optional during creation, will be filled later)
-    parentName: {
-        type: String
-    },
-    contactNumber: {
-        type: String
-    },
-    whatsappNumber: {
-        type: String
     }
 }, { timestamps: true });
 
@@ -175,9 +165,35 @@ const academicSchema = new Schema({
 // Index for efficient queries
 academicSchema.index({ grade: 1, class: 1 });
 
+// Parent Details Schema
+const parentSchema = new Schema({
+    userID: {
+        type: String,
+        required: true,
+        unique: true,
+        ref: 'User'
+    },
+    parentName: {
+        type: String,
+        required: true
+    },
+    contactNumber: {
+        type: String,
+        required: true
+    },
+    whatsappNumber: {
+        type: String,
+        required: true
+    }
+}, { timestamps: true });
+
+// Index for efficient queries
+parentSchema.index({ userID: 1 });
+
 // Export all models
 module.exports = {
     User: mongoose.model("User", userSchema),
     Login: mongoose.model("Login", loginSchema),
-    Academic: mongoose.model("Academic", academicSchema)
+    Academic: mongoose.model("Academic", academicSchema),
+    Parent: mongoose.model("Parent", parentSchema)
 };

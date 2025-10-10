@@ -10,6 +10,7 @@ const authRoutes = require("./Routes/authRoutes");
 const featureRoutes = require("./Routes/featureRoutes");
 const academicRoutes = require("./Routes/academicRoutes");
 const activityRoutes = require("./Routes/activityRoutes");
+const parentRoutes = require("./Routes/parentRoutes");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/auth", authRoutes);  // login/otp routes
 app.use("/features", featureRoutes); // features CRUD routes
 app.use("/academic", academicRoutes); // academic information routes
 app.use("/activities", activityRoutes); // activity logging routes
+app.use("/parents", parentRoutes); // parent details routes
 
 // Read from .env with safe fallbacks
 const PORT = process.env.PORT || 5000;
