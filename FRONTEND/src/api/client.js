@@ -22,3 +22,9 @@ export const getAttendanceByStudent = (idOrIndex) => api.get(`/attendance/${idOr
 
 // Notify parents for Absent/Late (WhatsApp)
 export const notifyParentsForAbsents = (items) => api.post("/attendance/notify-parents", { items });
+
+// Reports
+export const generateAttendanceReport = (params) => api.get("/reports/attendance", { params, responseType: 'blob' });
+export const generateMonthlyReport = (params) => api.get("/reports/monthly", { params, responseType: 'blob' });
+export const generateStudentReport = (params) => api.get("/reports/student", { params, responseType: 'blob' });
+export const getAvailableSections = () => api.get("/reports/sections");

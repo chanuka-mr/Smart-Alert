@@ -15,7 +15,9 @@ const AttendanceRecords = () => {
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [monthFilter, setMonthFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [sectionFilter, setSectionFilter] = useState("");
 
   // Notification states
   const [notifying, setNotifying] = useState(false);
@@ -31,7 +33,9 @@ const AttendanceRecords = () => {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { 
+    load(); 
+  }, []);
 
   // Filter records based on search criteria
   const filteredRecords = useMemo(() => {
@@ -53,13 +57,25 @@ const AttendanceRecords = () => {
       );
     }
 
+    // Filter by month
+    if (monthFilter) {
+      filtered = filtered.filter(record => 
+        dayjs(record.date).format("YYYY-MM") === monthFilter
+      );
+    }
+
     // Filter by status
     if (statusFilter) {
       filtered = filtered.filter(record => record.status === statusFilter);
     }
 
+    // Filter by section
+    if (sectionFilter) {
+      filtered = filtered.filter(record => record.student?.section === sectionFilter);
+    }
+
     return filtered;
-  }, [records, searchTerm, dateFilter, statusFilter]);
+  }, [records, searchTerm, dateFilter, monthFilter, statusFilter, sectionFilter]);
 
   // Get current date records that are absent/late and not yet notified
   const currentDateAbsentLateRecords = useMemo(() => {
@@ -104,10 +120,195 @@ const AttendanceRecords = () => {
   const clearFilters = () => {
     setSearchTerm("");
     setDateFilter("");
+    setMonthFilter("");
     setStatusFilter("");
+    setSectionFilter("");
   };
 
-  const hasActiveFilters = searchTerm || dateFilter || statusFilter;
+  const hasActiveFilters = searchTerm || dateFilter || monthFilter || statusFilter || sectionFilter;
+
+  // Generate text report from data
+  const generateTextReport = (data) => {
+    let report = '';
+    report += '='.repeat(50) + '\n';
+    report += `           ${data.title}\n`;
+    report += '='.repeat(50) + '\n';
+    report += `Generated on: ${data.generatedOn}\n\n`;
+    
+    // Filters applied
+    if (data.filters && Object.keys(data.filters).some(key => data.filters[key])) {
+      report += 'Filters Applied:\n';
+      report += '-'.repeat(20) + '\n';
+      if (data.filters.searchTerm) report += `Search: ${data.filters.searchTerm}\n`;
+      if (data.filters.dateFilter) report += `Date: ${data.filters.dateFilter}\n`;
+      if (data.filters.monthFilter) report += `Month: ${data.filters.monthFilter}\n`;
+      if (data.filters.statusFilter) report += `Status: ${data.filters.statusFilter}\n`;
+      if (data.filters.sectionFilter) report += `Section: ${data.filters.sectionFilter}\n`;
+      report += '\n';
+    }
+    
+    // Statistics
+    report += 'Statistics:\n';
+    report += '-'.repeat(20) + '\n';
+    report += `Total Records: ${data.statistics.totalRecords}\n`;
+    report += `Present: ${data.statistics.present}\n`;
+    report += `Absent: ${data.statistics.absent}\n`;
+    report += `Late: ${data.statistics.late}\n`;
+    report += `Excused: ${data.statistics.excused}\n`;
+    report += `Attendance Rate: ${data.statistics.attendancePercentage}%\n\n`;
+    
+    // Records
+    report += 'Records:\n';
+    report += '-'.repeat(20) + '\n';
+    data.records.forEach((record, index) => {
+      report += `${index + 1}. ${record.student?.name || 'Unknown'} (${record.student?.std_index || 'N/A'})\n`;
+      report += `   Section: ${record.student?.section || 'N/A'}\n`;
+      report += `   Status: ${record.status}\n`;
+      report += `   Date: ${new Date(record.date).toLocaleDateString()}\n`;
+      report += '\n';
+    });
+    
+    report += '='.repeat(50) + '\n';
+    report += 'End of Report\n';
+    report += '='.repeat(50) + '\n';
+    
+    return report;
+  };
+
+  // Download functionality
+  const downloadReport = async () => {
+    try {
+      // Check if there are records to download
+      if (filteredRecords.length === 0) {
+        alert('No records to download. Please adjust your filters or add some attendance records first.');
+        return;
+      }
+
+      console.log('Downloading report with:', {
+        recordCount: filteredRecords.length,
+        filters: {
+          searchTerm: searchTerm || null,
+          dateFilter: dateFilter || null,
+          monthFilter: monthFilter || null,
+          statusFilter: statusFilter || null,
+          sectionFilter: sectionFilter || null,
+        }
+      });
+
+      const response = await fetch('http://localhost:5002/reports/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filters: {
+            searchTerm: searchTerm || null,
+            dateFilter: dateFilter || null,
+            monthFilter: monthFilter || null,
+            statusFilter: statusFilter || null,
+            sectionFilter: sectionFilter || null,
+          },
+          records: filteredRecords
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server error: ${response.status}`);
+      }
+
+      // Check if response is a PDF
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/pdf')) {
+        const blob = await response.blob();
+        
+        // Check if blob is empty
+        if (blob.size === 0) {
+          throw new Error('Received empty PDF file. Please try again.');
+        }
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        
+        // Generate filename based on filters
+        let filename = 'attendance_report';
+        if (monthFilter) {
+          filename = `attendance_report_${monthFilter}`;
+        } else if (dateFilter) {
+          filename = `attendance_report_${dateFilter}`;
+        } else if (hasActiveFilters) {
+          filename = 'attendance_report_filtered';
+        }
+        filename += '.pdf';
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        console.log('PDF downloaded successfully:', filename);
+        return;
+      }
+
+      // If it's JSON (fallback)
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        console.log('Received JSON response (fallback):', data);
+        
+        // Create a simple text report as fallback
+        const reportText = generateTextReport(data.data);
+        
+        // Create and download text file
+        const blob = new Blob([reportText], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        
+        // Generate filename based on filters
+        let filename = 'attendance_report';
+        if (monthFilter) {
+          filename = `attendance_report_${monthFilter}`;
+        } else if (dateFilter) {
+          filename = `attendance_report_${dateFilter}`;
+        } else if (hasActiveFilters) {
+          filename = 'attendance_report_filtered';
+        }
+        filename += '.txt';
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        console.log('Text report downloaded successfully (fallback):', filename);
+        return;
+      }
+
+      // If neither PDF nor JSON
+      const errorText = await response.text();
+      console.error('Unexpected response type:', contentType, errorText);
+      throw new Error('Server returned unexpected response type. Please check server logs.');
+    } catch (error) {
+      console.error('Download error:', error);
+      alert(`Failed to download report: ${error.message}\n\nPlease check that the backend server is running and try again.`);
+    }
+  };
+
+  // Get button text based on filters
+  const getDownloadButtonText = () => {
+    if (monthFilter) {
+      return `Download ${dayjs(monthFilter).format('MMMM YYYY')} Report`;
+    } else if (hasActiveFilters) {
+      return 'Download Selected Range Report';
+    } else {
+      return 'Download Current Report';
+    }
+  };
 
   // Notify parents for current date absent/late students
   const notifyParentsForCurrentDate = async () => {
@@ -169,6 +370,7 @@ const AttendanceRecords = () => {
     }
   };
 
+
   return (
     <Layout>
       <div style={{ textAlign: "center", marginTop: 12 }}>
@@ -178,7 +380,12 @@ const AttendanceRecords = () => {
       {/* Search and Filter Section */}
       <div className="panel" style={{ marginTop: 16, marginBottom: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
+            gap: 12, 
+            alignItems: "end" 
+          }}>
             {/* Search by Name/Index */}
             <div className="field" style={{ flex: 1, minWidth: 200 }}>
               <label>Search by Name or Index</label>
@@ -202,6 +409,17 @@ const AttendanceRecords = () => {
               />
             </div>
 
+            {/* Filter by Month */}
+            <div className="field" style={{ flex: 1, minWidth: 150 }}>
+              <label>Filter by Month</label>
+              <input
+                type="month"
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                style={{ marginBottom: 0 }}
+              />
+            </div>
+
             {/* Filter by Status */}
             <div className="field" style={{ flex: 1, minWidth: 150 }}>
               <label>Filter by Status</label>
@@ -219,17 +437,71 @@ const AttendanceRecords = () => {
               </select>
             </div>
 
-            {/* Clear Filters Button */}
-            {hasActiveFilters && (
+            {/* Filter by Section */}
+            <div className="field" style={{ flex: 1, minWidth: 150 }}>
+              <label>Filter by Section</label>
+              <select
+                value={sectionFilter}
+                onChange={(e) => setSectionFilter(e.target.value)}
+                style={{ marginBottom: 0 }}
+              >
+                <option value="">All Sections</option>
+                <option value="1A">1A</option>
+                <option value="1B">1B</option>
+                <option value="2A">2A</option>
+                <option value="2B">2B</option>
+                <option value="12A">12A</option>
+                <option value="11C">11C</option>
+              </select>
+            </div>
+
+            {/* Download Report Button */}
+            <div style={{ display: "flex", alignItems: "end" }}>
+              <button
+                onClick={downloadReport}
+                className="success"
+                style={{
+                  padding: "8px 16px",
+                  fontSize: "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  height: "fit-content",
+                  whiteSpace: "nowrap"
+                }}
+                title="Download filtered attendance report"
+              >
+                <i className="fas fa-download" style={{ fontSize: "14px" }}></i>
+                {getDownloadButtonText()}
+              </button>
+            </div>
+
+          </div>
+
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <div style={{ 
+              display: "flex", 
+              justifyContent: "flex-end",
+              padding: "12px 0",
+              borderTop: "1px solid var(--border)"
+            }}>
               <button
                 className="ghost"
                 onClick={clearFilters}
-                style={{ height: "fit-content", marginBottom: 0 }}
+                style={{ 
+                  height: "fit-content", 
+                  padding: "8px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px"
+                }}
               >
+                <i className="fas fa-times" style={{ fontSize: "12px" }}></i>
                 Clear Filters
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Notification Section for Current Date */}
           {currentDateAbsentLateRecords.length > 0 && (
@@ -270,6 +542,7 @@ const AttendanceRecords = () => {
             <span>
               Showing {filteredRecords.length} of {records.length} records
               {hasActiveFilters && " (filtered)"}
+              {monthFilter && ` - ${dayjs(monthFilter).format('MMMM YYYY')}`}
             </span>
             {hasActiveFilters && (
               <span style={{ color: "var(--primary)" }}>
@@ -285,59 +558,225 @@ const AttendanceRecords = () => {
         <table className="table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Name</th>
-              <th>Index</th>
-              <th>Section</th>
-              <th>Status</th>
-              <th>Notified</th>
-              <th></th>
+              <th style={{ padding: "12px 8px", textAlign: "left" }}>Date</th>
+              <th style={{ padding: "12px 8px", textAlign: "left" }}>Name</th>
+              <th style={{ padding: "12px 8px", textAlign: "left" }}>Index</th>
+              <th style={{ padding: "12px 8px", textAlign: "left" }}>Section</th>
+              <th style={{ padding: "12px 8px", textAlign: "left" }}>Status</th>
+              <th style={{ padding: "12px 8px", textAlign: "left" }}>Notified</th>
+              <th style={{ padding: "12px 8px", textAlign: "right", minWidth: "200px" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading && <tr><td colSpan="7">Loading...</td></tr>}
 
             {!loading && filteredRecords.map((r) => (
-              <tr key={r._id}>
-                <td>{dayjs(r.date).format("YYYY-MM-DD")}</td>
-                <td>{r.student?.name}</td>
-                <td><span className="badge">{r.student?.std_index}</span></td>
-                <td>{r.student?.section}</td>
+              <tr 
+                key={r._id}
+                style={{
+                  transition: "background-color 0.2s ease"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = "#f8f9fa";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = "transparent";
+                }}
+              >
+                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>{dayjs(r.date).format("YYYY-MM-DD")}</td>
+                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>{r.student?.name}</td>
+                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}><span className="badge">{r.student?.std_index}</span></td>
+                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>{r.student?.section}</td>
 
-                <td>
+                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>
                   {editingId === r._id ? (
-                    <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)}>
+                    <select 
+                      value={editStatus} 
+                      onChange={(e) => setEditStatus(e.target.value)}
+                      style={{ 
+                        padding: "4px 8px", 
+                        borderRadius: "4px", 
+                        border: "1px solid #ddd",
+                        fontSize: "12px"
+                      }}
+                    >
                       {STATUS_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
                   ) : (
-                    r.status
+                    <span style={{ 
+                      padding: "4px 8px", 
+                      borderRadius: "4px",
+                      backgroundColor: r.status === "Present" ? "#d4edda" : 
+                                    r.status === "Absent" ? "#f8d7da" : 
+                                    r.status === "Late" ? "#fff3cd" : "#e2e3e5",
+                      color: r.status === "Present" ? "#155724" : 
+                            r.status === "Absent" ? "#721c24" : 
+                            r.status === "Late" ? "#856404" : "#6c757d",
+                      fontSize: "12px",
+                      fontWeight: "500"
+                    }}>
+                      {r.status}
+                    </span>
                   )}
                 </td>
 
-                <td>
+                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>
                   {r.notifiedParent || notifiedRecords.has(r._id) ? (
-                    <span style={{ color: "var(--success)", fontSize: "12px" }}>✓ Notified</span>
+                    <span style={{ 
+                      color: "var(--success)", 
+                      fontSize: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
+                    }}>
+                      <i className="fas fa-check-circle" style={{ fontSize: "10px" }}></i>
+                      Notified
+                    </span>
                   ) : (
                     <span style={{ color: "var(--subtle)", fontSize: "12px" }}>-</span>
                   )}
                 </td>
 
-                <td style={{ textAlign: "right", display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  {editingId === r._id ? (
-                    <>
-                      <button className="success" onClick={() => saveEdit(r._id)} disabled={saving}>
-                        {saving ? "Saving..." : "Save"}
-                      </button>
-                      <button className="ghost" onClick={cancelEdit} disabled={saving}>Cancel</button>
-                    </>
-                  ) : (
-                    <>
-                      <button onClick={() => startEdit(r)}>Edit</button>
-                      <button className="danger" onClick={() => remove(r._id)}>Delete</button>
-                    </>
-                  )}
+                <td style={{ 
+                  textAlign: "right", 
+                  padding: "8px 4px",
+                  verticalAlign: "middle"
+                }}>
+                  <div style={{ 
+                    display: "flex", 
+                    gap: "6px", 
+                    justifyContent: "flex-end", 
+                    alignItems: "center",
+                    flexWrap: "nowrap"
+                  }}>
+                    {editingId === r._id ? (
+                      <>
+                        <button 
+                          onClick={() => saveEdit(r._id)} 
+                          disabled={saving}
+                          style={{ 
+                            fontSize: "11px", 
+                            padding: "6px 12px", 
+                            minWidth: "60px",
+                            height: "28px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderRadius: "4px",
+                            border: "1px solid #28a745",
+                            cursor: saving ? "not-allowed" : "pointer",
+                            transition: "all 0.2s ease",
+                            backgroundColor: "white",
+                            color: "#28a745"
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!saving) {
+                              e.target.style.backgroundColor = "#28a745";
+                              e.target.style.color = "white";
+                              e.target.style.transform = "translateY(-1px)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!saving) {
+                              e.target.style.backgroundColor = "white";
+                              e.target.style.color = "#28a745";
+                              e.target.style.transform = "translateY(0)";
+                            }
+                          }}
+                        >
+                          {saving ? "Saving..." : "Save"}
+                        </button>
+                        <button 
+                          className="ghost" 
+                          onClick={cancelEdit} 
+                          disabled={saving}
+                          style={{ 
+                            fontSize: "11px", 
+                            padding: "6px 12px", 
+                            minWidth: "60px",
+                            height: "28px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderRadius: "4px",
+                            border: "1px solid #6c757d",
+                            cursor: saving ? "not-allowed" : "pointer",
+                            transition: "all 0.2s ease",
+                            backgroundColor: "transparent",
+                            color: "#6c757d"
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!saving) {
+                              e.target.style.backgroundColor = "#6c757d";
+                              e.target.style.color = "white";
+                              e.target.style.transform = "translateY(-1px)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!saving) {
+                              e.target.style.backgroundColor = "transparent";
+                              e.target.style.color = "#6c757d";
+                              e.target.style.transform = "translateY(0)";
+                            }
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => startEdit(r)}
+                          style={{ 
+                            fontSize: "11px", 
+                            padding: "6px 12px", 
+                            minWidth: "50px",
+                            height: "28px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderRadius: "4px",
+                            border: "1px solid #6c757d",
+                            backgroundColor: "#6c757d",
+                            color: "white",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease"
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = "#5a6268";
+                            e.target.style.color = "white";
+                            e.target.style.transform = "translateY(-1px)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = "#6c757d";
+                            e.target.style.color = "white";
+                            e.target.style.transform = "translateY(0)";
+                          }}
+                          title="Edit Record"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          className="danger" 
+                          onClick={() => remove(r._id)}
+                          style={{ 
+                            fontSize: "11px", 
+                            padding: "6px 12px", 
+                            minWidth: "60px",
+                            height: "28px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}
+                          title="Delete Record"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

@@ -3,14 +3,14 @@ import { Link, useLocation } from "react-router-dom";
 
 const Navbar = () => {
   const { pathname } = useLocation();
-  const active = (path) => (pathname === path ? { opacity: 1 } : { opacity: 0.8 });
+  const active = (path) => (pathname === path ? 'active' : '');
 
   return (
     <div className="navbar">
       <div className="container">
         <div className="top-row">
           <div className="logo">
-            <i className="fas fa-graduation-cap"></i>
+            <div className="logo-icon">🎓</div>
             <h1>WEBSTAR INTERNATIONAL COLLEGE</h1>
           </div>
         </div>
@@ -20,10 +20,9 @@ const Navbar = () => {
         </div>
 
         <div className="nav-links">
-          <Link to="/" style={active("/")}>Students</Link>
-          <Link to="/attendance" style={active("/attendance")}>Mark Attendance</Link>
-          <Link to="/records" style={active("/records")}>Records</Link>
-          <Link to="/parent" style={active("/parent")}>Parent Portal</Link>
+          <Link to="/students" className={pathname === "/" || pathname === "/students" ? active("/students") : ''}>Students</Link>
+          <Link to="/attendance" className={active("/attendance")}>Mark Attendance</Link>
+          <Link to="/records" className={active("/records")}>Records</Link>
         </div>
       </div>
     </div>
