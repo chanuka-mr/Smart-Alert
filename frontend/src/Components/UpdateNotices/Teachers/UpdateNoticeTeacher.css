@@ -1,0 +1,139 @@
+
+/* Modal overlay for delete confirmation dialog */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Modal card styling */
+.modal-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,150,136,0.18);
+  padding: 32px 28px;
+  min-width: 320px;
+  text-align: center;
+}
+.modal-card h3 {
+  color: #00897b;
+  margin-bottom: 12px;
+}
+.modal-card p {
+  color: #616161;
+  font-size: 1.08em;
+}
+
+/* Modal backdrop for dimming background */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.18);
+  z-index: 999;
+}
+
+/* Main container for update notice teacher page */
+.update-notice-teacher-container {
+  max-width: 700px;
+  margin: 30px auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 32px;
+  border: 1.5px solid #1976d2;
+}
+
+/* Section title styling */
+.update-notice-teacher-container h2 {
+  text-align: center;
+  color: #176fd2;
+  margin-bottom: 24px;
+}
+
+/* List of notices styling */
+.notices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Individual notice item styling */
+.notice-item {
+  background: #f7faff;
+  border-radius: 6px;
+  padding: 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  border: 1px solid #1976d2;
+}
+.notice-item h3 {
+  margin: 0 0 8px 0;
+  color: #00897b !important;
+}
+
+/* Category, date, and author styling */
+.notice-category, .notice-date, .notice-author {
+  display: inline-block;
+  margin-right: 12px;
+  font-size: 0.95em;
+  color: #666;
+}
+
+/* Edit form layout and input styling */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.edit-form input, .edit-form textarea {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #cfd8dc;
+  font-size: 1em;
+}
+
+/* Edit form button styling */
+.edit-form button {
+  background: #176fd2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin-right: 8px;
+  cursor: pointer;
+  font-size: 1em;
+}
+.edit-form button:last-child {
+  background: #bbb;
+  color: #222;
+}
+
+/* Notice item button styling */
+.notice-item button {
+  background: #176fd2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  margin-right: 8px;
+  cursor: pointer;
+  font-size: 0.98em;
+}
+.notice-item button:last-child {
+  background: #e74c3c;
+}
+
+/* Error message styling */
+.error-msg {
+  color: #e74c3c;
+  text-align: center;
+  margin-bottom: 16px;
+}

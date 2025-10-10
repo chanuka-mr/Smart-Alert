@@ -1,0 +1,51 @@
+
+/* Container for the teacher notice creation form */
+.create-notice-teacher-container {
+  max-width: 500px; /* Limit width for better readability */
+  margin: 40px auto; /* Center container vertically and horizontally */
+  background: #fff; /* White background */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* Subtle shadow for depth */
+  padding: 32px 24px; /* Inner spacing */
+  border: 1.5px solid #1976d2;
+}
+
+/* Form layout: vertical stacking of fields */
+.create-notice-form {
+  display: flex; /* Use flexbox for layout */
+  flex-direction: column; /* Stack fields vertically */
+  gap: 16px; /* Space between fields */
+}
+
+/* Label styling for form fields */
+.create-notice-form label {
+  font-weight: 500; /* Make labels bold */
+  margin-bottom: 4px; /* Space below label */
+}
+
+/* Input, textarea, and select styling */
+.create-notice-form input[type="text"],
+.create-notice-form textarea,
+.create-notice-form select {
+  padding: 8px; /* Inner padding */
+  border-radius: 4px; /* Rounded corners */
+  border: 1px solid #ccc; /* Light border */
+  font-size: 1rem; /* Standard font size */
+}
+
+/* Textarea specific styling */
+.create-notice-form textarea {
+  min-height: 80px; /* Minimum height for textarea */
+  resize: vertical; /* Allow vertical resizing */
+}
+
+/* File input styling */
+.create-notice-form input[type="file"] {
+  margin-top: 4px; /* Space above file input */
+}
+
+/* Error message styling */
+.error-msg {
+  color: #d32f2f; /* Red color for errors */
+  font-weight: 500; /* Bold text */
+}

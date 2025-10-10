@@ -1,4 +1,4 @@
-// app.js
+// Main backend entry point for Smart-Alert
 require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
@@ -11,6 +11,8 @@ const featureRoutes = require("./Routes/featureRoutes");
 const academicRoutes = require("./Routes/academicRoutes");
 const activityRoutes = require("./Routes/activityRoutes");
 const parentRoutes = require("./Routes/parentRoutes");
+const noticeRouter = require("./Routes/NoticeRoutes");
+const chatRouter = require("./Routes/ChatRoutes");
 
 const app = express();
 
@@ -21,7 +23,8 @@ app.use(cors({
 }));
 
 // Middleware
-app.use(express.json()); // parse JSON bodies
+app.use(express.json()); // Parse JSON request bodies
+app.use('/uploads', express.static(__dirname + '/uploads')); // Serve uploaded files statically
 
 // Mount routes
 app.use("/users", userRoutes); // protected CRUD routes
@@ -30,6 +33,8 @@ app.use("/features", featureRoutes); // features CRUD routes
 app.use("/academic", academicRoutes); // academic information routes
 app.use("/activities", activityRoutes); // activity logging routes
 app.use("/parents", parentRoutes); // parent details routes
+app.use("/notices", noticeRouter); // Mount notice routes
+app.use("/chat", chatRouter); // Mount chat routes
 
 // Read from .env with safe fallbacks
 const PORT = process.env.PORT || 5000;

@@ -224,10 +224,16 @@ const Home = () => {
             </nav>
             <div className="header-actions">
               {user && user.role && user.role.toLowerCase() === 'admin' && (
-                <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
-                  <i className="fas fa-tachometer-alt"></i>
-                  <span>Admin Dashboard</span>
-                </a>
+                <>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
+                    <i className="fas fa-tachometer-alt"></i>
+                    <span>Admin Dashboard</span>
+                  </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/admin-create-notice'); }}>
+                    <i className="fas fa-bullhorn"></i>
+                    <span>Notices</span>
+                  </a>
+                </>
               )}
               <a href="#" className="profile-button" onClick={handleProfileClick}>
                 <i className="fas fa-user-circle"></i>

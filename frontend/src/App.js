@@ -1,4 +1,6 @@
 // src/App.js
+import './App.css';
+import './theme.css';
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./Components/Home/Home";
@@ -9,6 +11,12 @@ import ResetPassword from "./Components/ResetPassword/ResetPassword";
 import ForgotPassword from "./Components/ForgotPassword/ForgotPassword";
 import ResetPasswordViaEmail from "./Components/ResetPasswordViaEmail/ResetPasswordViaEmail";
 import AdminDashboard from "./Components/AdminDashboard/AdminDashboard";
+import CreateNoticeAdmin from './Components/CreateNotices/Admin/CreateNoticeAdmin';
+import CreateNoticeTeacher from './Components/CreateNotices/Teachers/CreateNoticeTeacher';
+import DirectMessages from './Components/DirectMessages/DirectMessages';
+import DisplayNotices from './Components/DisplayNotices/DisplayNotices';
+import UpdateNoticeAdmin from './Components/UpdateNotices/Admin/UpdateNoticeAdmin';
+import UpdateNoticeTeacher from './Components/UpdateNotices/Teachers/UpdateNoticeTeacher';
 import { api } from "./utils/api";
 
 // ✅ Enhanced guard: checks token in localStorage and validates it
@@ -243,6 +251,15 @@ export default function App() {
             </RequireAuth>
           }
         />
+
+        {/* Notice Management Routes */}
+        <Route path="/admin-create-notice" element={<CreateNoticeAdmin />} />
+        <Route path="/teacher-create-notice" element={<CreateNoticeTeacher />} />
+        <Route path="/direct-message-teacher" element={<DirectMessages userType="teacher" />} />
+        <Route path="/direct-message-parent" element={<DirectMessages userType="parent" />} />
+        <Route path="/display-notices" element={<DisplayNotices />} />
+        <Route path="/update-admin-notices" element={<UpdateNoticeAdmin />} />
+        <Route path="/update-teacher-notices" element={<UpdateNoticeTeacher />} />
 
         {/* Default → Redirect to home (will redirect to login if not authenticated) */}
         <Route path="*" element={<Navigate to="/" replace />} />
