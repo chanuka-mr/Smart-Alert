@@ -7,8 +7,9 @@ const getAllReportCards = async (req, res, next) => {
     try {
         const reportCards = await ReportCard.find();
         
+        // Return empty array if no report cards found (don't return 404)
         if (!reportCards || reportCards.length === 0) {
-            return res.status(404).json({ message: "No report cards found" });
+            return res.status(200).json({ reportCards: [] });
         }
         
         // Process each report card to include calculated fields

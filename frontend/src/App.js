@@ -268,12 +268,54 @@ export default function App() {
         <Route path="/update-teacher-notices" element={<UpdateNoticeTeacher />} />
 
         {/* Examination Management Routes */}
-        <Route path="/timetable" element={<TimeTableHallArrangement />} />
-        <Route path="/report-card" element={<ReportCard />} />
-        <Route path="/report-card/:studentId" element={<ReportCardView />} />
-        <Route path="/progress-analysis" element={<ProgressAnalysis />} />
-        <Route path="/report-data" element={<ReportData />} />
-        <Route path="/timetable-data-entry" element={<TimeTableDataEntry />} />
+        <Route 
+          path="/timetable" 
+          element={
+            <RequireAuth>
+              <TimeTableHallArrangement />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/report-card" 
+          element={
+            <RequireAuth>
+              <ReportCard />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/report-card/:studentId" 
+          element={
+            <RequireAuth>
+              <ReportCardView />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/progress-analysis" 
+          element={
+            <RequireAuth>
+              <ProgressAnalysis />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/report-data" 
+          element={
+            <RequireAuth>
+              <ReportData />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/timetable-data-entry" 
+          element={
+            <RequireAuth>
+              <TimeTableDataEntry />
+            </RequireAuth>
+          } 
+        />
 
         {/* Default → Redirect to home (will redirect to login if not authenticated) */}
         <Route path="*" element={<Navigate to="/" replace />} />

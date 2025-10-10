@@ -233,6 +233,14 @@ const Home = () => {
                     <i className="fas fa-bullhorn"></i>
                     <span>Notices</span>
                   </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/timetable'); }}>
+                    <i className="fas fa-calendar-alt"></i>
+                    <span>Timetable</span>
+                  </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/report-card'); }}>
+                    <i className="fas fa-file-alt"></i>
+                    <span>Report Cards</span>
+                  </a>
                 </>
               )}
               <a href="#" className="profile-button" onClick={handleProfileClick}>
