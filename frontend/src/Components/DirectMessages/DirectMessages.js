@@ -100,11 +100,6 @@ const DirectMessages = ({ userType }) => {
   };
 
   // Edit message
-  const handleEdit = (id, text) => {
-    setEditId(id);
-    setEditText(text);
-  };
-
   const handleEditSave = async (id) => {
     try {
       await axios.put(`/chat/${id}`, { messageContent: editText });

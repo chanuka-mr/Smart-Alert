@@ -5,8 +5,6 @@ import './DisplayNotices.css';
 
 const DisplayNotices = ({ userType, classId }) => {
   const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
   const navigate = useNavigate();
@@ -24,15 +22,12 @@ const DisplayNotices = ({ userType, classId }) => {
 
   useEffect(() => {
     const fetchNotices = async () => {
-      setLoading(true);
-      setError('');
       try {
         const res = await axios.get('/notices');
         setNotices(res.data.notices || []);
       } catch (err) {
-        setError('Failed to load notices.');
+        console.error('Failed to load notices:', err);
       }
-      setLoading(false);
     };
     fetchNotices();
   }, []);
@@ -52,15 +47,6 @@ const DisplayNotices = ({ userType, classId }) => {
     return `http://localhost:5000/uploads/${filename}`;
   }
 
-  // Helper to get file icon based on file type
-  function getFileIcon(path) {
-    if (!path) return null;
-    const ext = path.split('.').pop().toLowerCase();
-    if (ext === 'pdf') return 'https://cdn.jsdelivr.net/gh/file-icons/icons/svg/pdf.svg';
-    if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') return 'https://cdn.jsdelivr.net/gh/file-icons/icons/svg/image.svg';
-    if (ext === 'ppt' || ext === 'pptx') return 'https://cdn.jsdelivr.net/gh/file-icons/icons/svg/ppt.svg';
-    return 'https://cdn.jsdelivr.net/gh/file-icons/icons/svg/file.svg';
-  }
 
   return (
     <>
@@ -140,12 +126,6 @@ const DisplayNotices = ({ userType, classId }) => {
     </>
   );
 };
-
-// Helper to get file type from attachment path
-function getFileType(path) {
-  const ext = path.split('.').pop().toLowerCase();
-  return ext;
-}
 
 // Helper to get file name from attachment path
 function getFileName(path) {
