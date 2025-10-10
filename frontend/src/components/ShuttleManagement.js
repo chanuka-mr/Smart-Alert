@@ -43,21 +43,11 @@ const ShuttleManagement = () => {
   const loadShuttles = async () => {
     try {
       setLoading(true);
-      console.log('Loading shuttles...'); // Debug log
       const data = await shuttleAPI.getAllShuttles();
-      console.log('Loaded shuttles:', data); // Debug log
-      console.log('Number of shuttles:', data.length); // Debug log
-      if (data.length > 0) {
-        console.log('First shuttle structure:', data[0]); // Debug log
-        console.log('First shuttle startingLocation:', data[0].startingLocation); // Debug log
-        console.log('First shuttle endingLocation:', data[0].endingLocation); // Debug log
-        console.log('First shuttle waypoints:', data[0].waypoints); // Debug log
-        console.log('First shuttle schedule:', data[0].schedule); // Debug log
-      }
       setShuttles(data);
       setError('');
     } catch (err) {
-      console.error('Error loading shuttles:', err); // Debug log
+      console.error('Error loading shuttles:', err);
       setError('Failed to load shuttles: ' + err.message);
     } finally {
       setLoading(false);
@@ -363,14 +353,6 @@ const ShuttleManagement = () => {
 
        {error && <div className="alert alert-error fade-in">{error}</div>}
        {success && <div className="alert alert-success fade-in">{success}</div>}
-
-       {/* Debug Panel - Remove in production */}
-       {process.env.NODE_ENV === 'development' && shuttles.length > 0 && (
-         <div className="debug-panel">
-           <h4>Debug: Raw Shuttle Data</h4>
-           <pre>{JSON.stringify(shuttles[0], null, 2)}</pre>
-         </div>
-       )}
 
       <div className="search-section">
         <div className="search-container">
