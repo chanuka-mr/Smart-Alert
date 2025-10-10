@@ -1,10 +1,10 @@
 :root {
-  --bg: #f0f8f9; /* Light blue-green background */
-  --panel: #ffffff; /* White panels */
-  --muted: #e0f2f4; /* Light muted for inputs, badges, table headers */
-  --text: #1a9382; /* Dark teal text */
-  --subtle: #00897b; /* Teal for subtle text, table header text */
-  --primary: #00bfa5; /* Teal for primary buttons */
+  --bg: #f0f8f9; 
+  --panel: #ffffff;
+  --muted: #e0f2f4; 
+  --text: #1a9382; 
+  --subtle: #00897b; 
+  --primary: #00bfa5; 
   --primary-700: #00897b; /* Darker teal for button hover */
   --danger: #d32f2f; /* Red for danger buttons */
   --success: #4caf50; /* Green for success buttons */

@@ -1,24 +1,34 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const Navbar = () => {
+  // Get current route for active link styling
   const { pathname } = useLocation();
   const active = (path) => (pathname === path ? 'active' : '');
 
   return (
     <div className="navbar">
       <div className="container">
+        
         <div className="top-row">
           <div className="logo">
+<<<<<<< Updated upstream
             <div className="logo-icon">🎓</div>
             <h1>WEBSTAR INTERNATIONAL COLLEGE</h1>
+=======
+            <i className="fas fa-graduation-cap"></i>
+            <h1>WEBSTAR INTERNATIONAL SCHOOL</h1>
+>>>>>>> Stashed changes
           </div>
         </div>
 
+       
         <div className="subtitle">
-          Smart Alert
+          Smart - Alert
         </div>
 
+        {/* Navigation links */}
         <div className="nav-links">
           <Link to="/students" className={pathname === "/" || pathname === "/students" ? active("/students") : ''}>Students</Link>
           <Link to="/attendance" className={active("/attendance")}>Mark Attendance</Link>

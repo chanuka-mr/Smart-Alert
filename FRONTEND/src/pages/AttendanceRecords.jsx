@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState, useMemo } from "react";
 import Layout from "../components/Layout";
 import { getAllAttendance, deleteAttendance, updateAttendance, notifyParentsForAbsents } from "../api/client";
@@ -5,24 +7,33 @@ import { STATUS_OPTIONS } from "../utils/statusOptions";
 import dayjs from "dayjs";
 
 const AttendanceRecords = () => {
-  const [records, setRecords] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const [editingId, setEditingId] = useState(null);
-  const [editStatus, setEditStatus] = useState("");
-  const [saving, setSaving] = useState(false);
+  
+  const [records, setRecords] = useState([]);             
+  const [loading, setLoading] = useState(true);          
+  // Edit functionality states
+  const [editingId, setEditingId] = useState(null);       
+  const [editStatus, setEditStatus] = useState("");       
+  const [saving, setSaving] = useState(false);           
 
   // Search and filter states
+<<<<<<< Updated upstream
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("");
+=======
+  const [searchTerm, setSearchTerm] = useState("");       
+  const [dateFilter, setDateFilter] = useState("");      
+>>>>>>> Stashed changes
   const [statusFilter, setStatusFilter] = useState("");
   const [sectionFilter, setSectionFilter] = useState("");
 
   // Notification states
-  const [notifying, setNotifying] = useState(false);
-  const [notifiedRecords, setNotifiedRecords] = useState(new Set());
+  const [notifying, setNotifying] = useState(false);      // Notification loading state
+  const [notifiedRecords, setNotifiedRecords] = useState(new Set());  // Track notified records
 
+
+  
+  // Load all attendance records from database
   const load = async () => {
     setLoading(true);
     try {
@@ -33,10 +44,16 @@ const AttendanceRecords = () => {
     }
   };
 
+<<<<<<< Updated upstream
   useEffect(() => { 
     load(); 
   }, []);
+=======
+  // Load records on component mount
+  useEffect(() => { load(); }, []);
+>>>>>>> Stashed changes
 
+  
   // Filter records based on search criteria
   const filteredRecords = useMemo(() => {
     let filtered = [...records];
@@ -310,7 +327,9 @@ const AttendanceRecords = () => {
     }
   };
 
-  // Notify parents for current date absent/late students
+  
+  
+  // Send WhatsApp notifications to parents for today's absent/late students
   const notifyParentsForCurrentDate = async () => {
     if (currentDateAbsentLateRecords.length === 0) {
       alert("No absent or late students found for today.");
@@ -319,6 +338,7 @@ const AttendanceRecords = () => {
 
     setNotifying(true);
     try {
+      // Prepare notification data
       const items = currentDateAbsentLateRecords.map(record => ({
         studentId: record.student._id,
         status: record.status,
@@ -327,6 +347,7 @@ const AttendanceRecords = () => {
 
       console.log("Sending notifications for:", items);
 
+      // Send notifications via API
       const { data } = await notifyParentsForAbsents(items);
       const succeeded = Array.isArray(data?.succeeded) ? data.succeeded : [];
       const failed = Array.isArray(data?.failed) ? data.failed : [];

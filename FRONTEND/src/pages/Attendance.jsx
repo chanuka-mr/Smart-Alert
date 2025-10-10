@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import Select from "../components/Select";
@@ -6,16 +8,20 @@ import { getStudents, markAttendance, getAllAttendance } from "../api/client";
 import dayjs from "dayjs";
 
 const Attendance = () => {
-  const [students, setStudents] = useState([]);
-  const [section, setSection] = useState("");
-  const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
-  const [rows, setRows] = useState({});
-  const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
+ 
+  const [students, setStudents] = useState([]);           
+  const [section, setSection] = useState("");             
+  const [date, setDate] = useState(dayjs().format("YYYY-MM-DD")); 
+  const [rows, setRows] = useState({});                   
+  const [submitting, setSubmitting] = useState(false);    
+  const [loading, setLoading] = useState(true);          
 
+  // Track which students already have attendance marked
   const [existingIdsForDate, setExistingIdsForDate] = useState(new Set());
   const [loadingExisting, setLoadingExisting] = useState(false);
 
+ 
+  // Load all students from database
   const load = async () => {
     setLoading(true);
     try {
@@ -26,8 +32,10 @@ const Attendance = () => {
     }
   };
 
+  // Load students on component mount
   useEffect(() => { load(); }, []);
 
+  // Update date every minute to keep it current
   useEffect(() => {
     const id = setInterval(() => {
       setDate(dayjs().format("YYYY-MM-DD"));
@@ -35,11 +43,14 @@ const Attendance = () => {
     return () => clearInterval(id);
   }, []);
 
+ 
+  // Generate unique sections for dropdown
   const sections = useMemo(() => {
     const set = new Set(students.map((s) => s.section));
     return Array.from(set).sort().map((s) => ({ value: s, label: s }));
   }, [students]);
 
+  // Filter students by selected section
   const visible = useMemo(
     () => (section ? students.filter((s) => s.section === section) : []),
     [students, section]
@@ -91,17 +102,21 @@ const Attendance = () => {
     return visible.every((s) => existingIdsForDate.has(s._id));
   }, [visible, existingIdsForDate]);
 
+  
+  // Submit attendance for selected students
   const submit = async () => {
     if (!section) return alert("Select a class/section first");
     
     setSubmitting(true);
     try {
+      // Get students who don't have attendance marked yet
       const toSubmit = visible.filter((s) => !existingIdsForDate.has(s._id));
       if (toSubmit.length === 0) {
         alert("Attendance already marked for all students in this section for this date.");
         return;
       }
 
+      // Prepare attendance data for each student
       const payloads = toSubmit.map((s) => {
         const status = rows[s._id]?.status || "Present";
         return {
@@ -112,10 +127,12 @@ const Attendance = () => {
         };
       });
 
+      // Submit attendance for each student
       for (const p of payloads) {
         await markAttendance(p);
       }
 
+      // Update local state to reflect submitted attendance
       setExistingIdsForDate((prev) => {
         const next = new Set(prev);
         toSubmit.forEach((s) => next.add(s._id));

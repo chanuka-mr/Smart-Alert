@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import { useState } from 'react';
 
 const initial = {
   name: "",
@@ -9,10 +10,13 @@ const initial = {
 };
 
 const StudentForm = ({ onSubmit, submitting }) => {
+  // Form state management
   const [form, setForm] = useState(initial);
 
+  
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  //form submission
   const submit = (e) => {
     e.preventDefault();
     onSubmit(form, () => setForm(initial));
@@ -20,6 +24,7 @@ const StudentForm = ({ onSubmit, submitting }) => {
 
   return (
     <form className="panel" onSubmit={submit}>
+      
       <div className="row">
         <div className="field">
           <label>Name</label>
@@ -30,6 +35,7 @@ const StudentForm = ({ onSubmit, submitting }) => {
           <input value={form.std_index} onChange={set("std_index")} required placeholder="S1234" />
         </div>
       </div>
+      
       <div className="row">
         <div className="field">
           <label>Class / Section</label>
@@ -40,6 +46,7 @@ const StudentForm = ({ onSubmit, submitting }) => {
           <input value={form.parentName} onChange={set("parentName")} required placeholder="Jane Doe" />
         </div>
       </div>
+      
       <div className="row">
         <div className="field">
           <label>Parent Phone</label>
