@@ -17,6 +17,12 @@ import DirectMessages from './Components/DirectMessages/DirectMessages';
 import DisplayNotices from './Components/DisplayNotices/DisplayNotices';
 import UpdateNoticeAdmin from './Components/UpdateNotices/Admin/UpdateNoticeAdmin';
 import UpdateNoticeTeacher from './Components/UpdateNotices/Teachers/UpdateNoticeTeacher';
+import TimeTableHallArrangement from './Components/TimeTableHallArrangement/TimeTableHallArrangement';
+import ReportCard from './Components/ReportCard/ReportCard';
+import ReportCardView from './Components/ReportCardView/ReportCardView';
+import ProgressAnalysis from './Components/ProgressAnalysis/ProgressAnalysis';
+import ReportData from './Components/ReportData/ReportData';
+import TimeTableDataEntry from './Components/TimeTableHallArrangementData/TimeTableDataEntry';
 import { api } from "./utils/api";
 
 // ✅ Enhanced guard: checks token in localStorage and validates it
@@ -260,6 +266,14 @@ export default function App() {
         <Route path="/display-notices" element={<DisplayNotices />} />
         <Route path="/update-admin-notices" element={<UpdateNoticeAdmin />} />
         <Route path="/update-teacher-notices" element={<UpdateNoticeTeacher />} />
+
+        {/* Examination Management Routes */}
+        <Route path="/timetable" element={<TimeTableHallArrangement />} />
+        <Route path="/report-card" element={<ReportCard />} />
+        <Route path="/report-card/:studentId" element={<ReportCardView />} />
+        <Route path="/progress-analysis" element={<ProgressAnalysis />} />
+        <Route path="/report-data" element={<ReportData />} />
+        <Route path="/timetable-data-entry" element={<TimeTableDataEntry />} />
 
         {/* Default → Redirect to home (will redirect to login if not authenticated) */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -13,6 +13,9 @@ const activityRoutes = require("./Routes/activityRoutes");
 const parentRoutes = require("./Routes/parentRoutes");
 const noticeRouter = require("./Routes/NoticeRoutes");
 const chatRouter = require("./Routes/ChatRoutes");
+const examRouter = require("./Routes/ExamRoutes");
+const timeTableRouter = require("./Routes/TimeTableRoutes");
+const reportCardRouter = require("./Routes/ReportCardRoutes");
 
 const app = express();
 
@@ -35,6 +38,9 @@ app.use("/activities", activityRoutes); // activity logging routes
 app.use("/parents", parentRoutes); // parent details routes
 app.use("/notices", noticeRouter); // Mount notice routes
 app.use("/chat", chatRouter); // Mount chat routes
+app.use("/exams", examRouter); // Mount exam routes
+app.use("/timetable", timeTableRouter); // Mount timetable routes
+app.use("/reportcard", reportCardRouter); // Mount report card routes
 
 // Read from .env with safe fallbacks
 const PORT = process.env.PORT || 5000;
