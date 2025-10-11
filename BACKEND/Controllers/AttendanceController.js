@@ -1,5 +1,5 @@
 const Attendance = require("../Model/AttendanceModel");
-const Student = require("../Model/StudentModel");
+const Student = require("../Model/studentModel");
 
 // Helper: check if string looks like a Mongo ObjectId
 const looksLikeObjectId = (s) => typeof s === "string" && s.match(/^[0-9a-fA-F]{24}$/);

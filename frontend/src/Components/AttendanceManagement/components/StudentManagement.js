@@ -32,13 +32,10 @@ const StudentManagement = () => {
     try {
       setLoading(true);
       const data = await studentAPI.getAllStudents();
-      // Handle both array response and object with students property
-      const studentsArray = Array.isArray(data) ? data : (data.students || []);
-      setStudents(Array.isArray(studentsArray) ? studentsArray : []);
+      setStudents(data);
       setError('');
     } catch (err) {
       setError('Failed to load students: ' + err.message);
-      setStudents([]);
     } finally {
       setLoading(false);
     }

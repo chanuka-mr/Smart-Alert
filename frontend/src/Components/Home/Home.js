@@ -245,6 +245,18 @@ const Home = () => {
                     <i className="fas fa-file-alt"></i>
                     <span>Report Cards</span>
                   </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/students'); }}>
+                    <i className="fas fa-user-graduate"></i>
+                    <span>Students</span>
+                  </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/attendance'); }}>
+                    <i className="fas fa-clipboard-check"></i>
+                    <span>Mark Attendance</span>
+                  </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/attendance-records'); }}>
+                    <i className="fas fa-list-alt"></i>
+                    <span>Attendance Records</span>
+                  </a>
                 </>
               )}
               <a href="#" className="profile-button" onClick={handleProfileClick}>

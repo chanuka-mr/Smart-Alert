@@ -1,33 +1,34 @@
 const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
-const studentSchema = new mongoose.Schema({
-  userId: { 
-    type: String,
-     required: true, 
-     unique: true, trim: true 
+const studentSchema = new Schema({
+    name: {
+        type: String,
+        required: true,
     },
-  name: { 
-    type: String, 
-    required: true,
-     trim: true 
+    std_index: {
+        type: String,
+        required: true,
+        unique: true,   // each student has unique index no
     },
-  route: { 
-    type: String, 
-    required: true, 
-    trim: true
-   },
-  guardianName: { 
-    type: String, 
-    required: true,
-     trim: true
-     },
-  parentContactNo: { 
-    type: String,
-     required: true,
-      trim: true
-     }
-},);
+    section: {
+        type: String,
+        required: true,
+    },
+    parentName: {
+        type: String,
+        required: true,
+    },
+    parentPhoneNum: {
+        type: String,
+        required: true,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    }
+});
 
-module.exports = mongoose.model("Student", studentSchema);
+module.exports = mongoose.model("StudentModel", studentSchema);
 
 

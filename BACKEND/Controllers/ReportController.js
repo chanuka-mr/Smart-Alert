@@ -1,5 +1,5 @@
 const Attendance = require("../Model/AttendanceModel");
-const Student = require("../Model/StudentModel");
+const Student = require("../Model/studentModel");
 const { jsPDF } = require("jspdf");
 const PDFDocument = require('pdfkit');
 

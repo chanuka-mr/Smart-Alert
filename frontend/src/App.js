@@ -24,6 +24,9 @@ import ProgressAnalysis from './Components/ProgressAnalysis/ProgressAnalysis';
 import ReportData from './Components/ReportData/ReportData';
 import TimeTableDataEntry from './Components/TimeTableHallArrangementData/TimeTableDataEntry';
 import ShuttleServices from './Components/ShuttleServices/ShuttleServices';
+import Students from './Components/AttendanceManagement/Students';
+import Attendance from './Components/AttendanceManagement/Attendance';
+import AttendanceRecords from './Components/AttendanceManagement/AttendanceRecords';
 import { api } from "./utils/api";
 
 // ✅ Enhanced guard: checks token in localStorage and validates it
@@ -324,6 +327,32 @@ export default function App() {
           element={
             <RequireAuth>
               <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
+
+        {/* Attendance Management Routes */}
+        <Route 
+          path="/students" 
+          element={
+            <RequireAuth>
+              <Students />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/attendance" 
+          element={
+            <RequireAuth>
+              <Attendance />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/attendance-records" 
+          element={
+            <RequireAuth>
+              <AttendanceRecords />
             </RequireAuth>
           } 
         />
