@@ -22,6 +22,8 @@ const driverRoutes = require("./Routes/driverRoutes");
 const shuttleRoutes = require("./Routes/shuttleRoute");
 const studentRoutes = require("./Routes/studentRoutes");
 const locationRoutes = require("./Routes/locationRoutes");
+const attendanceRoutes = require("./Routes/AttendanceRoutes");
+const reportRoutes = require("./Routes/ReportRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -65,6 +67,8 @@ app.use("/api/drivers", driverRoutes); // Mount driver routes
 app.use("/api/shuttles", shuttleRoutes); // Mount shuttle routes
 app.use("/api/students", studentRoutes); // Mount student routes
 app.use("/api/locations", locationRoutes); // Mount location routes
+app.use("/attendance", attendanceRoutes); // Mount attendance routes
+app.use("/reports", reportRoutes); // Mount report routes
 
 // Read from .env with safe fallbacks
 const PORT = process.env.PORT || 5000;
