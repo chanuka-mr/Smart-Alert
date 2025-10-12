@@ -230,8 +230,24 @@ const Home = () => {
                     <span>Admin Dashboard</span>
                   </a>
                   <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/admin-create-notice'); }}>
+                    <i className="fas fa-plus-circle"></i>
+                    <span>Create Notice</span>
+                  </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/display-notices'); }}>
                     <i className="fas fa-bullhorn"></i>
-                    <span>Notices</span>
+                    <span>View Notices</span>
+                  </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/update-admin-notices'); }}>
+                    <i className="fas fa-edit"></i>
+                    <span>Update Notices</span>
+                  </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/direct-message-teacher'); }}>
+                    <i className="fas fa-envelope"></i>
+                    <span>Message Teachers</span>
+                  </a>
+                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/direct-message-parent'); }}>
+                    <i className="fas fa-paper-plane"></i>
+                    <span>Message Parents</span>
                   </a>
                   <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/shuttle-services'); }}>
                     <i className="fas fa-bus"></i>

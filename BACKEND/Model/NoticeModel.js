@@ -16,9 +16,22 @@ const noticeSchema = new Schema(
       trim: true
     },
     attachment: {
-      type: String,                // File path or URL for an optional attachment
-      required: false,
-      default: null
+      data: {
+        type: String,              // Base64 encoded file data
+        required: false
+      },
+      contentType: {
+        type: String,              // MIME type (e.g., 'application/pdf', 'image/jpeg')
+        required: false
+      },
+      filename: {
+        type: String,              // Original filename
+        required: false
+      },
+      size: {
+        type: Number,              // File size in bytes
+        required: false
+      }
     },
     createdBy: {
       type: String,                // Name/ID of admin/teacher who posted (optional)

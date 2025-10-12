@@ -34,7 +34,11 @@ const UpdateNoticeAdmin = () => {
     setEditTitle(notice.title);
     setEditNotice(notice.notice);
     setEditAttachment(null);
-    setEditAttachmentUrl(notice.attachment || '');
+    // Handle both string and object attachment formats
+    const attachmentUrl = typeof notice.attachment === 'object' 
+      ? (notice.attachment.filename ? `/notices/${notice._id}/attachment` : '')
+      : (notice.attachment || '');
+    setEditAttachmentUrl(attachmentUrl);
   };
 
   const handleDeleteAttachment = () => {
@@ -111,7 +115,7 @@ const UpdateNoticeAdmin = () => {
                     />
                     {editAttachmentUrl && (
                       <div>
-                        <a href={`http://localhost:5000${editAttachmentUrl}`} target="_blank" rel="noopener noreferrer">Download Current Attachment</a>
+                        <a href={editAttachmentUrl} target="_blank" rel="noopener noreferrer">Download Current Attachment</a>
                         <button type="button" className="btn-primary" onClick={handleDeleteAttachment}>Delete Attachment</button>
                       </div>
                     )}
@@ -126,8 +130,8 @@ const UpdateNoticeAdmin = () => {
                     {n.attachment && (
                       <div className="notice-attachment-display" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '8px 0' }}>
                         <span role="img" aria-label="attachment" style={{ fontSize: '1.3em' }}>📎</span>
-                        <span style={{ fontWeight: 500 }}>{n.attachment.split('/').pop()}</span>
-                        <a href={`http://localhost:5000${n.attachment}`} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ padding: '2px 10px', fontSize: '0.95em' }}>Download</a>
+                        <span style={{ fontWeight: 500 }}>{typeof n.attachment === 'object' ? n.attachment.filename : n.attachment.split('/').pop()}</span>
+                        <a href={`/notices/${n._id}/attachment`} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ padding: '2px 10px', fontSize: '0.95em' }}>Download</a>
                       </div>
                     )}
                     <span className="notice-category">{n.category}</span>

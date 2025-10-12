@@ -26,6 +26,9 @@ router.get("/", NoticeController.getAllNotice);
 // Route to add a new notice (with file upload)
 router.post("/", upload.single('attachment'), NoticeController.addNotice);
 
+// Route to download attachment for a specific notice (MUST be before /:id route)
+router.get("/:id/attachment", NoticeController.getAttachment);
+
 // Route to get a notice by its ID
 router.get("/:id", NoticeController.getById);
 

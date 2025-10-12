@@ -40,11 +40,30 @@ const DisplayNotices = ({ userType, classId }) => {
   const filteredSchoolNotices = schoolNotices.filter(n => !categoryFilter || n.category === categoryFilter);
   const filteredClassNotices = classNotices.filter(n => !categoryFilter || n.category === categoryFilter);
 
-  // Helper to get correct attachment path
-  function getAttachmentPath(attachment) {
+  // Helper to get correct attachment path or data URL
+  function getAttachmentPath(attachment, noticeId) {
     if (!attachment) return '';
-    const filename = attachment.split('/').pop().split('\\').pop();
-    return `http://localhost:5000/uploads/${filename}`;
+    
+    // If attachment is an object (with or without Base64 data), use the API endpoint
+    if (typeof attachment === 'object' && noticeId) {
+      // If Base64 data is present, use data URL (for backward compatibility)
+      if (attachment.data) {
+        return `data:${attachment.contentType};base64,${attachment.data}`;
+      }
+      // Otherwise, fetch from API endpoint
+      return `/notices/${noticeId}/attachment`;
+    }
+    
+    // If we have a notice ID, use the attachment API endpoint (use relative path for proxy)
+    if (noticeId) {
+      return `/notices/${noticeId}/attachment`;
+    }
+    
+    // Fallback: if attachment is a string path
+    const attachmentStr = typeof attachment === 'string' ? attachment : attachment.path || attachment.filename || '';
+    if (!attachmentStr) return '';
+    const filename = attachmentStr.split('/').pop().split('\\').pop();
+    return `/uploads/${filename}`;
   }
 
 
@@ -77,7 +96,7 @@ const DisplayNotices = ({ userType, classId }) => {
                     <p>{n.notice}</p>
                     {n.attachment && (
                       <div className="notice-attachment">
-                        <a href={getAttachmentPath(n.attachment)} download target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: '#222' }}>
+                        <a href={getAttachmentPath(n.attachment, n._id)} download target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: '#222' }}>
                           <img src="https://cdn.jsdelivr.net/gh/file-icons/icons/svg/pdf.svg" alt="pdf" style={{ width: 28, height: 28, marginRight: 8 }} />
                           <span>{getFileName(n.attachment)}</span>
                         </a>
@@ -103,7 +122,7 @@ const DisplayNotices = ({ userType, classId }) => {
                     <p>{n.notice}</p>
                     {n.attachment && (
                       <div className="notice-attachment">
-                        <a href={getAttachmentPath(n.attachment)} download target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: '#222' }}>
+                        <a href={getAttachmentPath(n.attachment, n._id)} download target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: '#222' }}>
                           <img src="https://cdn.jsdelivr.net/gh/file-icons/icons/svg/pdf.svg" alt="pdf" style={{ width: 28, height: 28, marginRight: 8 }} />
                           <span>{getFileName(n.attachment)}</span>
                         </a>
@@ -127,10 +146,19 @@ const DisplayNotices = ({ userType, classId }) => {
   );
 };
 
-// Helper to get file name from attachment path
-function getFileName(path) {
-  if (!path) return '';
-  return path.split('/').pop().split('\\').pop();
+// Helper to get file name from attachment path or object
+function getFileName(attachment) {
+  if (!attachment) return '';
+  
+  // If attachment is an object with filename property
+  if (typeof attachment === 'object' && attachment.filename) {
+    return attachment.filename;
+  }
+  
+  // If attachment is a string path
+  const pathStr = typeof attachment === 'string' ? attachment : attachment.path || '';
+  if (!pathStr) return '';
+  return pathStr.split('/').pop().split('\\').pop();
 }
 
 // Helper to download notice as PDF
