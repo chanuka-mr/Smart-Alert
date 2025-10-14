@@ -16,8 +16,12 @@ const noticeSchema = new Schema(
       trim: true
     },
     attachment: {
-      data: {
-        type: String,              // Base64 encoded file data
+      url: {
+        type: String,              // Uploadcare CDN URL
+        required: false
+      },
+      uuid: {
+        type: String,              // Uploadcare file UUID
         required: false
       },
       contentType: {

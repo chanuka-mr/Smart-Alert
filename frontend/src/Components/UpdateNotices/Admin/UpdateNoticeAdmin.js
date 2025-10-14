@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
+import { FileUploaderRegular } from '@uploadcare/react-uploader';
+import '@uploadcare/react-uploader/core.css';
 import './UpdateNoticeAdmin.css';
 
 const UpdateNoticeAdmin = () => {
@@ -12,6 +14,7 @@ const UpdateNoticeAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteId, setDeleteId] = useState(null);
+  const uploaderRef = useRef(null);
 
   useEffect(() => {
     fetchNotices();
@@ -33,12 +36,14 @@ const UpdateNoticeAdmin = () => {
     setEditId(notice._id);
     setEditTitle(notice.title);
     setEditNotice(notice.notice);
-    setEditAttachment(null);
-    // Handle both string and object attachment formats
-    const attachmentUrl = typeof notice.attachment === 'object' 
-      ? (notice.attachment.filename ? `/notices/${notice._id}/attachment` : '')
-      : (notice.attachment || '');
-    setEditAttachmentUrl(attachmentUrl);
+    // Store existing attachment data
+    if (notice.attachment && notice.attachment.url) {
+      setEditAttachment(notice.attachment);
+      setEditAttachmentUrl(notice.attachment.url);
+    } else {
+      setEditAttachment(null);
+      setEditAttachmentUrl('');
+    }
   };
 
   const handleDeleteAttachment = () => {
@@ -46,23 +51,31 @@ const UpdateNoticeAdmin = () => {
     setEditAttachmentUrl('');
   };
 
-  const handleAttachmentChange = (e) => {
-    setEditAttachment(e.target.files[0]);
-    setEditAttachmentUrl('');
+  // Handle Uploadcare file upload success
+  const handleUploadSuccess = (file) => {
+    if (file && file.cdnUrl) {
+      const attachmentData = {
+        url: file.cdnUrl,
+        uuid: file.uuid,
+        contentType: file.mimeType,
+        filename: file.name,
+        size: file.size
+      };
+      setEditAttachment(attachmentData);
+      setEditAttachmentUrl(file.cdnUrl);
+      console.log('File uploaded to Uploadcare:', attachmentData);
+    }
   };
 
   const handleUpdate = async () => {
     try {
-      const formData = new FormData();
-      formData.append('title', editTitle);
-      formData.append('notice', editNotice);
-      if (editAttachment) {
-        formData.append('attachment', editAttachment);
-      } else if (editAttachmentUrl === '') {
-        formData.append('attachment', ''); // delete attachment
-      }
-      await axios.put(`/notices/${editId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const noticeData = {
+        title: editTitle,
+        notice: editNotice,
+        attachment: editAttachmentUrl === '' ? null : (editAttachment || 'keep')
+      };
+      await axios.put(`/notices/${editId}`, noticeData, {
+        headers: { 'Content-Type': 'application/json' },
       });
       setEditId(null);
       setEditTitle('');
@@ -71,6 +84,7 @@ const UpdateNoticeAdmin = () => {
       setEditAttachmentUrl('');
       fetchNotices();
     } catch (err) {
+      console.error('Error updating notice:', err);
       setError('Failed to update notice.');
     }
   };
@@ -114,12 +128,22 @@ const UpdateNoticeAdmin = () => {
                       placeholder="Notice"
                     />
                     {editAttachmentUrl && (
-                      <div>
-                        <a href={editAttachmentUrl} target="_blank" rel="noopener noreferrer">Download Current Attachment</a>
-                        <button type="button" className="btn-primary" onClick={handleDeleteAttachment}>Delete Attachment</button>
+                      <div style={{ marginBottom: '10px', padding: '10px', background: '#f0f0f0', borderRadius: '4px' }}>
+                        <p style={{ margin: 0, fontSize: '14px' }}>Current: {editAttachment?.filename || 'Attachment'}</p>
+                        <a href={editAttachmentUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px' }}>View</a>
+                        <button type="button" className="btn-primary" onClick={handleDeleteAttachment} style={{ marginLeft: '10px', padding: '4px 8px', fontSize: '12px' }}>Remove</button>
                       </div>
                     )}
-                    <input type="file" onChange={handleAttachmentChange} />
+                    <label>Upload New Attachment (optional)</label>
+                    <FileUploaderRegular
+                      ref={uploaderRef}
+                      pubkey="e8c9790d2d0cfc27cb41"
+                      maxLocalFileSizeBytes={20971520}
+                      multiple={false}
+                      sourceList="local, url, camera, dropbox"
+                      classNameUploader="uc-light"
+                      onFileUploadSuccess={handleUploadSuccess}
+                    />
                     <button className="btn-primary" onClick={handleUpdate}>Save</button>
                     <button className="btn-primary" onClick={() => setEditId(null)}>Cancel</button>
                   </div>

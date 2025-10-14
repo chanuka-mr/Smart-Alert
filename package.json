@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/chanuka-mr/Smart-Alert#readme",
   "dependencies": {
+    "@uploadcare/react-uploader": "^1.10.2",
     "axios": "^1.12.2"
   }
 }
