@@ -1,13 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { api } from '../../utils/api';
 import './DisplayNotices.css';
 
-const DisplayNotices = ({ userType, classId }) => {
+const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
   const [notices, setNotices] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [userType, setUserType] = useState(propUserType || null);
+  const [classId, setClassId] = useState(propClassId || null);
 
   const navigate = useNavigate();
+  
+  // Fetch user data to determine userType
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userData = await api('/auth/me');
+        const user = userData?.user || userData;
+        const detectedUserType = user?.userType || user?.role;
+        console.log('DisplayNotices - User Type:', detectedUserType);
+        setUserType(detectedUserType);
+        setClassId(user?.classId);
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    };
+    
+    // Only fetch if userType not provided via props
+    if (!propUserType) {
+      fetchUserData();
+    }
+  }, [propUserType]);
+  
   // Backspace navigation
   useEffect(() => {
     const handleBackspace = (e) => {
@@ -72,6 +97,14 @@ const DisplayNotices = ({ userType, classId }) => {
       <div className="section-title">
         <h2>Notices</h2>
         <p>View all school and class notices</p>
+        {(userType === 'Admin' || userType === 'Teacher' || userType === 'admin' || userType === 'teacher') && (
+          <button 
+            className="btn-primary create-notice-btn"
+            onClick={() => navigate((userType === 'Admin' || userType === 'admin') ? '/admin-create-notice' : '/teacher-create-notice')}
+          >
+            + Create New Notice
+          </button>
+        )}
       </div>
       <div className="display-notices-container">
         <div className="container home-page">

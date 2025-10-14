@@ -116,6 +116,29 @@
   margin-bottom: 18px;
 }
 
+/* Create notice button styling */
+.create-notice-btn {
+  margin-top: 12px;
+  padding: 10px 20px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.create-notice-btn:hover {
+  background-color: #1565c0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+.create-notice-btn:active {
+  transform: translateY(0);
+}
+
 /* Responsive layout for smaller screens */
 @media (max-width: 900px) {
   .notices-subtopics {
