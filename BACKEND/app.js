@@ -82,11 +82,38 @@ mongoose
   .then(() => {
     console.log("Connected to MongoDB");
 
-    // Start server
-    server.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-      console.log("Socket.IO enabled for real-time tracking");
+    // Start server with automatic port fallback if the desired port is busy
+    let currentPort = Number(PORT);
+    const maxRetries = 10;
+    let attempts = 0;
+
+    const startListening = () => {
+      server.listen(currentPort, () => {
+        console.log(`Server running on http://localhost:${currentPort}`);
+        console.log("Socket.IO enabled for real-time tracking");
+      });
+    };
+
+    server.on('error', (err) => {
+      if (err && err.code === 'EADDRINUSE' && attempts < maxRetries) {
+        attempts += 1;
+        const nextPort = currentPort + 1;
+        console.warn(`Port ${currentPort} in use. Retrying on ${nextPort} (attempt ${attempts}/${maxRetries})...`);
+        currentPort = nextPort;
+        setTimeout(() => {
+          try {
+            server.close(() => startListening());
+          } catch (_) {
+            startListening();
+          }
+        }, 500);
+      } else {
+        console.error('Server failed to start:', err);
+        process.exit(1);
+      }
     });
+
+    startListening();
   })
   .catch((err) => console.log(err));
 
