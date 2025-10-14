@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../utils/api';
+import logo from '../../logo.png';
 import './Home.css';
 
 const Home = () => {
@@ -210,71 +211,19 @@ const Home = () => {
       <header>
         <div className="container">
           <div className="header-content">
-            <div className="logo">
-              <i className="fas fa-graduation-cap"></i>
-              <h1>Smart Alert</h1>
+            <div className="logo-section">
+              <img src={logo} alt="Smart Alert Logo" className="logo-image" />
+              <h1 className="logo-text">Smart Alert</h1>
             </div>
-            <nav>
-              <ul>
+            <nav className="main-navigation">
+              <ul className="nav-menu">
                 <li><a href="#" onClick={handleNavClick}>Home</a></li>
                 <li><a href="#features" onClick={handleNavClick}>Features</a></li>
                 <li><a href="#about" onClick={handleNavClick}>About</a></li>
                 <li><a href="#contact" onClick={handleNavClick}>Contact</a></li>
               </ul>
             </nav>
-            <div className="header-actions">
-              {user && user.role && user.role.toLowerCase() === 'admin' && (
-                <>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
-                    <i className="fas fa-tachometer-alt"></i>
-                    <span>Admin Dashboard</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/admin-create-notice'); }}>
-                    <i className="fas fa-plus-circle"></i>
-                    <span>Create Notice</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/display-notices'); }}>
-                    <i className="fas fa-bullhorn"></i>
-                    <span>View Notices</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/update-admin-notices'); }}>
-                    <i className="fas fa-edit"></i>
-                    <span>Update Notices</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/direct-message-teacher'); }}>
-                    <i className="fas fa-envelope"></i>
-                    <span>Message Teachers</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/direct-message-parent'); }}>
-                    <i className="fas fa-paper-plane"></i>
-                    <span>Message Parents</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/shuttle-services'); }}>
-                    <i className="fas fa-bus"></i>
-                    <span>Shuttle Services</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/timetable'); }}>
-                    <i className="fas fa-calendar-alt"></i>
-                    <span>Timetable</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/report-card'); }}>
-                    <i className="fas fa-file-alt"></i>
-                    <span>Report Cards</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/students'); }}>
-                    <i className="fas fa-user-graduate"></i>
-                    <span>Students</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/attendance'); }}>
-                    <i className="fas fa-clipboard-check"></i>
-                    <span>Mark Attendance</span>
-                  </a>
-                  <a href="#" className="admin-dashboard-button" onClick={(e) => { e.preventDefault(); navigate('/attendance-records'); }}>
-                    <i className="fas fa-list-alt"></i>
-                    <span>Attendance Records</span>
-                  </a>
-                </>
-              )}
+            <div className="user-actions">
               <a href="#" className="profile-button" onClick={handleProfileClick}>
                 <i className="fas fa-user-circle"></i>
                 <span>Profile</span>
@@ -288,12 +237,44 @@ const Home = () => {
         </div>
       </header>
 
+      {/* Main Action Buttons Section */}
+      <section className="main-actions-section">
+        <div className="container">
+          <div className="main-actions">
+            <button className="action-btn-admin-dashboard" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
+              <i className="fas fa-tachometer-alt"></i>
+              <span>Admin Dashboard</span>
+            </button>
+            <button className="action-btn mark-attendance" onClick={(e) => { e.preventDefault(); navigate('/attendance'); }}>
+              <i className="fas fa-clipboard-check"></i>
+              <span>Mark Attendance</span>
+            </button>
+            <button className="action-btn notices" onClick={(e) => { e.preventDefault(); navigate('/display-notices'); }}>
+              <i className="fas fa-bullhorn"></i>
+              <span>Notices</span>
+            </button>
+            <button className="action-btn examination" onClick={(e) => { e.preventDefault(); navigate('/timetable'); }}>
+              <i className="fas fa-file-alt"></i>
+              <span>Examination</span>
+            </button>
+            <button className="action-btn shuttle-services" onClick={(e) => { e.preventDefault(); navigate('/shuttle-services'); }}>
+              <i className="fas fa-bus"></i>
+              <span>Shuttle Services</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Hero Section */}
       <section className="hero">
         <div className="container">
-          <h2>Under Development</h2>
-          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.</p>
-          <a href="#" className="btn-hero" onClick={handleGetStarted}>Button</a>
+          <h2>Welcome to Webstar International Smart Alert System !</h2>
+          <p>
+            A unified platform designed to keep students, parents, and staff connected in
+            real time. Monitor attendance, follow shuttle services, receive important
+            notices, and track academic milestones securely—all in one intuitive and
+            reliable system.
+          </p>
         </div>
       </section>
 

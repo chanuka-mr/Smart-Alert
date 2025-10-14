@@ -349,7 +349,7 @@ export default function App() {
           } 
         />
         <Route 
-          path="/attendance-records" 
+          path="/records" 
           element={
             <RequireAuth>
               <AttendanceRecords />

@@ -26,123 +26,159 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.home-page .header-content {
+.header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.home-page .logo {
-  display: flex;
-  align-items: center;
-}
-
-.home-page .logo i {
-  font-size: 36px;
-  margin-right: 10px;
-}
-
-.home-page .logo h1 {
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.home-page nav ul {
-  display: flex;
-  list-style: none;
-}
-
-.home-page nav ul li {
-  margin-left: 25px;
-}
-
-.home-page nav ul li a {
-  color: white;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.home-page nav ul li a:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.home-page .profile-button {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 8px 15px;
-  border-radius: 5px;
-  text-decoration: none;
-  transition: all 0.3s;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-}
-
-.home-page .profile-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-.home-page .profile-button i {
-  margin-right: 8px;
-}
-
-.home-page .logout-button {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 107, 64, 0.2);
-  color: white;
-  padding: 8px 15px;
-  border-radius: 5px;
-  text-decoration: none;
-  transition: all 0.3s;
-  border: 1px solid rgba(255, 107, 64, 0.4);
-  cursor: pointer;
-}
-
-.home-page .logout-button:hover {
-  background: rgba(255, 107, 64, 0.3);
-  transform: translateY(-2px);
-  border-color: rgba(255, 107, 64, 0.6);
-}
-
-.home-page .logout-button i {
-  margin-right: 8px;
-}
-
-/* Header Actions */
-.home-page .header-actions {
+.logo-section {
   display: flex;
   align-items: center;
   gap: 15px;
 }
 
-.home-page .admin-dashboard-button {
+.logo-image {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px;
+}
+
+.logo-text {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.main-navigation {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-menu {
+  display: flex;
+  list-style: none;
+  gap: 30px;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-menu li a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 8px 15px;
+  border-radius: 5px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.nav-menu li a:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.user-actions {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
+  gap: 12px;
+}
+
+.profile-button, .logout-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 8px 15px;
   border-radius: 5px;
   text-decoration: none;
   transition: all 0.3s;
-  border: 1px solid rgba(255, 255, 255, 0.3);
   cursor: pointer;
   font-weight: 600;
+  font-size: 14px;
 }
 
-.home-page .admin-dashboard-button:hover {
-  background: rgba(255, 255, 255, 0.25);
+.profile-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.profile-button:hover {
+  background: rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
 }
 
-.home-page .admin-dashboard-button i {
-  margin-right: 8px;
+.logout-button {
+  background: rgba(255, 107, 64, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 107, 64, 0.4);
+}
+
+.logout-button:hover {
+  background: rgba(255, 107, 64, 0.3);
+  transform: translateY(-2px);
+  border-color: rgba(255, 107, 64, 0.6);
+}
+
+/* Main Actions Section */
+.main-actions-section {
+  background: rgba(0, 137, 123, 0.05);
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(0, 137, 123, 0.1);
+}
+
+.main-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 137, 123, 0.1);
+  color: #00897b;
+  border: 2px solid rgba(0, 137, 123, 0.2);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+}
+
+.action-btn:hover {
+  background: rgba(0, 137, 123, 0.2);
+  border-color: rgba(0, 137, 123, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 137, 123, 0.2);
+}
+
+.action-btn i {
+  font-size: 16px;
+}
+
+.action-btn-admin-dashboard {
+  background: rgba(0, 137, 123, 0.1) !important;
+  color: #00897b !important;
+  border: 2px solid rgba(0, 137, 123, 0.2) !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+}
+
+.action-btn-admin-dashboard:hover {
+  background: rgba(0, 137, 123, 0.2) !important;
+  border-color: rgba(0, 137, 123, 0.4) !important;
 }
 
 /* Hero Section */
@@ -495,32 +531,38 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .home-page .header-content {
+  .header-content {
     flex-direction: column;
-    text-align: center;
+    gap: 15px;
   }
   
-  .home-page nav ul {
-    margin: 20px 0;
+  .logo-section {
     justify-content: center;
   }
   
-  .home-page nav ul li {
-    margin: 0 10px;
+  .main-navigation {
+    width: 100%;
   }
   
-  .home-page .header-actions {
-    flex-direction: column;
+  .nav-menu {
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .user-actions {
+    justify-content: center;
+  }
+  
+  .main-actions {
     gap: 10px;
-    margin-top: 15px;
   }
   
-  .home-page .profile-button {
-    margin-top: 0;
-  }
-  
-  .home-page .logout-button {
-    margin-top: 0;
+  .action-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
   }
   
   .home-page .hero h2 {
@@ -533,23 +575,45 @@
 }
 
 @media (max-width: 480px) {
-  .home-page nav ul {
+  .nav-menu {
     flex-direction: column;
     gap: 10px;
-    margin: 15px 0;
-    align-items: center;
-    width: 100%;
-    text-align: center;
-  }
-  
-  .home-page nav ul li {
-    margin: 5px 0;
     width: 100%;
   }
   
-  .home-page nav ul li a {
+  .nav-menu li {
+    width: 100%;
+  }
+  
+  .nav-menu li a {
     display: block;
-    padding: 10px;
+    text-align: center;
+    padding: 12px;
+  }
+  
+  .main-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .action-btn {
+    width: 100%;
+    justify-content: center;
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+    padding: 10px 16px;
+  }
+  
+  .user-actions {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .profile-button, .logout-button {
+    width: 100%;
+    justify-content: center;
   }
   
   .home-page .features-grid {
