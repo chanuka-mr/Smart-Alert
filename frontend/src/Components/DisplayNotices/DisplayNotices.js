@@ -43,10 +43,17 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
     }
   }, [propUserType]);
   
-  // Backspace navigation
+  // Backspace navigation (only when not editing)
   useEffect(() => {
     const handleBackspace = (e) => {
-      if (e.key === 'Backspace') {
+      // Don't navigate if user is typing in an input, textarea, or select element
+      const target = e.target;
+      const isEditing = target.tagName === 'INPUT' || 
+                       target.tagName === 'TEXTAREA' || 
+                       target.tagName === 'SELECT' ||
+                       target.isContentEditable;
+      
+      if (e.key === 'Backspace' && !isEditing) {
         e.preventDefault();
         navigate(-1);
       }
