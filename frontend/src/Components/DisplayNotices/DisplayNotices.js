@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { FileUploaderRegular } from '@uploadcare/react-uploader';
+import '@uploadcare/react-uploader/core.css';
 import { api } from '../../utils/api';
 import './DisplayNotices.css';
 
@@ -9,6 +11,14 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [userType, setUserType] = useState(propUserType || null);
   const [classId, setClassId] = useState(propClassId || null);
+  const [deleteId, setDeleteId] = useState(null);
+  const [editId, setEditId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editNotice, setEditNotice] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editAttachment, setEditAttachment] = useState(null);
+  const [editAttachmentUrl, setEditAttachmentUrl] = useState('');
+  const uploaderRef = useRef(null);
 
   const navigate = useNavigate();
   
@@ -45,21 +55,22 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
     return () => window.removeEventListener('keydown', handleBackspace);
   }, [navigate]);
 
-  useEffect(() => {
-    const fetchNotices = async () => {
-      try {
-        const res = await axios.get('/notices');
-        const fetchedNotices = res.data.notices || [];
-        console.log('Fetched notices:', fetchedNotices);
-        // Log first notice attachment for debugging
-        if (fetchedNotices.length > 0 && fetchedNotices[0].attachment) {
-          console.log('First notice attachment:', fetchedNotices[0].attachment);
-        }
-        setNotices(fetchedNotices);
-      } catch (err) {
-        console.error('Failed to load notices:', err);
+  const fetchNotices = async () => {
+    try {
+      const res = await axios.get('/notices');
+      const fetchedNotices = res.data.notices || [];
+      console.log('Fetched notices:', fetchedNotices);
+      // Log first notice attachment for debugging
+      if (fetchedNotices.length > 0 && fetchedNotices[0].attachment) {
+        console.log('First notice attachment:', fetchedNotices[0].attachment);
       }
-    };
+      setNotices(fetchedNotices);
+    } catch (err) {
+      console.error('Failed to load notices:', err);
+    }
+  };
+
+  useEffect(() => {
     fetchNotices();
   }, []);
 
@@ -161,6 +172,100 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
     }
   };
 
+  // Handle inline edit notice
+  const handleUpdateNotice = (notice) => {
+    setEditId(notice._id);
+    setEditTitle(notice.title);
+    setEditNotice(notice.notice);
+    setEditCategory(notice.category || 'General');
+    // Store existing attachment data
+    if (notice.attachment && notice.attachment.url) {
+      setEditAttachment(notice.attachment);
+      setEditAttachmentUrl(notice.attachment.url);
+    } else {
+      setEditAttachment(null);
+      setEditAttachmentUrl('');
+    }
+    // Scroll to the edit form
+    setTimeout(() => {
+      const element = document.getElementById(`edit-form-${notice._id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setEditId(null);
+    setEditTitle('');
+    setEditNotice('');
+    setEditCategory('');
+    setEditAttachment(null);
+    setEditAttachmentUrl('');
+  };
+
+  // Handle delete attachment
+  const handleDeleteAttachment = () => {
+    setEditAttachment(null);
+    setEditAttachmentUrl('');
+  };
+
+  // Handle Uploadcare file upload success
+  const handleUploadSuccess = (file) => {
+    if (file && file.cdnUrl) {
+      const attachmentData = {
+        url: file.cdnUrl,
+        uuid: file.uuid,
+        contentType: file.mimeType,
+        filename: file.name,
+        size: file.size
+      };
+      setEditAttachment(attachmentData);
+      setEditAttachmentUrl(file.cdnUrl);
+      console.log('File uploaded to Uploadcare:', attachmentData);
+    }
+  };
+
+  // Handle save edit
+  const handleSaveEdit = async () => {
+    try {
+      const noticeData = {
+        title: editTitle,
+        notice: editNotice,
+        category: editCategory,
+        attachment: editAttachmentUrl === '' ? null : (editAttachment || 'keep'),
+        updatedAt: new Date().toISOString()
+      };
+      await axios.put(`/notices/${editId}`, noticeData, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      handleCancelEdit();
+      fetchNotices();
+    } catch (err) {
+      console.error('Error updating notice:', err);
+      alert('Failed to update notice. Please try again.');
+    }
+  };
+
+  // Handle delete notice
+  const handleDeleteNotice = (noticeId) => {
+    setDeleteId(noticeId);
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(`/notices/${deleteId}`);
+      setDeleteId(null);
+      fetchNotices();
+    } catch (err) {
+      console.error('Failed to delete notice:', err);
+      alert('Failed to delete notice. Please try again.');
+      setDeleteId(null);
+    }
+  };
+
 
   return (
     <>
@@ -194,27 +299,94 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
               <h3>School Notices</h3>
               <div className="notices-section">
                 {filteredSchoolNotices.length === 0 ? <p>No school notices.</p> : filteredSchoolNotices.map(n => (
-                  <div className="notice-card" key={n._id}>
-                    <h3>{n.title}</h3>
-                    <p>{n.notice}</p>
-                    {hasValidAttachment(n.attachment) && (
-                      <div className="notice-attachment">
-                        <button 
-                          onClick={() => handleDownloadAttachment(n.attachment, n._id, getFileName(n.attachment))}
-                          style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: '#222', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  <div className="notice-card" key={n._id} id={`notice-${n._id}`}>
+                    {editId === n._id ? (
+                      <div className="edit-form" id={`edit-form-${n._id}`}>
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={e => setEditTitle(e.target.value)}
+                          placeholder="Title"
+                          className="edit-input"
+                        />
+                        <textarea
+                          value={editNotice}
+                          onChange={e => setEditNotice(e.target.value)}
+                          placeholder="Notice"
+                          className="edit-textarea"
+                          rows="5"
+                        />
+                        <select
+                          value={editCategory}
+                          onChange={e => setEditCategory(e.target.value)}
+                          className="edit-select"
                         >
-                          <img src="https://cdn.jsdelivr.net/gh/file-icons/icons/svg/pdf.svg" alt="pdf" style={{ width: 28, height: 28, marginRight: 8 }} />
-                          <span>{getFileName(n.attachment)}</span>
-                        </button>
+                          <option value="General">General</option>
+                          <option value="Exam">Exam</option>
+                          <option value="Holiday">Holiday</option>
+                          <option value="Event">Event</option>
+                          <option value="Other">Other</option>
+                        </select>
+                        {editAttachmentUrl && (
+                          <div className="current-attachment">
+                            <p>Current: {editAttachment?.filename || 'Attachment'}</p>
+                            <a href={editAttachmentUrl} target="_blank" rel="noopener noreferrer">View</a>
+                            <button type="button" className="btn-remove" onClick={handleDeleteAttachment}>Remove</button>
+                          </div>
+                        )}
+                        <label className="upload-label">Upload New Attachment (optional)</label>
+                        <FileUploaderRegular
+                          ref={uploaderRef}
+                          pubkey="e8c9790d2d0cfc27cb41"
+                          maxLocalFileSizeBytes={20971520}
+                          multiple={false}
+                          sourceList="local, url, camera, dropbox"
+                          classNameUploader="uc-light"
+                          onFileUploadSuccess={handleUploadSuccess}
+                        />
+                        <div className="edit-actions">
+                          <button className="btn-save" onClick={handleSaveEdit}>Save</button>
+                          <button className="btn-cancel" onClick={handleCancelEdit}>Cancel</button>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        <h3>{n.title}</h3>
+                        <p>{n.notice}</p>
+                        {hasValidAttachment(n.attachment) && (
+                          <div className="notice-attachment">
+                            <button 
+                              onClick={() => handleDownloadAttachment(n.attachment, n._id, getFileName(n.attachment))}
+                              style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: '#222', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                            >
+                              <img src="https://cdn.jsdelivr.net/gh/file-icons/icons/svg/pdf.svg" alt="pdf" style={{ width: 28, height: 28, marginRight: 8 }} />
+                              <span>{getFileName(n.attachment)}</span>
+                            </button>
+                          </div>
+                        )}
+                        <span className="notice-category">{n.category}</span>
+                        <span className="notice-date">{new Date(n.publishedAt).toLocaleString()}</span>
+                        <span className="notice-author">By: {n.createdBy}</span>
+                        <div className="notice-actions">
+                          <button
+                            className="btn-primary notice-download"
+                            onClick={() => downloadNoticeAsPDF(n.title, n.notice, n.publishedAt, n.createdBy)}
+                          >Download Notice as PDF</button>
+                          {(userType === 'Admin' || userType === 'admin') && (
+                            <>
+                              <button
+                                className="btn-update"
+                                onClick={() => handleUpdateNotice(n)}
+                              >Update</button>
+                              <button
+                                className="btn-delete"
+                                onClick={() => handleDeleteNotice(n._id)}
+                              >Delete</button>
+                            </>
+                          )}
+                        </div>
+                      </>
                     )}
-                    <span className="notice-category">{n.category}</span>
-                    <span className="notice-date">{new Date(n.publishedAt).toLocaleString()}</span>
-                    <span className="notice-author">By: {n.createdBy}</span>
-                    <button
-                      className="btn-primary notice-download"
-                      onClick={() => downloadNoticeAsPDF(n.title, n.notice, n.publishedAt, n.createdBy)}
-                    >Download Notice as PDF</button>
                   </div>
                 ))}
               </div>
@@ -223,27 +395,94 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
               <h3>Class Notices</h3>
               <div className="notices-section">
                 {filteredClassNotices.length === 0 ? <p>No class notices.</p> : filteredClassNotices.map(n => (
-                  <div className="notice-card" key={n._id}>
-                    <h3>{n.title}</h3>
-                    <p>{n.notice}</p>
-                    {hasValidAttachment(n.attachment) && (
-                      <div className="notice-attachment">
-                        <button 
-                          onClick={() => handleDownloadAttachment(n.attachment, n._id, getFileName(n.attachment))}
-                          style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: '#222', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  <div className="notice-card" key={n._id} id={`notice-${n._id}`}>
+                    {editId === n._id ? (
+                      <div className="edit-form" id={`edit-form-${n._id}`}>
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={e => setEditTitle(e.target.value)}
+                          placeholder="Title"
+                          className="edit-input"
+                        />
+                        <textarea
+                          value={editNotice}
+                          onChange={e => setEditNotice(e.target.value)}
+                          placeholder="Notice"
+                          className="edit-textarea"
+                          rows="5"
+                        />
+                        <select
+                          value={editCategory}
+                          onChange={e => setEditCategory(e.target.value)}
+                          className="edit-select"
                         >
-                          <img src="https://cdn.jsdelivr.net/gh/file-icons/icons/svg/pdf.svg" alt="pdf" style={{ width: 28, height: 28, marginRight: 8 }} />
-                          <span>{getFileName(n.attachment)}</span>
-                        </button>
+                          <option value="General">General</option>
+                          <option value="Exam">Exam</option>
+                          <option value="Holiday">Holiday</option>
+                          <option value="Event">Event</option>
+                          <option value="Other">Other</option>
+                        </select>
+                        {editAttachmentUrl && (
+                          <div className="current-attachment">
+                            <p>Current: {editAttachment?.filename || 'Attachment'}</p>
+                            <a href={editAttachmentUrl} target="_blank" rel="noopener noreferrer">View</a>
+                            <button type="button" className="btn-remove" onClick={handleDeleteAttachment}>Remove</button>
+                          </div>
+                        )}
+                        <label className="upload-label">Upload New Attachment (optional)</label>
+                        <FileUploaderRegular
+                          ref={uploaderRef}
+                          pubkey="e8c9790d2d0cfc27cb41"
+                          maxLocalFileSizeBytes={20971520}
+                          multiple={false}
+                          sourceList="local, url, camera, dropbox"
+                          classNameUploader="uc-light"
+                          onFileUploadSuccess={handleUploadSuccess}
+                        />
+                        <div className="edit-actions">
+                          <button className="btn-save" onClick={handleSaveEdit}>Save</button>
+                          <button className="btn-cancel" onClick={handleCancelEdit}>Cancel</button>
+                        </div>
                       </div>
+                    ) : (
+                      <>
+                        <h3>{n.title}</h3>
+                        <p>{n.notice}</p>
+                        {hasValidAttachment(n.attachment) && (
+                          <div className="notice-attachment">
+                            <button 
+                              onClick={() => handleDownloadAttachment(n.attachment, n._id, getFileName(n.attachment))}
+                              style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: '#222', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                            >
+                              <img src="https://cdn.jsdelivr.net/gh/file-icons/icons/svg/pdf.svg" alt="pdf" style={{ width: 28, height: 28, marginRight: 8 }} />
+                              <span>{getFileName(n.attachment)}</span>
+                            </button>
+                          </div>
+                        )}
+                        <span className="notice-category">{n.category}</span>
+                        <span className="notice-date">{new Date(n.publishedAt).toLocaleString()}</span>
+                        <span className="notice-author">By: {n.createdBy}</span>
+                        <div className="notice-actions">
+                          <button
+                            className="btn-primary notice-download"
+                            onClick={() => downloadNoticeAsPDF(n.title, n.notice)}
+                          >Download Notice as PDF</button>
+                          {(userType === 'Admin' || userType === 'admin') && (
+                            <>
+                              <button
+                                className="btn-update"
+                                onClick={() => handleUpdateNotice(n)}
+                              >Update</button>
+                              <button
+                                className="btn-delete"
+                                onClick={() => handleDeleteNotice(n._id)}
+                              >Delete</button>
+                            </>
+                          )}
+                        </div>
+                      </>
                     )}
-                    <span className="notice-category">{n.category}</span>
-                    <span className="notice-date">{new Date(n.publishedAt).toLocaleString()}</span>
-                    <span className="notice-author">By: {n.createdBy}</span>
-                    <button
-                      className="btn-primary notice-download"
-                      onClick={() => downloadNoticeAsPDF(n.title, n.notice)}
-                    >Download Notice as PDF</button>
                   </div>
                 ))}
               </div>
@@ -251,6 +490,22 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
           </div>
         </div>
       </div>
+      {deleteId && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h3>Confirm Delete</h3>
+            <p>Are you sure you want to delete this notice? This action cannot be undone.</p>
+            <p style={{ color: '#d32f2f', fontWeight: 500, marginTop: 8 }}>
+              If there is an attached file, it will also be deleted.
+            </p>
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '18px' }}>
+              <button className="btn-primary" onClick={confirmDelete}>Delete</button>
+              <button className="btn-primary" style={{ background: '#bbb', color: '#222' }} onClick={() => setDeleteId(null)}>Cancel</button>
+            </div>
+          </div>
+          <div className="modal-backdrop" style={{ pointerEvents: 'none' }}></div>
+        </div>
+      )}
     </>
   );
 };

@@ -1,10 +1,12 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { FileUploaderRegular } from '@uploadcare/react-uploader';
 import '@uploadcare/react-uploader/core.css';
 import './UpdateNoticeAdmin.css';
 
 const UpdateNoticeAdmin = () => {
+  const location = useLocation();
   const [notices, setNotices] = useState([]);
   const [editId, setEditId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
@@ -15,10 +17,6 @@ const UpdateNoticeAdmin = () => {
   const [error, setError] = useState('');
   const [deleteId, setDeleteId] = useState(null);
   const uploaderRef = useRef(null);
-
-  useEffect(() => {
-    fetchNotices();
-  }, []);
 
   const fetchNotices = async () => {
     setLoading(true);
@@ -32,7 +30,7 @@ const UpdateNoticeAdmin = () => {
     setLoading(false);
   };
 
-  const handleEdit = (notice) => {
+  const handleEdit = useCallback((notice) => {
     setEditId(notice._id);
     setEditTitle(notice.title);
     setEditNotice(notice.notice);
@@ -44,7 +42,28 @@ const UpdateNoticeAdmin = () => {
       setEditAttachment(null);
       setEditAttachmentUrl('');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchNotices();
+  }, []);
+
+  // Auto-open edit mode if noticeId is passed via location state
+  useEffect(() => {
+    if (location.state?.noticeId && notices.length > 0) {
+      const notice = notices.find(n => n._id === location.state.noticeId);
+      if (notice) {
+        handleEdit(notice);
+        // Scroll to the notice
+        setTimeout(() => {
+          const element = document.querySelector('.edit-form');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      }
+    }
+  }, [location.state, notices, handleEdit]);
 
   const handleDeleteAttachment = () => {
     setEditAttachment(null);
