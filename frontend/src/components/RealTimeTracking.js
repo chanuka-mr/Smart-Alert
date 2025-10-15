@@ -385,6 +385,9 @@ const RealTimeTracking = () => {
       case error.TIMEOUT:
         message = 'Location request timed out';
         break;
+      default:
+        message = 'Unknown location error';
+        break;
     }
     
     setError('Location Error: ' + message);

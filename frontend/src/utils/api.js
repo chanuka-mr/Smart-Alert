@@ -17,7 +17,8 @@ export function setToken(token) {
 export function getToken() {
   try { 
     const token = localStorage.getItem("token");
-    console.log('Token retrieved:', token ? 'present' : 'missing');
+    // Only log if debugging is needed - reduces console noise
+    // console.log('Token retrieved:', token ? 'present' : 'missing');
     return token;
   } catch (e) {
     console.error('Failed to retrieve token:', e);
@@ -56,7 +57,8 @@ export async function api(
   } = {}
 ) {
   const token = skipAuth ? null : getToken();
-  console.log('API call to:', path, 'with token:', token ? 'present' : 'missing');
+  // Only log API calls if debugging is needed - reduces console noise
+  // console.log('API call to:', path, 'with token:', token ? 'present' : 'missing');
   const url = buildUrl(path);
 
   const ctrl = new AbortController();

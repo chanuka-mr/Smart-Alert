@@ -1,4 +1,5 @@
 const Student = require("../Model/studentModel");
+const { User } = require("../Model/userModel");
 
 // Helper: check if string looks like a Mongo ObjectId
 const looksLikeObjectId = (s) => typeof s === "string" && s.match(/^[0-9a-fA-F]{24}$/);
@@ -42,26 +43,32 @@ const addStudent = async (req, res) => {
   }
 };
 
-// Get student by ID or index
+// Get student by ID or index (robust lookup)
 const getStudentByIdOrIndex = async (req, res) => {
-  const param = req.params.id;
-  
+  let param = req.params.id;
+  if (typeof param === 'string') param = param.trim();
+
   try {
-    let student;
+    // Try ObjectId first
+    let student = null;
     if (looksLikeObjectId(param)) {
       student = await Student.findById(param);
-    } else {
-      student = await Student.findOne({ std_index: param });
     }
-    
+
+    // If not found, try case-insensitive full match on std_index
+    if (!student && typeof param === 'string' && param.length > 0) {
+      const safe = param.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+      student = await Student.findOne({ std_index: { $regex: `^${safe}$`, $options: 'i' } });
+    }
+
     if (!student) {
-      return res.status(404).json({ message: "Student not found" });
+      return res.status(404).json({ message: 'Student not found' });
     }
-    
+
     return res.status(200).json({ student });
   } catch (err) {
-    console.error(err.message);
-    return res.status(500).json({ message: "Server error" });
+    console.error('Error in getStudentByIdOrIndex:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -115,11 +122,31 @@ const deleteStudent = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+// Lookup a student/user by userID in the users collection (public minimal view)
+const getStudentByUserId = async (req, res) => {
+  try {
+    let userid = req.params.userid;
+    if (typeof userid === 'string') userid = userid.trim();
+
+    if (!userid) return res.status(400).json({ message: 'Missing userid' });
+
+    const safe = userid.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+    const user = await User.findOne({ userID: { $regex: `^${safe}$`, $options: 'i' } }).select('userID fullName');
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    return res.status(200).json({ user });
+  } catch (err) {
+    console.error('Error in getStudentByUserId:', err);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
 
 module.exports = {
   getAllStudents,
   addStudent,
   getStudentByIdOrIndex,
+  getStudentByUserId,
   updateStudent,
   deleteStudent
 };

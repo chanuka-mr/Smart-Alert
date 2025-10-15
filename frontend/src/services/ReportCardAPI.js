@@ -256,47 +256,6 @@ class ReportCardAPI {
     };
   }
 
-  // Update report card
-  static async updateReportCard(id, reportCardData) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(reportCardData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.reportCard;
-    } catch (error) {
-      console.error('Error updating report card:', error);
-      throw error;
-    }
-  }
-
-  // Delete report card
-  static async deleteReportCard(id) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.message;
-    } catch (error) {
-      console.error('Error deleting report card:', error);
-      throw error;
-    }
-  }
 }
 
 export default ReportCardAPI;

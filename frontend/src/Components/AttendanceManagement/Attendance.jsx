@@ -61,7 +61,7 @@ const Attendance = () => {
       map[s._id] = rows[s._id] ?? { status: "Present" };
     });
     setRows(map);
-  }, [visible.length, section]);
+  }, [visible.length, section, rows, visible]);
 
   useEffect(() => {
     const loadExisting = async () => {
