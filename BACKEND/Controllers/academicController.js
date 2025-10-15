@@ -17,15 +17,20 @@ const getAllAcademicRecords = async (req, res) => {
       academicRecords.map(async (record) => {
         const user = await User.findOne({ userID: record.userID }).select('fullName email role');
         const assignedByUser = await User.findOne({ userID: record.assignedBy }).select('fullName');
-        
+
+        // Always preserve the original userID string in the response so the frontend can
+        // map academic records to users even when the User document is missing.
+        const originalUserID = record.userID;
+
         return {
           ...record.toObject(),
+          originalUserID,
           userID: user ? {
             userID: user.userID,
             fullName: user.fullName,
             email: user.email,
             role: user.role
-          } : null,
+          } : { userID: originalUserID, fullName: null, email: null, role: null },
           assignedBy: assignedByUser ? {
             userID: assignedByUser.userID,
             fullName: assignedByUser.fullName
@@ -65,14 +70,16 @@ const getAcademicRecord = async (req, res) => {
     const user = await User.findOne({ userID: academicRecord.userID }).select('fullName email role');
     const assignedByUser = await User.findOne({ userID: academicRecord.assignedBy }).select('fullName');
     
+    const originalUserID = academicRecord.userID;
     const populatedRecord = {
       ...academicRecord.toObject(),
+      originalUserID,
       userID: user ? {
         userID: user.userID,
         fullName: user.fullName,
         email: user.email,
         role: user.role
-      } : null,
+      } : { userID: originalUserID, fullName: null, email: null, role: null },
       assignedBy: assignedByUser ? {
         userID: assignedByUser.userID,
         fullName: assignedByUser.fullName

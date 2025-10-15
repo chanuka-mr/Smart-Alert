@@ -32,7 +32,11 @@ const AdminDashboard = () => {
     birthday: '',
     address: '',
     email: '',
-    role: 'Parent'
+    role: 'Parent',
+    // Parent contact fields included so student + parent can be entered in one form
+    parentName: '',
+    contactNumber: '',
+    whatsappNumber: ''
   });
   const [studentFormErrors, setStudentFormErrors] = useState({});
 
@@ -49,7 +53,10 @@ const AdminDashboard = () => {
     birthday: '',
     address: '',
     email: '',
-    role: 'Teacher'
+    role: 'Teacher',
+    grade: '',
+    class: 'A',
+    phone: ''
   });
   // eslint-disable-next-line no-unused-vars
   const [teacherFormErrors, setTeacherFormErrors] = useState({});
@@ -68,6 +75,8 @@ const AdminDashboard = () => {
     whatsappNumber: ''
   });
   const [parentDetailsErrors, setParentDetailsErrors] = useState({});
+  // Track which userIDs had parent details saved during this session to avoid re-prompting
+  const [parentDetailsSaved, setParentDetailsSaved] = useState({});
 
   // Shuttle Staff management state
   const [shuttleStaff, setShuttleStaff] = useState([]);
@@ -83,6 +92,8 @@ const AdminDashboard = () => {
     address: '',
     email: '',
     role: 'ShuttleStaff'
+    ,
+    phone: ''
   });
   // eslint-disable-next-line no-unused-vars
   const [shuttleFormErrors, setShuttleFormErrors] = useState({});
@@ -101,6 +112,8 @@ const AdminDashboard = () => {
     address: '',
     email: '',
     role: 'Admin'
+    ,
+    phone: ''
   });
   // eslint-disable-next-line no-unused-vars
   const [adminFormErrors, setAdminFormErrors] = useState({});
@@ -155,6 +168,53 @@ const AdminDashboard = () => {
     loadDashboardStats();
     loadRecentActivity();
   }, [navigate]);
+
+  // State to track which row's kebab menu is open (store unique id like user._id)
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  // Close kebab menu when clicking outside
+  useEffect(() => {
+    const handleDocClick = (e) => {
+      // If click is outside any open kebab menu, close it
+      if (!e.target.closest || !document.querySelector('.kebab-menu')) return;
+      const openMenu = document.querySelector('.kebab-menu.open');
+      if (openMenu && !openMenu.contains(e.target) && !e.target.closest('.kebab-button')) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('click', handleDocClick);
+    return () => document.removeEventListener('click', handleDocClick);
+  }, []);
+
+  // Small reusable KebabMenu component (inline)
+  const KebabMenu = ({ id, onEdit, onDelete, extraItems }) => {
+    const isOpen = openMenuId === id;
+    return (
+      <div className="kebab-container" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="kebab-button"
+          aria-label="More options"
+          onClick={(e) => { e.stopPropagation(); setOpenMenuId(isOpen ? null : id); }}
+        >
+          <div className="kebab-dot"></div>
+          <div className="kebab-dot"></div>
+          <div className="kebab-dot"></div>
+        </button>
+        <div className={`kebab-menu ${isOpen ? 'open' : ''}`} role="menu">
+          <button className="menu-item edit-item" onClick={() => { setOpenMenuId(null); onEdit && onEdit(); }}>
+            <div className="menu-icon edit-icon" />
+            Edit
+          </button>
+          {extraItems}
+          <div className="divider" />
+          <button className="menu-item delete-item" onClick={() => { setOpenMenuId(null); onDelete && onDelete(); }}>
+            <div className="menu-icon delete-icon" />
+            Delete
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // Check if user is admin, if not redirect to home
   useEffect(() => {
@@ -305,13 +365,14 @@ const AdminDashboard = () => {
       console.log(`Making API call to /academic?role=${encodeURIComponent(role)}`);
       const res = await api(`/academic?role=${encodeURIComponent(role)}`);
       console.log('API response:', res);
-      const list = res.academicRecords || [];
+      // Backend returns { academicRecords: [...] }. Be defensive about shapes.
+      const list = Array.isArray(res.academicRecords) ? res.academicRecords : (Array.isArray(res) ? res : []);
       console.log(`Loading academic assignments for ${role}:`, list);
       setAcademicByUserId(prev => {
         const copy = { ...prev };
         list.forEach(r => {
-          // The userID is now an object with userID, fullName, email, role properties
-          const uid = r.userID?.userID || r.userID;
+          // r.userID may be an object (populated) or a string; backend also provides originalUserID
+          const uid = (r.userID && r.userID.userID) || r.originalUserID || r.userID || null;
           console.log(`Processing academic record for userID: ${uid}, grade: ${r.grade}, class: ${r.class}`);
           if (uid) {
             copy[uid] = { grade: r.grade, class: r.class };
@@ -359,9 +420,12 @@ const AdminDashboard = () => {
       // If this was a new student assignment, refresh the students list
       if (assignContext.role === 'Parent') {
         await loadStudents();
-        // Show parent details form after academic assignment
+        // Show parent details form after academic assignment only if parent details not already saved
         setShowAssignModal(false);
-        setShowParentDetailsModal(true);
+        const uid = assignContext.user?.userID;
+        if (!uid || !parentDetailsSaved[uid]) {
+          setShowParentDetailsModal(true);
+        }
         return;
       }
       
@@ -530,6 +594,25 @@ const AdminDashboard = () => {
       email: user.email,
       role: user.role
     });
+    // If editing a Parent user, try to load existing parent details and merge into the form
+    if (user.role === 'Parent') {
+      (async () => {
+        try {
+          const parentResp = await api(`/parents/${user.userID}`);
+          if (parentResp && parentResp.parentDetails) {
+            setStudentForm(prev => ({
+              ...prev,
+              parentName: parentResp.parentDetails.parentName || '',
+              contactNumber: parentResp.parentDetails.contactNumber || '',
+              whatsappNumber: parentResp.parentDetails.whatsappNumber || ''
+            }));
+          }
+        } catch (err) {
+          // ignore - parent details may not exist yet
+          console.debug('No parent details to preload for user:', user.userID, err.message || err);
+        }
+      })();
+    }
     setShowStudentModal(true);
   };
 
@@ -609,6 +692,38 @@ const AdminDashboard = () => {
             : user
         );
         setStudents(updatedStudents);
+        // If user is a Parent, also update/create parent details and mark saved
+        if (studentForm.role === 'Parent') {
+          const targetUserID = response.user?.userID || editingStudent.userID;
+          try {
+            // Try create first
+            await api('/parents', {
+              method: 'POST',
+              body: {
+                userID: targetUserID,
+                parentName: studentForm.parentName,
+                contactNumber: studentForm.contactNumber,
+                whatsappNumber: studentForm.whatsappNumber
+              }
+            });
+            setParentDetailsSaved(prev => ({ ...prev, [targetUserID]: true }));
+          } catch (createErr) {
+            // If creation fails (likely exists), attempt update
+            try {
+              await api(`/parents/${targetUserID}`, {
+                method: 'PUT',
+                body: {
+                  parentName: studentForm.parentName,
+                  contactNumber: studentForm.contactNumber,
+                  whatsappNumber: studentForm.whatsappNumber
+                }
+              });
+              setParentDetailsSaved(prev => ({ ...prev, [targetUserID]: true }));
+            } catch (updateErr) {
+              console.error('Failed to save parent details after updating user:', updateErr);
+            }
+          }
+        }
         setShowStudentModal(false);
         setStudentFormErrors({});
         filterAndSortStudents();
@@ -624,6 +739,38 @@ const AdminDashboard = () => {
         setStudents([...students, response.user]);
         
         // For new students (parents), calculate grade and show assignment modal
+        // Persist parent details if role is Parent and mark saved
+        if (studentForm.role === 'Parent') {
+          const newUserID = response.user.userID;
+          try {
+            await api('/parents', {
+              method: 'POST',
+              body: {
+                userID: newUserID,
+                parentName: studentForm.parentName,
+                contactNumber: studentForm.contactNumber,
+                whatsappNumber: studentForm.whatsappNumber
+              }
+            });
+            setParentDetailsSaved(prev => ({ ...prev, [newUserID]: true }));
+          } catch (parentCreateErr) {
+            // If already exists, try update
+            try {
+              await api(`/parents/${newUserID}`, {
+                method: 'PUT',
+                body: {
+                  parentName: studentForm.parentName,
+                  contactNumber: studentForm.contactNumber,
+                  whatsappNumber: studentForm.whatsappNumber
+                }
+              });
+              setParentDetailsSaved(prev => ({ ...prev, [newUserID]: true }));
+            } catch (parentUpdateErr) {
+              console.error('Failed to create/update parent details for new user:', parentCreateErr, parentUpdateErr);
+            }
+          }
+        }
+
         if (studentForm.role === 'Parent') {
           const calculatedGrade = calculateGradeFromAge(studentForm.birthday);
           console.log('Calculated grade for birthday', studentForm.birthday, ':', calculatedGrade);
@@ -686,7 +833,9 @@ const AdminDashboard = () => {
       birthday: '',
       address: '',
       email: '',
-      role: 'Teacher'
+      role: 'Teacher',
+      grade: '',
+      class: 'A'
     });
     setShowTeacherModal(true);
   };
@@ -698,7 +847,9 @@ const AdminDashboard = () => {
       birthday: user.birthday ? new Date(user.birthday).toISOString().split('T')[0] : '',
       address: user.address,
       email: user.email,
-      role: user.role
+      role: user.role,
+      grade: academicByUserId[user.userID]?.grade || '',
+      class: academicByUserId[user.userID]?.class || 'A'
     });
     setShowTeacherModal(true);
   };
@@ -732,12 +883,56 @@ const AdminDashboard = () => {
             : user
         );
         setTeachers(updatedTeachers);
+        // If a grade/class was assigned, save academic assignment for teacher
+        if (teacherForm.grade) {
+          try {
+            await api('/academic/assign', {
+              method: 'POST',
+              body: { userID: response.user?.userID || editingTeacher.userID, grade: Number(teacherForm.grade), class: teacherForm.class || 'A' }
+            });
+          } catch (assignErr) {
+            // If already assigned, update
+            if (assignErr.message && assignErr.message.includes('already assigned')) {
+              await api(`/academic/${response.user?.userID || editingTeacher.userID}`, {
+                method: 'PUT',
+                body: { grade: Number(teacherForm.grade), class: teacherForm.class || 'A' }
+              });
+            } else {
+              console.error('Failed to assign academic info to teacher:', assignErr);
+            }
+          }
+          // refresh academic cache
+          await loadAcademicAssignments('Teacher');
+        }
       } else {
         const response = await api('/users', {
           method: 'POST',
           body: teacherForm
         });
         setTeachers([...teachers, response.user]);
+        // If a grade/class was provided during creation, create academic assignment
+        if (teacherForm.grade) {
+          try {
+            await api('/academic/assign', {
+              method: 'POST',
+              body: { userID: response.user.userID, grade: Number(teacherForm.grade), class: teacherForm.class || 'A' }
+            });
+          } catch (assignErr) {
+            if (assignErr.message && assignErr.message.includes('already assigned')) {
+              try {
+                await api(`/academic/${response.user.userID}`, {
+                  method: 'PUT',
+                  body: { grade: Number(teacherForm.grade), class: teacherForm.class || 'A' }
+                });
+              } catch (uErr) {
+                console.error('Failed to update academic assignment after create:', uErr);
+              }
+            } else {
+              console.error('Failed to assign academic info to new teacher:', assignErr);
+            }
+          }
+          await loadAcademicAssignments('Teacher');
+        }
       }
       
       setShowTeacherModal(false);
@@ -1400,10 +1595,6 @@ const AdminDashboard = () => {
             <div className="page-header">
               <h1 className="page-title">Student Management</h1>
               <div className="header-buttons">
-                <button className="btn btn-info" onClick={testLoadAcademic}>
-                  <i className="fas fa-test-tube"></i>
-                  <span>Test Academic Data</span>
-                </button>
                 <button className="btn btn-primary" onClick={handleAddStudent}>
                   <i className="fas fa-plus"></i>
                   <span>Add New Student</span>
@@ -1540,25 +1731,12 @@ const AdminDashboard = () => {
                           <td>{birthday}</td>
                           <td>{age} years old</td>
                           <td>
-                            <div className="action-buttons" onClick={(e) => e.stopPropagation()}>
-                              <button 
-                                className="action-btn edit-btn" 
-                                onClick={() => handleEditStudent(user)}
-                              >
-                                <i className="fas fa-edit"></i> Edit
-                              </button>
-                              <button
-                                className="action-btn"
-                                onClick={() => openAssignModal(user, 'Parent')}
-                              >
-                                <i className="fas fa-tasks"></i> {academicByUserId[user.userID] ? 'Edit Assignment' : 'Assign'}
-                              </button>
-                              <button 
-                                className="action-btn delete-btn" 
-                                onClick={() => handleDeleteStudent(user._id)}
-                              >
-                                <i className="fas fa-trash"></i> Delete
-                              </button>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <KebabMenu
+                                id={`student-${user._id}`}
+                                onEdit={() => handleEditStudent(user)}
+                                onDelete={() => handleDeleteStudent(user._id)}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -1664,6 +1842,7 @@ const AdminDashboard = () => {
                     <th>#</th>
                     <th>Teacher</th>
                     <th>Email</th>
+                    <th>Phone</th>
                     <th>Email Status</th>
                     <th>Grade</th>
                     <th>Class</th>
@@ -1676,7 +1855,7 @@ const AdminDashboard = () => {
                 <tbody>
                   {filteredTeachers.length === 0 ? (
                     <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
+                      <td colSpan="10" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
                         No teachers found matching your criteria.
                       </td>
                     </tr>
@@ -1700,6 +1879,7 @@ const AdminDashboard = () => {
                             </div>
                           </td>
                           <td>{teacherSearchTerm ? highlightText(user.email, teacherSearchTerm) : user.email}</td>
+                          <td>{teacherSearchTerm ? highlightText(user.phone || '-', teacherSearchTerm) : (user.phone || '-')}</td>
                           <td>
                             <span className={`email-status ${user.isEmailVerified ? 'verified' : 'unverified'}`}>
                               <i className={`fas ${user.isEmailVerified ? 'fa-check-circle' : 'fa-times-circle'}`}></i>
@@ -1712,25 +1892,21 @@ const AdminDashboard = () => {
                           <td>{birthday}</td>
                           <td>{age} years old</td>
                           <td>
-                            <div className="action-buttons" onClick={(e) => e.stopPropagation()}>
-                              <button 
-                                className="action-btn edit-btn" 
-                                onClick={() => handleEditTeacher(user)}
-                              >
-                                <i className="fas fa-edit"></i> Edit
-                              </button>
-                              <button
-                                className="action-btn"
-                                onClick={() => openAssignModal(user, 'Teacher')}
-                              >
-                                <i className="fas fa-tasks"></i> {academicByUserId[user.userID] ? 'Edit Assignment' : 'Assign'}
-                              </button>
-                              <button 
-                                className="action-btn delete-btn" 
-                                onClick={() => handleDeleteTeacher(user._id)}
-                              >
-                                <i className="fas fa-trash"></i> Delete
-                              </button>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <KebabMenu
+                                id={`teacher-${user._id}`}
+                                onEdit={() => handleEditTeacher(user)}
+                                onDelete={() => handleDeleteTeacher(user._id)}
+                                extraItems={(
+                                  <>
+                                    <div className="divider" />
+                                    <button className="menu-item" onClick={() => { setOpenMenuId(null); openAssignModal(user, 'Teacher'); }}>
+                                      <div className="menu-icon" />
+                                      Assign
+                                    </button>
+                                  </>
+                                )}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -1836,6 +2012,7 @@ const AdminDashboard = () => {
                     <th>#</th>
                     <th>Staff Member</th>
                     <th>Email</th>
+                    <th>Phone</th>
                     <th>Email Status</th>
                     <th>Address</th>
                     <th>Birthday</th>
@@ -1846,7 +2023,7 @@ const AdminDashboard = () => {
                 <tbody>
                   {filteredShuttleStaff.length === 0 ? (
                     <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
+                      <td colSpan="9" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
                         No shuttle staff found matching your criteria.
                       </td>
                     </tr>
@@ -1870,6 +2047,7 @@ const AdminDashboard = () => {
                             </div>
                           </td>
                           <td>{shuttleSearchTerm ? highlightText(user.email, shuttleSearchTerm) : user.email}</td>
+                          <td>{shuttleSearchTerm ? highlightText(user.phone || '-', shuttleSearchTerm) : (user.phone || '-')}</td>
                           <td>
                             <span className={`email-status ${user.isEmailVerified ? 'verified' : 'unverified'}`}>
                               <i className={`fas ${user.isEmailVerified ? 'fa-check-circle' : 'fa-times-circle'}`}></i>
@@ -1880,19 +2058,12 @@ const AdminDashboard = () => {
                           <td>{birthday}</td>
                           <td>{age} years old</td>
                           <td>
-                            <div className="action-buttons" onClick={(e) => e.stopPropagation()}>
-                              <button 
-                                className="action-btn edit-btn" 
-                                onClick={() => handleEditShuttle(user)}
-                              >
-                                <i className="fas fa-edit"></i> Edit
-                              </button>
-                              <button 
-                                className="action-btn delete-btn" 
-                                onClick={() => handleDeleteShuttle(user._id)}
-                              >
-                                <i className="fas fa-trash"></i> Delete
-                              </button>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <KebabMenu
+                                id={`shuttle-${user._id}`}
+                                onEdit={() => handleEditShuttle(user)}
+                                onDelete={() => handleDeleteShuttle(user._id)}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -1998,6 +2169,7 @@ const AdminDashboard = () => {
                     <th>#</th>
                     <th>Admin</th>
                     <th>Email</th>
+                    <th>Phone</th>
                     <th>Email Status</th>
                     <th>Address</th>
                     <th>Birthday</th>
@@ -2008,7 +2180,7 @@ const AdminDashboard = () => {
                 <tbody>
                   {filteredAdmins.length === 0 ? (
                     <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
+                      <td colSpan="9" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-light)' }}>
                         No admins found matching your criteria.
                       </td>
                     </tr>
@@ -2032,6 +2204,7 @@ const AdminDashboard = () => {
                             </div>
                           </td>
                           <td>{adminSearchTerm ? highlightText(user.email, adminSearchTerm) : user.email}</td>
+                          <td>{adminSearchTerm ? highlightText(user.phone || '-', adminSearchTerm) : (user.phone || '-')}</td>
                           <td>
                             <span className={`email-status ${user.isEmailVerified ? 'verified' : 'unverified'}`}>
                               <i className={`fas ${user.isEmailVerified ? 'fa-check-circle' : 'fa-times-circle'}`}></i>
@@ -2042,19 +2215,12 @@ const AdminDashboard = () => {
                           <td>{birthday}</td>
                           <td>{age} years old</td>
                           <td>
-                            <div className="action-buttons" onClick={(e) => e.stopPropagation()}>
-                              <button 
-                                className="action-btn edit-btn" 
-                                onClick={() => handleEditAdmin(user)}
-                              >
-                                <i className="fas fa-edit"></i> Edit
-                              </button>
-                              <button 
-                                className="action-btn delete-btn" 
-                                onClick={() => handleDeleteAdmin(user._id)}
-                              >
-                                <i className="fas fa-trash"></i> Delete
-                              </button>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <KebabMenu
+                                id={`admin-${user._id}`}
+                                onEdit={() => handleEditAdmin(user)}
+                                onDelete={() => handleDeleteAdmin(user._id)}
+                              />
                             </div>
                           </td>
                         </tr>
@@ -2168,6 +2334,40 @@ const AdminDashboard = () => {
                   <div className="error-message">{studentFormErrors.address}</div>
                 )}
               </div>
+
+              {/* Parent fields - allow entering parent details in the same student modal */}
+              <div className="form-group">
+                <label htmlFor="parentName">Parent / Guardian Name</label>
+                <input
+                  type="text"
+                  id="parentName"
+                  value={studentForm.parentName}
+                  onChange={(e) => setStudentForm({...studentForm, parentName: e.target.value})}
+                  placeholder="e.g., Jane Doe"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="contactNumber">Parent Contact Number</label>
+                <input
+                  type="text"
+                  id="contactNumber"
+                  value={studentForm.contactNumber}
+                  onChange={(e) => setStudentForm({...studentForm, contactNumber: e.target.value})}
+                  placeholder="e.g., +94 7XX XXX XXX"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="whatsappNumber">Parent WhatsApp Number</label>
+                <input
+                  type="text"
+                  id="whatsappNumber"
+                  value={studentForm.whatsappNumber}
+                  onChange={(e) => setStudentForm({...studentForm, whatsappNumber: e.target.value})}
+                  placeholder="e.g., +94 7XX XXX XXX"
+                />
+              </div>
               
               <div className="form-actions">
                 <button 
@@ -2239,6 +2439,40 @@ const AdminDashboard = () => {
                   value={teacherForm.address}
                   onChange={(e) => setTeacherForm({...teacherForm, address: e.target.value})}
                 />
+              </div>
+              <div className="form-group">
+                <label htmlFor="teacherPhone">Phone</label>
+                <input
+                  type="tel"
+                  id="teacherPhone"
+                  value={teacherForm.phone}
+                  onChange={(e) => setTeacherForm({...teacherForm, phone: e.target.value})}
+                  placeholder="e.g., +94771234567"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="teacherGrade">Assign Grade</label>
+                <input
+                  type="number"
+                  id="teacherGrade"
+                  min="1"
+                  max="11"
+                  value={teacherForm.grade}
+                  onChange={(e) => setTeacherForm({...teacherForm, grade: e.target.value})}
+                  placeholder="e.g., 1"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="teacherClass">Assign Class</label>
+                <select
+                  id="teacherClass"
+                  value={teacherForm.class}
+                  onChange={(e) => setTeacherForm({...teacherForm, class: e.target.value})}
+                >
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                </select>
               </div>
               <div className="form-actions">
                 <button 
@@ -2314,6 +2548,16 @@ const AdminDashboard = () => {
                   onChange={(e) => setShuttleForm({...shuttleForm, address: e.target.value})}
                 />
               </div>
+              <div className="form-group">
+                <label htmlFor="shuttlePhone">Phone</label>
+                <input
+                  type="tel"
+                  id="shuttlePhone"
+                  value={shuttleForm.phone}
+                  onChange={(e) => setShuttleForm({...shuttleForm, phone: e.target.value})}
+                  placeholder="e.g., +94771234567"
+                />
+              </div>
               <div className="form-actions">
                 <button 
                   type="button" 
@@ -2386,6 +2630,16 @@ const AdminDashboard = () => {
                   id="adminAddress"
                   value={adminForm.address}
                   onChange={(e) => setAdminForm({...adminForm, address: e.target.value})}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="adminPhone">Phone</label>
+                <input
+                  type="tel"
+                  id="adminPhone"
+                  value={adminForm.phone}
+                  onChange={(e) => setAdminForm({...adminForm, phone: e.target.value})}
+                  placeholder="e.g., +94771234567"
                 />
               </div>
               <div className="form-actions">
