@@ -102,10 +102,17 @@ const Home = () => {
   const [examMenuOpen, setExamMenuOpen] = useState(false);
   const examMenuRef = React.useRef(null);
 
+  // Dropdown state for Notices menu
+  const [noticesMenuOpen, setNoticesMenuOpen] = useState(false);
+  const noticesMenuRef = React.useRef(null);
+
   React.useEffect(() => {
     function handleClickOutside(e) {
       if (examMenuRef.current && !examMenuRef.current.contains(e.target)) {
         setExamMenuOpen(false);
+      }
+      if (noticesMenuRef.current && !noticesMenuRef.current.contains(e.target)) {
+        setNoticesMenuOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -259,10 +266,24 @@ const Home = () => {
               <i className="fas fa-clipboard-check"></i>
               <span>Mark Attendance</span>
             </button>
-            <button className="action-btn notices" onClick={(e) => { e.preventDefault(); navigate('/display-notices'); }}>
-              <i className="fas fa-bullhorn"></i>
-              <span>Notices</span>
-            </button>
+            <div className="action-btn notices" ref={noticesMenuRef} style={{ position: 'relative' }}>
+              <button className="btn-iconless" onClick={(e) => { e.preventDefault(); setNoticesMenuOpen(s => !s); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <i className="fas fa-bullhorn"></i>
+                <span>Notices</span>
+                <i className="fas fa-caret-down" style={{ marginLeft: 6 }}></i>
+              </button>
+              {noticesMenuOpen && (
+                <div style={{ position: 'absolute', top: '46px', left: 0, background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 9999, minWidth: '200px' }}>
+                  <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=school'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>School Notices</button>
+                  <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=class'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>Class Notices</button>
+                  <button onClick={() => { 
+                    setNoticesMenuOpen(false); 
+                    const isAdmin = user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin';
+                    navigate(isAdmin ? '/admin-create-notice' : '/teacher-create-notice'); 
+                  }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px', borderTop: '1px solid #e0e0e0' }}>Create Notice</button>
+                </div>
+              )}
+            </div>
             <div className="action-btn examination" ref={examMenuRef} style={{ position: 'relative' }}>
               <button className="btn-iconless" onClick={(e) => { e.preventDefault(); setExamMenuOpen(s => !s); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <i className="fas fa-file-alt"></i>

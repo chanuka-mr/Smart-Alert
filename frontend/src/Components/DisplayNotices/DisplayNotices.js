@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { FileUploaderRegular } from '@uploadcare/react-uploader';
 import '@uploadcare/react-uploader/core.css';
@@ -21,6 +21,11 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
   const uploaderRef = useRef(null);
 
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get filter from URL query parameter
+  const searchParams = new URLSearchParams(location.search);
+  const viewFilter = searchParams.get('filter'); // 'school', 'class', or null for all
   
   // Fetch user data to determine userType
   useEffect(() => {
@@ -81,10 +86,10 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
     fetchNotices();
   }, []);
 
-  // School notices: createdBy === 'admin'
-  const schoolNotices = notices.filter(n => n.createdBy === 'admin');
+  // School notices: createdBy === 'admin' (case-insensitive)
+  const schoolNotices = notices.filter(n => n.createdBy && n.createdBy.toLowerCase() === 'admin');
   // Class notices: createdBy !== 'admin' and (for parents, only their class)
-  const classNotices = notices.filter(n => n.createdBy !== 'admin' && n.classId === classId);
+  const classNotices = notices.filter(n => n.createdBy && n.createdBy.toLowerCase() !== 'admin' && n.classId === classId);
   // Filter notices by category if selected
   const filteredSchoolNotices = schoolNotices.filter(n => !categoryFilter || n.category === categoryFilter);
   const filteredClassNotices = classNotices.filter(n => !categoryFilter || n.category === categoryFilter);
@@ -278,15 +283,6 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
     <>
       <div className="section-title">
         <h2>Notices</h2>
-        <p>View all school and class notices</p>
-        {(userType === 'Admin' || userType === 'Teacher' || userType === 'admin' || userType === 'teacher') && (
-          <button 
-            className="btn-primary create-notice-btn"
-            onClick={() => navigate((userType === 'Admin' || userType === 'admin') ? '/admin-create-notice' : '/teacher-create-notice')}
-          >
-            + Create New Notice
-          </button>
-        )}
       </div>
       <div className="display-notices-container">
         <div className="container home-page">
@@ -302,6 +298,7 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
             </select>
           </div>
           <div className="notices-subtopics">
+            {(!viewFilter || viewFilter === 'school') && (
             <div className="notices-subtopic">
               <h3>School Notices</h3>
               <div className="notices-section">
@@ -398,6 +395,8 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
                 ))}
               </div>
             </div>
+            )}
+            {(!viewFilter || viewFilter === 'class') && (
             <div className="notices-subtopic">
               <h3>Class Notices</h3>
               <div className="notices-section">
@@ -494,6 +493,7 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
                 ))}
               </div>
             </div>
+            )}
           </div>
         </div>
       </div>
