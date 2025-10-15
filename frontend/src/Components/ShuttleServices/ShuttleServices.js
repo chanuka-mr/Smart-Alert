@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Navigation from '../Navigation';
 import ShuttleManagement from '../ShuttleManagement';
-import DriverManagement from '../DriverManagement';
 import StudentManagement from '../StudentManagement';
 import RealTimeTracking from '../RealTimeTracking';
 import './ShuttleServices.css';
@@ -13,8 +12,6 @@ const ShuttleServices = () => {
     switch (activeTab) {
       case 'shuttles':
         return <ShuttleManagement />;
-      case 'drivers':
-        return <DriverManagement />;
       case 'students':
         return <StudentManagement />;
       case 'tracking':

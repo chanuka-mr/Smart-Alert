@@ -10,12 +10,6 @@ const Navigation = ({ activeTab, setActiveTab }) => {
       description: 'Manage shuttle fleet and routes'
     },
     {
-      id: 'drivers',
-      label: 'Driver Management',
-      icon: '👨‍✈️',
-      description: 'Manage drivers and assignments'
-    },
-    {
       id: 'students',
       label: 'Student Registration',
       icon: '👨‍🎓',

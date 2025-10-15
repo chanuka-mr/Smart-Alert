@@ -3,32 +3,32 @@ import './App.css';
 import './theme.css';
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Home from "./Components/Home/Home";
-import Login from "./Components/Login/Login";
-import Profile from "./Components/Profile/Profile";
-import OtpVerification from "./Components/OtpVerification/OtpVerification";
-import ResetPassword from "./Components/ResetPassword/ResetPassword";
-import ForgotPassword from "./Components/ForgotPassword/ForgotPassword";
-import ResetPasswordViaEmail from "./Components/ResetPasswordViaEmail/ResetPasswordViaEmail";
-import AdminDashboard from "./Components/AdminDashboard/AdminDashboard";
-import CreateNoticeAdmin from './Components/CreateNotices/Admin/CreateNoticeAdmin';
-import CreateNoticeTeacher from './Components/CreateNotices/Teachers/CreateNoticeTeacher';
-import DirectMessages from './Components/DirectMessages/DirectMessages';
-import DisplayNotices from './Components/DisplayNotices/DisplayNotices';
-import UpdateNoticeAdmin from './Components/UpdateNotices/Admin/UpdateNoticeAdmin';
-import UpdateNoticeTeacher from './Components/UpdateNotices/Teachers/UpdateNoticeTeacher';
-import TimeTableHallArrangement from './Components/TimeTableHallArrangement/TimeTableHallArrangement';
-import ReportCard from './Components/ReportCard/ReportCard';
-import ReportCardView from './Components/ReportCardView/ReportCardView';
-import ProgressAnalysis from './Components/ProgressAnalysis/ProgressAnalysis';
-import ReportData from './Components/ReportData/ReportData';
-import TimeTableDataEntry from './Components/TimeTableHallArrangementData/TimeTableDataEntry';
-import Examination from './Components/Examination/Examination';
-import ExamOnly from './Components/Examination/ExamOnly';
-import ShuttleServices from './Components/ShuttleServices/ShuttleServices';
-import Students from './Components/AttendanceManagement/Students';
-import Attendance from './Components/AttendanceManagement/Attendance';
-import AttendanceRecords from './Components/AttendanceManagement/AttendanceRecords';
+import Home from "./components/Home/Home";
+import Login from "./components/Login/Login";
+import Profile from "./components/Profile/Profile";
+import OtpVerification from "./components/OtpVerification/OtpVerification";
+import ResetPassword from "./components/ResetPassword/ResetPassword";
+import ForgotPassword from "./components/ForgotPassword/ForgotPassword";
+import ResetPasswordViaEmail from "./components/ResetPasswordViaEmail/ResetPasswordViaEmail";
+import AdminDashboard from "./components/AdminDashboard/AdminDashboard";
+import CreateNoticeAdmin from './components/CreateNotices/Admin/CreateNoticeAdmin';
+import CreateNoticeTeacher from './components/CreateNotices/Teachers/CreateNoticeTeacher';
+import DirectMessages from './components/DirectMessages/DirectMessages';
+import DisplayNotices from './components/DisplayNotices/DisplayNotices';
+import UpdateNoticeAdmin from './components/UpdateNotices/Admin/UpdateNoticeAdmin';
+import UpdateNoticeTeacher from './components/UpdateNotices/Teachers/UpdateNoticeTeacher';
+import TimeTableHallArrangement from './components/TimeTableHallArrangement/TimeTableHallArrangement';
+import ReportCard from './components/ReportCard/ReportCard';
+import ReportCardView from './components/ReportCardView/ReportCardView';
+import ProgressAnalysis from './components/ProgressAnalysis/ProgressAnalysis';
+import ReportData from './components/ReportData/ReportData';
+import TimeTableDataEntry from './components/TimeTableHallArrangementData/TimeTableDataEntry';
+import Examination from './components/Examination/Examination';
+import ExamOnly from './components/Examination/ExamOnly';
+import ShuttleServices from './components/ShuttleServices/ShuttleServices';
+import Students from './components/AttendanceManagement/Students';
+import Attendance from './components/AttendanceManagement/Attendance';
+import AttendanceRecords from './components/AttendanceManagement/AttendanceRecords';
 import { api } from "./utils/api";
 
 // ✅ Enhanced guard: checks token in localStorage and validates it
@@ -165,7 +165,7 @@ export default function App() {
 
   // Show loading screen while checking global auth
   if (globalAuth.isChecking) {
-    return (
+  return (
       <div style={{ 
         display: 'flex', 
         justifyContent: 'center', 
@@ -179,9 +179,9 @@ export default function App() {
           <i className="fas fa-spinner fa-spin" style={{ marginRight: '10px' }}></i>
           Initializing Smart Alert...
         </div>
-      </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <BrowserRouter>
