@@ -219,6 +219,14 @@ const AdminDashboard = () => {
     );
   };
 
+  // Validate phone: require exactly 10 digits (digits only)
+  const validatePhoneNumber = (phone) => {
+    if (!phone || !String(phone).trim()) return { isValid: false, message: 'Phone number is required' };
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.length !== 10) return { isValid: false, message: 'Phone number must be exactly 10 digits' };
+    return { isValid: true, normalized: digits };
+  };
+
   // Check if user is admin, if not redirect to home
   useEffect(() => {
     if (user && user.role && user.role.toLowerCase() !== 'admin') {
@@ -691,6 +699,22 @@ const AdminDashboard = () => {
       setStudentFormErrors({ address: 'Address is required' });
       return;
     }
+    // Validate parent phone fields if role is Parent and any phone is provided
+    if (studentForm.role === 'Parent') {
+      const errs = {};
+      if (studentForm.contactNumber && studentForm.contactNumber.trim()) {
+        const v = validatePhoneNumber(studentForm.contactNumber);
+        if (!v.isValid) errs.contactNumber = v.message; else studentForm.contactNumber = v.normalized;
+      }
+      if (studentForm.whatsappNumber && studentForm.whatsappNumber.trim()) {
+        const v2 = validatePhoneNumber(studentForm.whatsappNumber);
+        if (!v2.isValid) errs.whatsappNumber = v2.message; else studentForm.whatsappNumber = v2.normalized;
+      }
+      if (Object.keys(errs).length > 0) {
+        setStudentFormErrors(errs);
+        return;
+      }
+    }
     
     try {
       if (editingStudent) {
@@ -850,7 +874,8 @@ const AdminDashboard = () => {
       email: '',
       role: 'Teacher',
       grade: '',
-      class: 'A'
+      class: 'A',
+      phone: ''
     });
     setShowTeacherModal(true);
   };
@@ -864,7 +889,8 @@ const AdminDashboard = () => {
       email: user.email,
       role: user.role,
       grade: academicByUserId[user.userID]?.grade || '',
-      class: academicByUserId[user.userID]?.class || 'A'
+      class: academicByUserId[user.userID]?.class || 'A',
+      phone: user.phone || ''
     });
     setShowTeacherModal(true);
   };
@@ -885,6 +911,16 @@ const AdminDashboard = () => {
 
   const handleSaveTeacher = async (e) => {
     e.preventDefault();
+    // Validate phone if provided
+    if (teacherForm.phone && teacherForm.phone.trim()) {
+      const v = validatePhoneNumber(teacherForm.phone);
+      if (!v.isValid) {
+        setTeacherFormErrors({ phone: v.message });
+        return;
+      } else {
+        setTeacherForm(prev => ({ ...prev, phone: v.normalized }));
+      }
+    }
     
     try {
       if (editingTeacher) {
@@ -966,7 +1002,8 @@ const AdminDashboard = () => {
       birthday: '',
       address: '',
       email: '',
-      role: 'ShuttleStaff'
+      role: 'ShuttleStaff',
+      phone: ''
     });
     setShowShuttleModal(true);
   };
@@ -978,7 +1015,8 @@ const AdminDashboard = () => {
       birthday: user.birthday ? new Date(user.birthday).toISOString().split('T')[0] : '',
       address: user.address,
       email: user.email,
-      role: user.role
+      role: user.role,
+      phone: user.phone || ''
     });
     setShowShuttleModal(true);
   };
@@ -999,6 +1037,15 @@ const AdminDashboard = () => {
 
   const handleSaveShuttle = async (e) => {
     e.preventDefault();
+    if (shuttleForm.phone && shuttleForm.phone.trim()) {
+      const v = validatePhoneNumber(shuttleForm.phone);
+      if (!v.isValid) {
+        setShuttleFormErrors({ phone: v.message });
+        return;
+      } else {
+        setShuttleForm(prev => ({ ...prev, phone: v.normalized }));
+      }
+    }
     
     try {
       if (editingShuttle) {
@@ -1036,7 +1083,8 @@ const AdminDashboard = () => {
       birthday: '',
       address: '',
       email: '',
-      role: 'Admin'
+      role: 'Admin',
+      phone: ''
     });
     setShowAdminModal(true);
   };
@@ -1048,7 +1096,8 @@ const AdminDashboard = () => {
       birthday: user.birthday ? new Date(user.birthday).toISOString().split('T')[0] : '',
       address: user.address,
       email: user.email,
-      role: user.role
+      role: user.role,
+      phone: user.phone || ''
     });
     setShowAdminModal(true);
   };
@@ -1069,6 +1118,15 @@ const AdminDashboard = () => {
 
   const handleSaveAdmin = async (e) => {
     e.preventDefault();
+    if (adminForm.phone && adminForm.phone.trim()) {
+      const v = validatePhoneNumber(adminForm.phone);
+      if (!v.isValid) {
+        setAdminFormErrors({ phone: v.message });
+        return;
+      } else {
+        setAdminForm(prev => ({ ...prev, phone: v.normalized }));
+      }
+    }
     
     try {
       if (editingAdmin) {
@@ -1221,7 +1279,17 @@ const AdminDashboard = () => {
     const errors = {};
     if (!parentDetailsForm.parentName.trim()) errors.parentName = 'Parent name is required';
     if (!parentDetailsForm.contactNumber.trim()) errors.contactNumber = 'Contact number is required';
+    else {
+      const v = validatePhoneNumber(parentDetailsForm.contactNumber);
+      if (!v.isValid) errors.contactNumber = v.message;
+      else parentDetailsForm.contactNumber = v.normalized;
+    }
     if (!parentDetailsForm.whatsappNumber.trim()) errors.whatsappNumber = 'WhatsApp number is required';
+    else {
+      const v2 = validatePhoneNumber(parentDetailsForm.whatsappNumber);
+      if (!v2.isValid) errors.whatsappNumber = v2.message;
+      else parentDetailsForm.whatsappNumber = v2.normalized;
+    }
 
     if (Object.keys(errors).length > 0) {
       setParentDetailsErrors(errors);
@@ -2369,8 +2437,12 @@ const AdminDashboard = () => {
                   id="contactNumber"
                   value={studentForm.contactNumber}
                   onChange={(e) => setStudentForm({...studentForm, contactNumber: e.target.value})}
+                  className={studentFormErrors.contactNumber ? 'error' : ''}
                   placeholder="e.g., +94 7XX XXX XXX"
                 />
+                {studentFormErrors.contactNumber && (
+                  <span className="error-message">{studentFormErrors.contactNumber}</span>
+                )}
               </div>
 
               <div className="form-group">
@@ -2380,8 +2452,12 @@ const AdminDashboard = () => {
                   id="whatsappNumber"
                   value={studentForm.whatsappNumber}
                   onChange={(e) => setStudentForm({...studentForm, whatsappNumber: e.target.value})}
+                  className={studentFormErrors.whatsappNumber ? 'error' : ''}
                   placeholder="e.g., +94 7XX XXX XXX"
                 />
+                {studentFormErrors.whatsappNumber && (
+                  <span className="error-message">{studentFormErrors.whatsappNumber}</span>
+                )}
               </div>
               
               <div className="form-actions">
@@ -2463,7 +2539,9 @@ const AdminDashboard = () => {
                   value={teacherForm.phone}
                   onChange={(e) => setTeacherForm({...teacherForm, phone: e.target.value})}
                   placeholder="e.g., +94771234567"
+                  className={teacherFormErrors.phone ? 'error' : ''}
                 />
+                {teacherFormErrors.phone && <span className="error-message">{teacherFormErrors.phone}</span>}
               </div>
               <div className="form-group">
                 <label htmlFor="teacherGrade">Assign Grade</label>
@@ -2571,6 +2649,18 @@ const AdminDashboard = () => {
                   value={shuttleForm.phone}
                   onChange={(e) => setShuttleForm({...shuttleForm, phone: e.target.value})}
                   placeholder="e.g., +94771234567"
+                  className={shuttleFormErrors.phone ? 'error' : ''}
+                />
+                {shuttleFormErrors.phone && <span className="error-message">{shuttleFormErrors.phone}</span>}
+              </div>
+              <div className="form-group">
+                <label htmlFor="shuttlePhone">Phone</label>
+                <input
+                  type="tel"
+                  id="shuttlePhone"
+                  value={shuttleForm.phone}
+                  onChange={(e) => setShuttleForm({...shuttleForm, phone: e.target.value})}
+                  placeholder="e.g., +94771234567"
                 />
               </div>
               <div className="form-actions">
@@ -2655,7 +2745,9 @@ const AdminDashboard = () => {
                   value={adminForm.phone}
                   onChange={(e) => setAdminForm({...adminForm, phone: e.target.value})}
                   placeholder="e.g., +94771234567"
+                  className={adminFormErrors.phone ? 'error' : ''}
                 />
+                {adminFormErrors.phone && <span className="error-message">{adminFormErrors.phone}</span>}
               </div>
               <div className="form-actions">
                 <button 
