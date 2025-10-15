@@ -274,9 +274,7 @@ const Home = () => {
               </button>
               {noticesMenuOpen && (
                 <div style={{ position: 'absolute', top: '46px', left: 0, background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 9999, minWidth: '200px' }}>
-                  {(user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin') && (
-                    <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=school'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>School Notices</button>
-                  )}
+                  <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=school'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>School Notices</button>
                   <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=class'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>Class Notices</button>
                   {(user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin' || user?.userType?.toLowerCase() === 'teacher' || user?.role?.toLowerCase() === 'teacher') && (
                     <button onClick={() => { 
@@ -306,7 +304,13 @@ const Home = () => {
               <span>Shuttle Services</span>
             </button>
             {(user?.userType?.toLowerCase() === 'teacher' || user?.role?.toLowerCase() === 'teacher') && (
-              <button className="action-btn direct-message" onClick={(e) => { e.preventDefault(); navigate('/teacher-direct-message'); }}>
+              <button className="action-btn direct-message" onClick={(e) => { e.preventDefault(); navigate('/direct-message-teacher'); }}>
+                <i className="fas fa-envelope"></i>
+                <span>Direct Message</span>
+              </button>
+            )}
+            {(user?.userType?.toLowerCase() === 'parent' || user?.role?.toLowerCase() === 'parent') && (
+              <button className="action-btn direct-message" onClick={(e) => { e.preventDefault(); navigate('/direct-message-parent'); }}>
                 <i className="fas fa-envelope"></i>
                 <span>Direct Message</span>
               </button>

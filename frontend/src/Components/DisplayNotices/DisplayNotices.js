@@ -376,7 +376,7 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
                             className="btn-primary notice-download"
                             onClick={() => downloadNoticeAsPDF(n.title, n.notice, n.publishedAt, n.createdBy)}
                           >Download Notice as PDF</button>
-                          {(userType === 'Admin' || userType === 'admin') && (
+                          {(userType?.toLowerCase() === 'admin') && (
                             <>
                               <button
                                 className="btn-update"
@@ -474,7 +474,7 @@ const DisplayNotices = ({ userType: propUserType, classId: propClassId }) => {
                             className="btn-primary notice-download"
                             onClick={() => downloadNoticeAsPDF(n.title, n.notice)}
                           >Download Notice as PDF</button>
-                          {(userType === 'Admin' || userType === 'admin') && (
+                          {(userType?.toLowerCase() === 'admin' || userType?.toLowerCase() === 'teacher') && (
                             <>
                               <button
                                 className="btn-update"
