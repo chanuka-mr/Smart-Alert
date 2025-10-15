@@ -274,13 +274,17 @@ const Home = () => {
               </button>
               {noticesMenuOpen && (
                 <div style={{ position: 'absolute', top: '46px', left: 0, background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 9999, minWidth: '200px' }}>
-                  <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=school'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>School Notices</button>
+                  {(user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin') && (
+                    <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=school'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>School Notices</button>
+                  )}
                   <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=class'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>Class Notices</button>
-                  <button onClick={() => { 
-                    setNoticesMenuOpen(false); 
-                    const isAdmin = user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin';
-                    navigate(isAdmin ? '/admin-create-notice' : '/teacher-create-notice'); 
-                  }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px', borderTop: '1px solid #e0e0e0' }}>Create Notice</button>
+                  {(user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin' || user?.userType?.toLowerCase() === 'teacher' || user?.role?.toLowerCase() === 'teacher') && (
+                    <button onClick={() => { 
+                      setNoticesMenuOpen(false); 
+                      const isAdmin = user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin';
+                      navigate(isAdmin ? '/admin-create-notice' : '/teacher-create-notice'); 
+                    }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px', borderTop: '1px solid #e0e0e0' }}>Create Notice</button>
+                  )}
                 </div>
               )}
             </div>
@@ -301,6 +305,12 @@ const Home = () => {
               <i className="fas fa-bus"></i>
               <span>Shuttle Services</span>
             </button>
+            {(user?.userType?.toLowerCase() === 'teacher' || user?.role?.toLowerCase() === 'teacher') && (
+              <button className="action-btn direct-message" onClick={(e) => { e.preventDefault(); navigate('/teacher-direct-message'); }}>
+                <i className="fas fa-envelope"></i>
+                <span>Direct Message</span>
+              </button>
+            )}
           </div>
         </div>
       </section>
