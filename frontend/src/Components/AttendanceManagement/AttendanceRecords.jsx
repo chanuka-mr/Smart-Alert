@@ -374,63 +374,131 @@ const AttendanceRecords = () => {
     }
   };
 
+  // Calculate statistics for dashboard
+  const statistics = useMemo(() => {
+    const total = filteredRecords.length;
+    const present = filteredRecords.filter(r => r.status === 'Present').length;
+    const absent = filteredRecords.filter(r => r.status === 'Absent').length;
+    const late = filteredRecords.filter(r => r.status === 'Late').length;
+    const excused = filteredRecords.filter(r => r.status === 'Excused').length;
+    const attendanceRate = total > 0 ? ((present + late) / total * 100).toFixed(1) : 0;
+
+    return { total, present, absent, late, excused, attendanceRate };
+  }, [filteredRecords]);
 
   return (
     <Layout>
-      <div style={{ textAlign: "center", marginTop: 12 }}>
-        <h1 style={{ margin: 0 }}>Attendance Records</h1>
+      <div className="page-header">
+        <div className="header-content">
+          <h1 className="page-title">Attendance Records</h1>
+          <p className="page-subtitle">Manage and monitor student attendance</p>
+        </div>
+        <div className="header-stats">
+          <div className="stat-card">
+            <div className="stat-icon present">
+              <i className="fas fa-check-circle"></i>
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{statistics.present}</span>
+              <span className="stat-label">Present</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon absent">
+              <i className="fas fa-times-circle"></i>
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{statistics.absent}</span>
+              <span className="stat-label">Absent</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon late">
+              <i className="fas fa-clock"></i>
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{statistics.late}</span>
+              <span className="stat-label">Late</span>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon total">
+              <i className="fas fa-chart-line"></i>
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{statistics.attendanceRate}%</span>
+              <span className="stat-label">Attendance Rate</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search and Filter Section */}
-      <div className="panel" style={{ marginTop: 16, marginBottom: 16 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
-            gap: 12, 
-            alignItems: "end" 
-          }}>
-            {/* Search by Name/Index */}
-            <div className="field" style={{ flex: 1, minWidth: 200 }}>
-              <label>Search by Name or Index</label>
+      <div className="filter-panel">
+        <div className="panel-header">
+          <h3>
+            <i className="fas fa-filter"></i>
+            Filters & Search
+          </h3>
+          <div className="header-actions">
+            {hasActiveFilters && (
+              <button className="clear-filters-btn" onClick={clearFilters}>
+                <i className="fas fa-times"></i>
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="filter-grid">
+          <div className="filter-group">
+            <label className="filter-label">Search by Name or Index</label>
+            <div className="search-input-container">
+              <i className="fas fa-search search-icon"></i>
               <input
                 type="text"
+                className="search-input"
                 placeholder="Enter name or index number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ marginBottom: 0 }}
               />
             </div>
+          </div>
 
-            {/* Filter by Date */}
-            <div className="field" style={{ flex: 1, minWidth: 150 }}>
-              <label>Filter by Date</label>
+          <div className="filter-group">
+            <label className="filter-label">Filter by Date</label>
+            <div className="date-input-container">
+              <i className="fas fa-calendar input-icon"></i>
               <input
                 type="date"
+                className="date-input"
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                style={{ marginBottom: 0 }}
               />
             </div>
+          </div>
 
-            {/* Filter by Month */}
-            <div className="field" style={{ flex: 1, minWidth: 150 }}>
-              <label>Filter by Month</label>
+          <div className="filter-group">
+            <label className="filter-label">Filter by Month</label>
+            <div className="date-input-container">
+              <i className="fas fa-calendar-alt input-icon"></i>
               <input
                 type="month"
+                className="date-input"
                 value={monthFilter}
                 onChange={(e) => setMonthFilter(e.target.value)}
-                style={{ marginBottom: 0 }}
               />
             </div>
+          </div>
 
-            {/* Filter by Status */}
-            <div className="field" style={{ flex: 1, minWidth: 150 }}>
-              <label>Filter by Status</label>
+          <div className="filter-group">
+            <label className="filter-label">Filter by Status</label>
+            <div className="select-container">
+              <i className="fas fa-tag input-icon"></i>
               <select
+                className="status-select"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                style={{ marginBottom: 0 }}
               >
                 <option value="">All Status</option>
                 {STATUS_OPTIONS.map((opt) => (
@@ -440,14 +508,16 @@ const AttendanceRecords = () => {
                 ))}
               </select>
             </div>
+          </div>
 
-            {/* Filter by Section */}
-            <div className="field" style={{ flex: 1, minWidth: 150 }}>
-              <label>Filter by Section</label>
+          <div className="filter-group">
+            <label className="filter-label">Filter by Section</label>
+            <div className="select-container">
+              <i className="fas fa-users input-icon"></i>
               <select
+                className="section-select"
                 value={sectionFilter}
                 onChange={(e) => setSectionFilter(e.target.value)}
-                style={{ marginBottom: 0 }}
               >
                 <option value="">All Sections</option>
                 <option value="1A">1A</option>
@@ -458,345 +528,880 @@ const AttendanceRecords = () => {
                 <option value="11C">11C</option>
               </select>
             </div>
-
-            {/* Download Report Button */}
-            <div style={{ display: "flex", alignItems: "end" }}>
-              <button
-                onClick={downloadReport}
-                className="success"
-                style={{
-                  padding: "8px 16px",
-                  fontSize: "14px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  height: "fit-content",
-                  whiteSpace: "nowrap"
-                }}
-                title="Download filtered attendance report"
-              >
-                <i className="fas fa-download" style={{ fontSize: "14px" }}></i>
-                {getDownloadButtonText()}
-              </button>
-            </div>
-
           </div>
 
-          {/* Clear Filters Button */}
-          {hasActiveFilters && (
-            <div style={{ 
-              display: "flex", 
-              justifyContent: "flex-end",
-              padding: "12px 0",
-              borderTop: "1px solid var(--border)"
-            }}>
+          <div className="filter-group download-group">
+            <button
+              onClick={downloadReport}
+              className="download-btn"
+              title="Download filtered attendance report"
+            >
+              <i className="fas fa-download"></i>
+              <span>{getDownloadButtonText()}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Notification Section for Current Date */}
+        {currentDateAbsentLateRecords.length > 0 && (
+          <div className="notification-banner">
+            <div className="banner-content">
+              <div className="banner-icon">
+                <i className="fas fa-exclamation-triangle"></i>
+              </div>
+              <div className="banner-info">
+                <h4>Attendance Alert for Today</h4>
+                <p>
+                  {currentDateAbsentLateRecords.length} student(s) are absent or late today:{" "}
+                  <strong>{currentDateAbsentLateRecords.map(r => r.student.name).join(", ")}</strong>
+                </p>
+              </div>
               <button
-                className="ghost"
-                onClick={clearFilters}
-                style={{ 
-                  height: "fit-content", 
-                  padding: "8px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px"
-                }}
+                className="notify-btn"
+                onClick={notifyParentsForCurrentDate}
+                disabled={notifying}
               >
-                <i className="fas fa-times" style={{ fontSize: "12px" }}></i>
-                Clear Filters
+                <i className="fas fa-bell"></i>
+                {notifying ? "Sending Notifications..." : "Notify Parents"}
               </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Notification Section for Current Date */}
-          {currentDateAbsentLateRecords.length > 0 && (
-  <div className="notification-section">
-    <div className="notification-content">
-      <div className="notification-info">
-        <h4>
-          <i className="fas fa-exclamation-triangle" style={{ marginRight: "8px" }}></i>
-          {currentDateAbsentLateRecords.length} absent/late student(s) for today
-        </h4>
-        <p>
-          {currentDateAbsentLateRecords.map(r => r.student.name).join(", ")}
-        </p>
-      </div>
-      <button
-        className="success"
-        onClick={notifyParentsForCurrentDate}
-        disabled={notifying}
-        style={{ whiteSpace: "nowrap" }}
-      >
-        <i className="fas fa-bell" style={{ marginRight: "8px" }}></i>
-        {notifying ? "Sending..." : "Notify Parents (Today Only)"}
-      </button>
-    </div>
-  </div>
-)}
-
-          {/* Results Summary */}
-          <div style={{ 
-            display: "flex", 
-            justifyContent: "space-between", 
-            alignItems: "center",
-            padding: "8px 0",
-            borderTop: "1px solid var(--border)",
-            fontSize: "14px",
-            color: "var(--subtle)"
-          }}>
-            <span>
-              Showing {filteredRecords.length} of {records.length} records
+        {/* Results Summary */}
+        <div className="results-summary">
+          <div className="summary-info">
+            <span className="record-count">
+              Showing <strong>{filteredRecords.length}</strong> of <strong>{records.length}</strong> records
               {hasActiveFilters && " (filtered)"}
-              {monthFilter && ` - ${dayjs(monthFilter).format('MMMM YYYY')}`}
             </span>
-            {hasActiveFilters && (
-              <span style={{ color: "var(--primary)" }}>
-                Filters active
+            {monthFilter && (
+              <span className="month-filter">
+                <i className="fas fa-calendar"></i>
+                {dayjs(monthFilter).format('MMMM YYYY')}
               </span>
             )}
           </div>
+          {hasActiveFilters && (
+            <div className="filter-indicator">
+              <i className="fas fa-filter"></i>
+              Filters Active
+            </div>
+          )}
         </div>
       </div>
 
       {/* Records Table */}
-      <div className="panel">
-        <table className="table">
-          <thead>
-            <tr>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>Date</th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>Name</th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>Index</th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>Section</th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>Status</th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>Notified</th>
-              <th style={{ padding: "12px 8px", textAlign: "right", minWidth: "200px" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && <tr><td colSpan="7">Loading...</td></tr>}
-
-            {!loading && filteredRecords.map((r) => (
-              <tr 
-                key={r._id}
-                style={{
-                  transition: "background-color 0.2s ease"
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#f8f9fa";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "transparent";
-                }}
-              >
-                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>{dayjs(r.date).format("YYYY-MM-DD")}</td>
-                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>{r.student?.name}</td>
-                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}><span className="badge">{r.student?.std_index}</span></td>
-                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>{r.student?.section}</td>
-
-                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>
-                  {editingId === r._id ? (
-                    <select 
-                      value={editStatus} 
-                      onChange={(e) => setEditStatus(e.target.value)}
-                      style={{ 
-                        padding: "4px 8px", 
-                        borderRadius: "4px", 
-                        border: "1px solid #ddd",
-                        fontSize: "12px"
-                      }}
-                    >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span style={{ 
-                      padding: "4px 8px", 
-                      borderRadius: "4px",
-                      backgroundColor: r.status === "Present" ? "#d4edda" : 
-                                    r.status === "Absent" ? "#f8d7da" : 
-                                    r.status === "Late" ? "#fff3cd" : "#e2e3e5",
-                      color: r.status === "Present" ? "#155724" : 
-                            r.status === "Absent" ? "#721c24" : 
-                            r.status === "Late" ? "#856404" : "#6c757d",
-                      fontSize: "12px",
-                      fontWeight: "500"
-                    }}>
-                      {r.status}
-                    </span>
-                  )}
-                </td>
-
-                <td style={{ padding: "12px 8px", verticalAlign: "middle" }}>
-                  {r.notifiedParent || notifiedRecords.has(r._id) ? (
-                    <span style={{ 
-                      color: "var(--success)", 
-                      fontSize: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px"
-                    }}>
-                      <i className="fas fa-check-circle" style={{ fontSize: "10px" }}></i>
-                      Notified
-                    </span>
-                  ) : (
-                    <span style={{ color: "var(--subtle)", fontSize: "12px" }}>-</span>
-                  )}
-                </td>
-
-                <td style={{ 
-                  textAlign: "right", 
-                  padding: "8px 4px",
-                  verticalAlign: "middle"
-                }}>
-                  <div style={{ 
-                    display: "flex", 
-                    gap: "6px", 
-                    justifyContent: "flex-end", 
-                    alignItems: "center",
-                    flexWrap: "nowrap"
-                  }}>
-                    {editingId === r._id ? (
-                      <>
-                        <button 
-                          onClick={() => saveEdit(r._id)} 
-                          disabled={saving}
-                          style={{ 
-                            fontSize: "11px", 
-                            padding: "6px 12px", 
-                            minWidth: "60px",
-                            height: "28px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: "4px",
-                            border: "1px solid #28a745",
-                            cursor: saving ? "not-allowed" : "pointer",
-                            transition: "all 0.2s ease",
-                            backgroundColor: "white",
-                            color: "#28a745"
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!saving) {
-                              e.target.style.backgroundColor = "#28a745";
-                              e.target.style.color = "white";
-                              e.target.style.transform = "translateY(-1px)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!saving) {
-                              e.target.style.backgroundColor = "white";
-                              e.target.style.color = "#28a745";
-                              e.target.style.transform = "translateY(0)";
-                            }
-                          }}
-                        >
-                          {saving ? "Saving..." : "Save"}
-                        </button>
-                        <button 
-                          className="ghost" 
-                          onClick={cancelEdit} 
-                          disabled={saving}
-                          style={{ 
-                            fontSize: "11px", 
-                            padding: "6px 12px", 
-                            minWidth: "60px",
-                            height: "28px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: "4px",
-                            border: "1px solid #6c757d",
-                            cursor: saving ? "not-allowed" : "pointer",
-                            transition: "all 0.2s ease",
-                            backgroundColor: "transparent",
-                            color: "#6c757d"
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!saving) {
-                              e.target.style.backgroundColor = "#6c757d";
-                              e.target.style.color = "white";
-                              e.target.style.transform = "translateY(-1px)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!saving) {
-                              e.target.style.backgroundColor = "transparent";
-                              e.target.style.color = "#6c757d";
-                              e.target.style.transform = "translateY(0)";
-                            }
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => startEdit(r)}
-                          style={{ 
-                            fontSize: "11px", 
-                            padding: "6px 12px", 
-                            minWidth: "50px",
-                            height: "28px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: "4px",
-                            border: "1px solid #6c757d",
-                            backgroundColor: "#6c757d",
-                            color: "white",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.backgroundColor = "#5a6268";
-                            e.target.style.color = "white";
-                            e.target.style.transform = "translateY(-1px)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.backgroundColor = "#6c757d";
-                            e.target.style.color = "white";
-                            e.target.style.transform = "translateY(0)";
-                          }}
-                          title="Edit Record"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          className="danger" 
-                          onClick={() => remove(r._id)}
-                          style={{ 
-                            fontSize: "11px", 
-                            padding: "6px 12px", 
-                            minWidth: "60px",
-                            height: "28px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}
-                          title="Delete Record"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-
-            {!loading && filteredRecords.length === 0 && (
+      <div className="table-panel">
+        <div className="table-container">
+          <table className="records-table">
+            <thead>
               <tr>
-                <td colSpan="7" style={{ color: "#aaa", textAlign: "center", padding: "20px" }}>
-                  {hasActiveFilters ? "No records match your search criteria" : "No records"}
-                </td>
+                <th>Date</th>
+                <th>Student Name</th>
+                <th>Index No.</th>
+                <th>Section</th>
+                <th>Status</th>
+                <th>Notification</th>
+                <th className="actions-header">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading && (
+                <tr>
+                  <td colSpan="7" className="loading-state">
+                    <div className="loading-spinner">
+                      <i className="fas fa-spinner fa-spin"></i>
+                      <span>Loading attendance records...</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {!loading && filteredRecords.map((record) => (
+                <tr key={record._id} className="table-row">
+                  <td className="date-cell">
+                    <div className="date-display">
+                      <span className="date-day">{dayjs(record.date).format("DD")}</span>
+                      <span className="date-month">{dayjs(record.date).format("MMM")}</span>
+                      <span className="date-year">{dayjs(record.date).format("YYYY")}</span>
+                    </div>
+                  </td>
+                  <td className="name-cell">
+                    <div className="student-info">
+                      <span className="student-name">{record.student?.name}</span>
+                    </div>
+                  </td>
+                  <td className="index-cell">
+                    <span className="index-badge">{record.student?.std_index}</span>
+                  </td>
+                  <td className="section-cell">
+                    <span className="section-tag">{record.student?.section}</span>
+                  </td>
+                  <td className="status-cell">
+                    {editingId === record._id ? (
+                      <select 
+                        className="status-edit-select"
+                        value={editStatus} 
+                        onChange={(e) => setEditStatus(e.target.value)}
+                      >
+                        {STATUS_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className={`status-badge status-${record.status?.toLowerCase()}`}>
+                        <i className={`status-icon ${getStatusIcon(record.status)}`}></i>
+                        {record.status}
+                      </span>
+                    )}
+                  </td>
+                  <td className="notification-cell">
+                    {record.notifiedParent || notifiedRecords.has(record._id) ? (
+                      <span className="notification-indicator notified">
+                        <i className="fas fa-check-circle"></i>
+                        Notified
+                      </span>
+                    ) : (
+                      <span className="notification-indicator pending">
+                        <i className="fas fa-clock"></i>
+                        Pending
+                      </span>
+                    )}
+                  </td>
+                  <td className="actions-cell">
+                    <div className="action-buttons">
+                      {editingId === record._id ? (
+                        <>
+                          <button 
+                            onClick={() => saveEdit(record._id)} 
+                            disabled={saving}
+                            className="btn-save"
+                          >
+                            <i className="fas fa-check"></i>
+                            {saving ? "Saving..." : "Save"}
+                          </button>
+                          <button 
+                            onClick={cancelEdit} 
+                            disabled={saving}
+                            className="btn-cancel"
+                          >
+                            <i className="fas fa-times"></i>
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => startEdit(record)}
+                            className="btn-edit"
+                            title="Edit Record"
+                          >
+                            <i className="fas fa-edit"></i>
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => remove(record._id)}
+                            className="btn-delete"
+                            title="Delete Record"
+                          >
+                            <i className="fas fa-trash"></i>
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {!loading && filteredRecords.length === 0 && (
+                <tr>
+                  <td colSpan="7" className="empty-state">
+                    <div className="empty-content">
+                      <i className="fas fa-clipboard-list"></i>
+                      <h3>No Records Found</h3>
+                      <p>
+                        {hasActiveFilters 
+                          ? "No attendance records match your current filters. Try adjusting your search criteria." 
+                          : "No attendance records available. Start by marking attendance for your students."
+                        }
+                      </p>
+                      {hasActiveFilters && (
+                        <button className="clear-filters-btn" onClick={clearFilters}>
+                          Clear All Filters
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      <style jsx>{`
+        .page-header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 2rem;
+          border-radius: 12px;
+          margin-bottom: 1.5rem;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+          margin-bottom: 1.5rem;
+        }
+
+        .page-title {
+          font-size: 2rem;
+          font-weight: 700;
+          margin: 0 0 0.5rem 0;
+        }
+
+        .page-subtitle {
+          font-size: 1rem;
+          opacity: 0.9;
+          margin: 0;
+        }
+
+        .header-stats {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1rem;
+        }
+
+        .stat-card {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          padding: 1rem;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          transition: transform 0.2s ease;
+        }
+
+        .stat-card:hover {
+          transform: translateY(-2px);
+        }
+
+        .stat-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.2rem;
+        }
+
+        .stat-icon.present { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .stat-icon.absent { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .stat-icon.late { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .stat-icon.total { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+
+        .stat-info {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .stat-value {
+          font-size: 1.5rem;
+          font-weight: 700;
+        }
+
+        .stat-label {
+          font-size: 0.875rem;
+          opacity: 0.9;
+        }
+
+        .filter-panel {
+          background: white;
+          border-radius: 12px;
+          padding: 1.5rem;
+          margin-bottom: 1.5rem;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+          border: 1px solid #e5e7eb;
+        }
+
+        .panel-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1.5rem;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .panel-header h3 {
+          margin: 0;
+          color: #374151;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 1.25rem;
+        }
+
+        .clear-filters-btn {
+          background: #6b7280;
+          color: white;
+          border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          font-size: 0.875rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: background-color 0.2s ease;
+        }
+
+        .clear-filters-btn:hover {
+          background: #4b5563;
+        }
+
+        .filter-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .filter-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .filter-label {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .search-input-container,
+        .date-input-container,
+        .select-container {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .search-icon,
+        .input-icon {
+          position: absolute;
+          left: 0.75rem;
+          color: #6b7280;
+          z-index: 10;
+        }
+
+        .search-input,
+        .date-input,
+        .status-select,
+        .section-select {
+          width: 100%;
+          padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          transition: all 0.2s ease;
+          background: white;
+        }
+
+        .search-input:focus,
+        .date-input:focus,
+        .status-select:focus,
+        .section-select:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .download-group {
+          display: flex;
+          justify-content: flex-end;
+          align-items: flex-end;
+        }
+
+        .download-btn {
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: all 0.2s ease;
+          font-weight: 600;
+        }
+
+        .download-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .notification-banner {
+          background: linear-gradient(135deg, #fef3c7, #fbbf24);
+          border: 1px solid #f59e0b;
+          border-radius: 8px;
+          padding: 1rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .banner-content {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .banner-icon {
+          color: #d97706;
+          font-size: 1.5rem;
+        }
+
+        .banner-info {
+          flex: 1;
+        }
+
+        .banner-info h4 {
+          margin: 0 0 0.25rem 0;
+          color: #92400e;
+        }
+
+        .banner-info p {
+          margin: 0;
+          color: #92400e;
+          font-size: 0.875rem;
+        }
+
+        .notify-btn {
+          background: #dc2626;
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 6px;
+          font-size: 0.875rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: background-color 0.2s ease;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+
+        .notify-btn:hover:not(:disabled) {
+          background: #b91c1c;
+        }
+
+        .notify-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .results-summary {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 0;
+          border-top: 1px solid #e5e7eb;
+          font-size: 0.875rem;
+        }
+
+        .summary-info {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .record-count {
+          color: #6b7280;
+        }
+
+        .month-filter {
+          background: #eff6ff;
+          color: #1d4ed8;
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          font-weight: 600;
+        }
+
+        .filter-indicator {
+          background: #dbeafe;
+          color: #1d4ed8;
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-weight: 600;
+        }
+
+        .table-panel {
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+          border: 1px solid #e5e7eb;
+        }
+
+        .table-container {
+          overflow-x: auto;
+        }
+
+        .records-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .records-table th {
+          background: #f8fafc;
+          padding: 1rem;
+          text-align: left;
+          font-weight: 600;
+          color: #374151;
+          font-size: 0.875rem;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .actions-header {
+          text-align: right;
+        }
+
+        .table-row {
+          transition: background-color 0.2s ease;
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table-row:hover {
+          background: #f8fafc;
+        }
+
+        .table-row td {
+          padding: 1rem;
+          vertical-align: middle;
+        }
+
+        .date-cell {
+          min-width: 100px;
+        }
+
+        .date-display {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          background: #f8fafc;
+          padding: 0.5rem;
+          border-radius: 6px;
+          min-width: 70px;
+        }
+
+        .date-day {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #1f2937;
+          line-height: 1;
+        }
+
+        .date-month {
+          font-size: 0.75rem;
+          color: #6b7280;
+          text-transform: uppercase;
+          font-weight: 600;
+        }
+
+        .date-year {
+          font-size: 0.75rem;
+          color: #9ca3af;
+        }
+
+        .name-cell {
+          min-width: 150px;
+        }
+
+        .student-name {
+          font-weight: 600;
+          color: #1f2937;
+        }
+
+        .index-cell {
+          min-width: 100px;
+        }
+
+        .index-badge {
+          background: #eff6ff;
+          color: #1d4ed8;
+          padding: 0.375rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          font-family: 'Courier New', monospace;
+        }
+
+        .section-cell {
+          min-width: 80px;
+        }
+
+        .section-tag {
+          background: #f0fdf4;
+          color: #166534;
+          padding: 0.375rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .status-cell {
+          min-width: 120px;
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          padding: 0.5rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: capitalize;
+        }
+
+        .status-present {
+          background: #f0fdf4;
+          color: #166534;
+        }
+
+        .status-absent {
+          background: #fef2f2;
+          color: #dc2626;
+        }
+
+        .status-late {
+          background: #fffbeb;
+          color: #d97706;
+        }
+
+        .status-excused {
+          background: #f8fafc;
+          color: #6b7280;
+        }
+
+        .status-edit-select {
+          padding: 0.5rem;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 0.75rem;
+          width: 100%;
+        }
+
+        .notification-cell {
+          min-width: 100px;
+        }
+
+        .notification-indicator {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          padding: 0.375rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .notification-indicator.notified {
+          background: #f0fdf4;
+          color: #166534;
+        }
+
+        .notification-indicator.pending {
+          background: #fffbeb;
+          color: #d97706;
+        }
+
+        .actions-cell {
+          min-width: 180px;
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 0.5rem;
+          justify-content: flex-end;
+        }
+
+        .btn-edit,
+        .btn-save,
+        .btn-cancel,
+        .btn-delete {
+          padding: 0.5rem 0.75rem;
+          border: none;
+          border-radius: 6px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.375rem;
+          transition: all 0.2s ease;
+          min-width: 70px;
+          justify-content: center;
+        }
+
+        .btn-edit {
+          background: #3b82f6;
+          color: white;
+        }
+
+        .btn-edit:hover {
+          background: #2563eb;
+        }
+
+        .btn-save {
+          background: #10b981;
+          color: white;
+        }
+
+        .btn-save:hover:not(:disabled) {
+          background: #059669;
+        }
+
+        .btn-cancel {
+          background: #6b7280;
+          color: white;
+        }
+
+        .btn-cancel:hover:not(:disabled) {
+          background: #4b5563;
+        }
+
+        .btn-delete {
+          background: #ef4444;
+          color: white;
+        }
+
+        .btn-delete:hover {
+          background: #dc2626;
+        }
+
+        .btn-edit:disabled,
+        .btn-save:disabled,
+        .btn-cancel:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .loading-state {
+          text-align: center;
+          padding: 3rem !important;
+        }
+
+        .loading-spinner {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+          color: #6b7280;
+        }
+
+        .loading-spinner i {
+          font-size: 2rem;
+        }
+
+        .empty-state {
+          text-align: center;
+          padding: 3rem !important;
+        }
+
+        .empty-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+          color: #6b7280;
+        }
+
+        .empty-content i {
+          font-size: 3rem;
+          opacity: 0.5;
+        }
+
+        .empty-content h3 {
+          margin: 0;
+          color: #374151;
+        }
+
+        .empty-content p {
+          margin: 0;
+          max-width: 400px;
+          line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+          .page-header {
+            padding: 1.5rem;
+          }
+
+          .header-stats {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .filter-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .banner-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+          }
+
+          .results-summary {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+          }
+
+          .action-buttons {
+            flex-direction: column;
+          }
+
+          .btn-edit,
+          .btn-save,
+          .btn-cancel,
+          .btn-delete {
+            min-width: auto;
+          }
+        }
+      `}</style>
     </Layout>
   );
 };
+
+// Helper function to get status icons
+function getStatusIcon(status) {
+  switch (status) {
+    case 'Present':
+      return 'fas fa-check-circle';
+    case 'Absent':
+      return 'fas fa-times-circle';
+    case 'Late':
+      return 'fas fa-clock';
+    case 'Excused':
+      return 'fas fa-user-clock';
+    default:
+      return 'fas fa-question-circle';
+  }
+}
 
 export default AttendanceRecords;

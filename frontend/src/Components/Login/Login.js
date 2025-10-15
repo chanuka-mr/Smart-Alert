@@ -55,6 +55,7 @@ export default function Login() {
       const res = await api("/auth/login", {
         method: "POST",
         body: { userID: form.userID, password: form.password },
+        skipAuth: true,
       });
 
       // remember last login id for any fallback logic
@@ -87,6 +88,7 @@ export default function Login() {
       const res = await api("/auth/verify-otp", {
         method: "POST",
         body: { userID: form.userID, otp },
+        skipAuth: true,
       });
       const token =
         res?.token ||
