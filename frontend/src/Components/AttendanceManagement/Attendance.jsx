@@ -19,6 +19,7 @@ import {
 const Attendance = () => {
   const navigate = useNavigate();
   const [students, setStudents] = useState([]);
+  const [grade, setGrade] = useState("");
   const [section, setSection] = useState("");
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [rows, setRows] = useState({});
@@ -32,6 +33,7 @@ const Attendance = () => {
     try {
       const response = await getStudents();
       const studentsData = response.data?.students || [];
+      console.log("📚 Loaded students:", studentsData);
       setStudents(Array.isArray(studentsData) ? studentsData : []);
     } catch (error) {
       console.error("Failed to load students:", error);
@@ -50,18 +52,39 @@ const Attendance = () => {
     return () => clearInterval(id);
   }, []);
 
-  const sections = useMemo(() => {
-    const set = new Set(students.map((s) => s.section));
-    return Array.from(set).sort().map((s) => ({ value: s, label: s }));
-  }, [students]);
+  // Fixed grades 1-11
+  const grades = useMemo(() => {
+    return Array.from({ length: 11 }, (_, i) => ({
+      value: String(i + 1),
+      label: String(i + 1)
+    }));
+  }, []);
 
-  const visible = useMemo(
-    () => (section ? students.filter((s) => s.section === section) : []),
-    [students, section]
-  );
+  // Fixed classes A, B, C
+  const sectionsForGrade = useMemo(() => {
+    return [
+      { value: 'A', label: 'A' },
+      { value: 'B', label: 'B' },
+      { value: 'C', label: 'C' }
+    ];
+  }, []);
+
+  // Combine grade + section for filtering
+  const fullSection = useMemo(() => {
+    const combined = grade && section ? `${grade}${section}` : "";
+    console.log(`🎯 Selected Grade: "${grade}", Class: "${section}" → Combined: "${combined}"`);
+    return combined;
+  }, [grade, section]);
+
+  const visible = useMemo(() => {
+    const filtered = fullSection ? students.filter((s) => s.section === fullSection) : [];
+    console.log(`🔍 Filtering for section "${fullSection}":`, filtered);
+    console.log(`📊 Total students in database:`, students.length);
+    return filtered;
+  }, [students, fullSection]);
 
   useEffect(() => {
-    if (!section) {
+    if (!fullSection) {
       setRows({});
       return;
     }
@@ -70,11 +93,11 @@ const Attendance = () => {
       map[s._id] = rows[s._id] ?? { status: "Present" };
     });
     setRows(map);
-  }, [visible.length, section, rows, visible]);
+  }, [visible.length, fullSection]);
 
   useEffect(() => {
     const loadExisting = async () => {
-      if (!section) {
+      if (!fullSection) {
         setExistingIdsForDate(new Set());
         return;
       }
@@ -85,7 +108,7 @@ const Attendance = () => {
         const ids = new Set(
           list
             .filter((r) => dayjs(r.date).format("YYYY-MM-DD") === date)
-            .filter((r) => r.student?.section === section)
+            .filter((r) => r.student?.section === fullSection)
             .map((r) => r.student?._id)
             .filter(Boolean)
         );
@@ -95,7 +118,7 @@ const Attendance = () => {
       }
     };
     loadExisting();
-  }, [date, section]);
+  }, [date, fullSection]);
 
   const updateRow = (studentId, newRow) => {
     setRows((r) => ({ ...r, [studentId]: newRow }));
@@ -106,7 +129,7 @@ const Attendance = () => {
   }, [visible, existingIdsForDate]);
 
   const submit = async () => {
-    if (!section) return alert("Select a class/section first");
+    if (!fullSection) return alert("Select both grade and class first");
     
     setSubmitting(true);
     try {
@@ -145,10 +168,15 @@ const Attendance = () => {
   };
 
 
+  // Reset section when grade changes
+  useEffect(() => {
+    setSection("");
+  }, [grade]);
+
   // --------------------
   // SECTION SELECTION VIEW
   // --------------------
-  if (!section) {
+  if (!fullSection) {
     return (
       <Layout>
         <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
@@ -187,16 +215,16 @@ const Attendance = () => {
               {/* Form Section */}
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
                 <div className="flex flex-col lg:flex-row gap-6 items-end">
-                  {/* Class Section Input */}
+                  {/* Grade Selection */}
                   <div className="flex-1">
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Class Section
+                      Grade
                       <span className="text-red-500 ml-1">*</span>
                     </label>
                     <Select
-                      value={section}
-                      onChange={setSection}
-                      options={[{ value: "", label: "Choose a section" }, ...sections]}
+                      value={grade}
+                      onChange={setGrade}
+                      options={[{ value: "", label: "Select grade" }, ...grades]}
                       className="w-full"
                       styles={{
                         control: (base) => ({
@@ -208,6 +236,34 @@ const Attendance = () => {
                           '&:hover': {
                             borderColor: '#9ca3af'
                           }
+                        })
+                      }}
+                    />
+                  </div>
+
+                  {/* Class Selection */}
+                  <div className="flex-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Class
+                      <span className="text-red-500 ml-1">*</span>
+                    </label>
+                    <Select
+                      value={section}
+                      onChange={setSection}
+                      options={[{ value: "", label: grade ? "Select class" : "Select grade first" }, ...sectionsForGrade]}
+                      className="w-full"
+                      isDisabled={!grade}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          border: '1px solid #d1d5db',
+                          borderRadius: '0.5rem',
+                          padding: '0.25rem 0',
+                          boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+                          '&:hover': {
+                            borderColor: '#9ca3af'
+                          },
+                          opacity: !grade ? 0.6 : 1
                         })
                       }}
                     />
@@ -231,7 +287,7 @@ const Attendance = () => {
                 <div className="mt-8 pt-6 border-t border-gray-200">
                   <button
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!section.value}
+                    disabled={!grade || !section}
                   >
                     Start Marking Attendance
                   </button>
@@ -254,11 +310,11 @@ const Attendance = () => {
           {/* Header */}
           <div className="mb-8">
             <button 
-              onClick={() => setSection("")}
+              onClick={() => { setGrade(""); setSection(""); }}
               className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium mb-6 transition-colors duration-200 group"
             >
               <FaArrowLeft className="mr-2 transform group-hover:-translate-x-1 transition-transform duration-200" />
-              Back to Sections
+              Back to Selection
             </button>
             
             <div className="text-center mb-8">
@@ -267,7 +323,7 @@ const Attendance = () => {
                   <FaClipboardList className="text-blue-600 text-lg" />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  Attendance - {section}
+                  Attendance - Grade {grade} Class {section}
                 </h1>
               </div>
               <div className="flex items-center justify-center text-gray-600">

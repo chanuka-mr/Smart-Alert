@@ -1,13 +1,39 @@
 const Student = require("../Model/studentModel");
-const { User } = require("../Model/userModel");
+const { User, Academic } = require("../Model/userModel");
 
 // Helper: check if string looks like a Mongo ObjectId
 const looksLikeObjectId = (s) => typeof s === "string" && s.match(/^[0-9a-fA-F]{24}$/);
 
-// Get all students
+// Get all students (from User collection with role="Parent" + Academic info)
 const getAllStudents = async (req, res) => {
   try {
-    const students = await Student.find().sort({ name: 1 });
+    // Get all users with role="Parent"
+    const parents = await User.find({ role: "Parent" }).sort({ fullName: 1 });
+    
+    // Get academic info for each parent
+    const studentsWithAcademic = await Promise.all(
+      parents.map(async (parent) => {
+        const academic = await Academic.findOne({ userID: parent.userID });
+        
+        return {
+          _id: parent._id,
+          userID: parent.userID,
+          name: parent.fullName,
+          std_index: parent.userID, // Using userID as student index
+          section: academic ? `${academic.grade}${academic.class}` : null,
+          grade: academic ? academic.grade : null,
+          class: academic ? academic.class : null,
+          email: parent.email,
+          phone: parent.phone,
+          birthday: parent.birthday,
+          address: parent.address
+        };
+      })
+    );
+    
+    // Filter out students without academic info (optional)
+    const students = studentsWithAcademic.filter(s => s.section !== null);
+    
     return res.status(200).json({ students });
   } catch (err) {
     console.error(err.message);
