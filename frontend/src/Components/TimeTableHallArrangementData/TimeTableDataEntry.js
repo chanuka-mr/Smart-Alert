@@ -119,7 +119,7 @@ const TimeTableDataEntry = () => {
         category: ''
       }));
     }
-  }, [timetableForm.grade, timetableForm.class]);
+  }, [timetableForm.grade, timetableForm.class, timetableForm]);
 
   // Set default date to today
   useEffect(() => {

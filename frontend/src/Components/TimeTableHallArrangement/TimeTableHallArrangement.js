@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './TimeTableHallArrangement.css';
 import TimeTableAPI from '../../services/TimeTableAPI';
 import { useNavigate } from 'react-router-dom';
 
 const TimeTableHallArrangement = () => {
   const navigate = useNavigate();
+  const [examDropdownOpen, setExamDropdownOpen] = useState(false);
+  const examDropdownRef = useRef(null);
   
   // Fallback data for when backend is not available
   const fallbackTimetableData = [
@@ -22,19 +24,19 @@ const TimeTableHallArrangement = () => {
     { examName: "3rd Term", grade: 11, class: "A", classSection: "11-A", subject: "Advanced Physics", examDate: "2023-12-25", examTime: "9:00 AM - 12:00 PM", hall: "Hall 9" }
   ];
 
-  const fallbackHallArrangements = [
-    { hall: "Hall 1", grade: 1, sections: ["A", "B"], capacity: 40 },
-    { hall: "Hall 2", grade: 2, sections: ["A", "B", "C"], capacity: 60 },
-    { hall: "Hall 3", grade: 3, sections: ["A", "C"], capacity: 40 },
-    { hall: "Hall 4", grade: 4, sections: ["B", "D"], capacity: 40 },
-    { hall: "Hall 5", grade: 5, sections: ["A", "B", "C", "D"], capacity: 80 },
-    { hall: "Hall 6", grade: 6, sections: ["A", "B"], capacity: 40 },
-    { hall: "Hall 7", grade: 7, sections: ["B", "C"], capacity: 40 },
-    { hall: "Hall 8", grade: 8, sections: ["C", "D"], capacity: 40 },
-    { hall: "Hall 9", grade: 9, sections: ["D", "E"], capacity: 40 },
-    { hall: "Hall 10", grade: 10, sections: ["A", "B", "C", "D", "E"], capacity: 100 },
-    { hall: "Hall 11", grade: 11, sections: ["A", "B"], capacity: 40 }
-  ];
+  // const fallbackHallArrangements = [
+  //   { hall: "Hall 1", grade: 1, sections: ["A", "B"], capacity: 40 },
+  //   { hall: "Hall 2", grade: 2, sections: ["A", "B", "C"], capacity: 60 },
+  //   { hall: "Hall 3", grade: 3, sections: ["A", "C"], capacity: 40 },
+  //   { hall: "Hall 4", grade: 4, sections: ["B", "D"], capacity: 40 },
+  //   { hall: "Hall 5", grade: 5, sections: ["A", "B", "C", "D"], capacity: 80 },
+  //   { hall: "Hall 6", grade: 6, sections: ["A", "B"], capacity: 40 },
+  //   { hall: "Hall 7", grade: 7, sections: ["B", "C"], capacity: 40 },
+  //   { hall: "Hall 8", grade: 8, sections: ["C", "D"], capacity: 40 },
+  //   { hall: "Hall 9", grade: 9, sections: ["D", "E"], capacity: 40 },
+  //   { hall: "Hall 10", grade: 10, sections: ["A", "B", "C", "D", "E"], capacity: 100 },
+  //   { hall: "Hall 11", grade: 11, sections: ["A", "B"], capacity: 40 }
+  // ];
 
   // State management
   const [selectedGrade, setSelectedGrade] = useState('');
@@ -97,7 +99,7 @@ const TimeTableHallArrangement = () => {
   };
 
   // Load data from backend
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -154,7 +156,7 @@ const TimeTableHallArrangement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedGrade, selectedClass]);
 
   // Filter functions
   const applyFilters = async () => {
@@ -212,11 +214,22 @@ const TimeTableHallArrangement = () => {
   // Apply filters when state changes
   useEffect(() => {
     loadData();
-  }, [selectedGrade, selectedClass]);
+  }, [selectedGrade, selectedClass, loadData]);
 
   // Load initial data
   useEffect(() => {
     loadData();
+  }, [loadData]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (examDropdownRef.current && !examDropdownRef.current.contains(e.target)) {
+        setExamDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   return (
@@ -225,7 +238,23 @@ const TimeTableHallArrangement = () => {
         <div className="page-header">
           <h2>All Classes TimeTable & Hall Arrangements</h2>
           <p>View and download timetables and hall arrangements for classes 1-11 (Primary: 1-5, Secondary: 6-11)</p>
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: '20px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ position: 'relative' }} ref={examDropdownRef}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setExamDropdownOpen(s => !s)}
+                style={{ padding: '10px 16px' }}
+              >
+                Examination <i className="fas fa-caret-down" style={{ marginLeft: 8 }} />
+              </button>
+              {examDropdownOpen && (
+                <div style={{ position: 'absolute', top: '46px', right: 0, background: '#fff', border: '1px solid #ddd', borderRadius: 6, boxShadow: '0 10px 30px rgba(0,0,0,0.12)', zIndex: 9999, minWidth: 220 }} role="menu">
+                  <button className="dropdown-item" onClick={() => { setExamDropdownOpen(false); navigate('/exams'); }} style={{ display: 'block', padding: '10px 14px', width: '100%', textAlign: 'left', background: 'none', border: 'none' }}>Exams</button>
+                  <button className="dropdown-item" onClick={() => { setExamDropdownOpen(false); navigate('/timetable'); }} style={{ display: 'block', padding: '10px 14px', width: '100%', textAlign: 'left', background: 'none', border: 'none' }}>Time Tables & Hall Arrangement</button>
+                </div>
+              )}
+            </div>
+            
             <button 
               className="btn btn-primary" 
               onClick={() => navigate('/timetable-data-entry')}

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './ReportData.css';
 import ReportDataAPI from '../../services/ReportDataAPI';
+import { api } from '../../api/client';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const ReportData = () => {
@@ -29,8 +30,11 @@ const ReportData = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-
+  // Student lookup status: idle | loading | found | not-found | error
+  const [studentLookupStatus, setStudentLookupStatus] = useState('idle');
+  const lookupTimeout = React.useRef(null);
   // Common subjects by class level
+  
   const subjectsByLevel = {
     '1': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
     '2': ['Sinhala', 'English', 'Tamil', 'Buddhist', 'Mathematics', 'Science', 'Art', 'Music', 'Dance'],
@@ -59,6 +63,92 @@ const ReportData = () => {
     }
   };
 
+  // Debounced student lookup: when studentId changes, try to autofill studentName
+  useEffect(() => {
+    const id = (formData.studentId || '').toString().trim();
+
+    // Clear any pending timeout
+    if (lookupTimeout.current) {
+      clearTimeout(lookupTimeout.current);
+      lookupTimeout.current = null;
+    }
+
+    if (!id) {
+      // Clear name when id cleared
+      setFormData(prev => ({ ...prev, studentName: '' }));
+      setStudentLookupStatus('idle');
+      return;
+    }
+
+    setStudentLookupStatus('loading');
+
+    // Debounce the lookup by 450ms
+    lookupTimeout.current = setTimeout(async () => {
+      try {
+        setStudentLookupStatus('loading');
+
+        // 1) Try students by-index (case-insensitive full match)
+        try {
+          const response = await api.get(`/api/students/by-index/${encodeURIComponent(id)}`);
+          console.log('by-index response:', response?.data);
+          const student = response?.data?.student;
+          if (student && (student.name || student.fullName)) {
+            setFormData(prev => ({ ...prev, studentName: student.name || student.fullName }));
+            setStudentLookupStatus('found');
+            return;
+          }
+        } catch (e) {
+          // ignore and try next
+          console.debug('by-index lookup failed:', e?.message || e);
+        }
+
+        // 2) Try users collection via public students/by-userid endpoint (case-insensitive)
+        try {
+          const response = await api.get(`/api/students/by-userid/${encodeURIComponent(id)}`);
+          console.log('by-userid response:', response?.data);
+          const user = response?.data?.user;
+          if (user && (user.fullName || user.name)) {
+            setFormData(prev => ({ ...prev, studentName: user.fullName || user.name }));
+            setStudentLookupStatus('found');
+            return;
+          }
+        } catch (e) {
+          console.debug('by-userid lookup failed:', e?.message || e);
+        }
+
+        // 3) Fallback: try /api/students/:id (by ObjectId or exact index)
+        try {
+          const response = await api.get(`/api/students/${encodeURIComponent(id)}`);
+          console.log('direct lookup response:', response?.data);
+          const student2 = response?.data?.student;
+          if (student2 && (student2.name || student2.fullName)) {
+            setFormData(prev => ({ ...prev, studentName: student2.name || student2.fullName }));
+            setStudentLookupStatus('found');
+            return;
+          }
+        } catch (e) {
+          console.debug('students direct lookup failed:', e?.message || e);
+        }
+
+        // Nothing found
+        setFormData(prev => ({ ...prev, studentName: '' }));
+        setStudentLookupStatus('not-found');
+      } catch (err) {
+        console.error('Student lookup unexpected error:', err);
+        setFormData(prev => ({ ...prev, studentName: '' }));
+        setStudentLookupStatus('error');
+      }
+    }, 450);
+
+    // Cleanup on unmount or id change
+    return () => {
+      if (lookupTimeout.current) {
+        clearTimeout(lookupTimeout.current);
+        lookupTimeout.current = null;
+      }
+    };
+  }, [formData.studentId]);
+
   // Handle class level change
   const handleClassLevelChange = (e) => {
     const grade = e.target.value;
@@ -81,7 +171,7 @@ const ReportData = () => {
   };
 
   // Add a new subject row
-  const addSubjectRow = (subjectName = '', term1 = '', term2 = '', term3 = '') => {
+  const addSubjectRow = useCallback((subjectName = '', term1 = '', term2 = '', term3 = '') => {
     const newSubject = {
       id: Date.now() + Math.random(), // Ensure unique ID
       subjectName: subjectName,
@@ -105,7 +195,7 @@ const ReportData = () => {
     if (error) {
       setError(null);
     }
-  };
+  }, [error]);
 
   // Remove a subject row
   const removeSubjectRow = (id, subjectName) => {
@@ -245,7 +335,7 @@ const ReportData = () => {
         }, 2000);
       } else {
         // Create new report card
-        result = await ReportDataAPI.addReportCard(submissionData);
+        await ReportDataAPI.addReportCard(submissionData);
         setSuccess('Report card data submitted successfully!');
         
         // Reset the form after successful submission
@@ -267,7 +357,7 @@ const ReportData = () => {
     if (subjects.length === 0) {
       addSubjectRow();
     }
-  }, []);
+  }, [addSubjectRow, subjects.length]);
 
   // Clear errors when form data changes
   useEffect(() => {
@@ -368,6 +458,21 @@ const ReportData = () => {
                     onChange={handleInputChange}
                     required 
                   />
+                  {/* Inline lookup status for student ID autofill */}
+                  <div style={{ marginTop: '6px', minHeight: '18px' }}>
+                    {studentLookupStatus === 'loading' && (
+                      <small style={{ color: '#0b74a6' }}>Looking up student...</small>
+                    )}
+                    {studentLookupStatus === 'found' && (
+                      <small style={{ color: '#2e7d32' }}>Student found and name autofilled</small>
+                    )}
+                    {studentLookupStatus === 'not-found' && (
+                      <small style={{ color: '#c62828' }}>Student not found</small>
+                    )}
+                    {studentLookupStatus === 'error' && (
+                      <small style={{ color: '#c62828' }}>Lookup error — check server</small>
+                    )}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label htmlFor="studentName">Student Name *</label>

@@ -1,0 +1,92 @@
+.examination-container {
+  padding: 24px;
+}
+
+.examination-header h2 {
+  margin: 0 0 4px 0;
+  color: #0f766e;
+}
+
+.examination-subtitle {
+  margin: 0 0 16px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.examination-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.exam-section-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.exam-section-header {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.exam-section-header h3 {
+  margin: 0 0 6px 0;
+}
+
+.exam-section-desc {
+  margin: 0;
+  color: #666;
+  font-size: 13px;
+}
+
+.exam-links {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 16px;
+}
+
+.exam-link {
+  text-decoration: none;
+}
+
+.exam-link-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f9fafb;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.exam-link-card:hover {
+  border-color: #0ea5e9;
+  background: #f0f9ff;
+}
+
+.exam-link-title {
+  font-weight: 600;
+  color: #111827;
+}
+
+.exam-link-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.examination-all-pages {
+  margin-top: 24px;
+}
+
+.examination-all-pages h4 {
+  margin: 0 0 8px 0;
+}
+
+.examination-all-pages ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.examination-all-pages a {
+  color: #0ea5e9;
+}

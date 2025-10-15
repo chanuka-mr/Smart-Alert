@@ -364,3 +364,21 @@
         width: 100%;
     }
 }
+
+/* Dropdown styles for Examination button */
+.dropdown-item {
+    background: white;
+    color: #333;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: #f5f5f5;
+}
+
+.dropdown-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+

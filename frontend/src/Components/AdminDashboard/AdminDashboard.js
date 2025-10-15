@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../utils/api';
 import './AdminDashboard.css';
@@ -148,26 +148,29 @@ const AdminDashboard = () => {
       }
     };
 
+    loadUserData();
+    loadDashboardStats();
+    // Note: recent activity depends on the loaded `user` and is handled in a separate effect
+  }, [navigate]);
+
+  // Load recent activity once we have a userID available. This avoids reading properties on null.
+  useEffect(() => {
     const loadRecentActivity = async () => {
       try {
         if (user?.userID) {
           const response = await api(`/activities/recent/${user.userID}`);
           setRecentActivity(response.activities || []);
         } else {
-          // Fallback to empty array if no user
           setRecentActivity([]);
         }
       } catch (error) {
         console.error('Failed to load recent activity:', error);
-        // Fallback to empty array on error
         setRecentActivity([]);
       }
     };
 
-    loadUserData();
-    loadDashboardStats();
     loadRecentActivity();
-  }, [navigate]);
+  }, [user?.userID]);
 
   // State to track which row's kebab menu is open (store unique id like user._id)
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -245,7 +248,7 @@ const AdminDashboard = () => {
   };
 
   // Student management functions
-  const loadStudents = async () => {
+  const loadStudents = useCallback(async () => {
     try {
       // Load users from the API and filter only parents
       const response = await api('/users');
@@ -261,10 +264,10 @@ const AdminDashboard = () => {
       setStudents([]);
       setFilteredStudents([]);
     }
-  };
+  }, []);
 
   // Teacher management functions
-  const loadTeachers = async () => {
+  const loadTeachers = useCallback(async () => {
     try {
       const response = await api('/users');
       const users = response.users || [];
@@ -278,7 +281,7 @@ const AdminDashboard = () => {
       setTeachers([]);
       setFilteredTeachers([]);
     }
-  };
+  }, []);
 
   // Shuttle Staff management functions
   const loadShuttleStaff = async () => {
@@ -310,7 +313,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const filterAndSortStudents = () => {
+  const filterAndSortStudents = useCallback(() => {
     let filtered = [...students];
     
     // Enhanced search filter with better matching
@@ -354,10 +357,13 @@ const AdminDashboard = () => {
       case 'userID':
         filtered.sort((a, b) => a.userID.localeCompare(b.userID));
         break;
+      default:
+        // No sorting
+        break;
     }
     
     setFilteredStudents(filtered);
-  };
+  }, [students, searchTerm, emailStatusFilter, sortBy]);
 
   // Load academic assignments by role and index by userID
   const loadAcademicAssignments = async (role) => {
@@ -439,7 +445,7 @@ const AdminDashboard = () => {
   };
 
   // Teacher filter and sort function
-  const filterAndSortTeachers = () => {
+  const filterAndSortTeachers = useCallback(() => {
     let filtered = [...teachers];
     
     if (teacherSearchTerm && teacherSearchTerm.trim()) {
@@ -478,13 +484,16 @@ const AdminDashboard = () => {
       case 'userID':
         filtered.sort((a, b) => a.userID.localeCompare(b.userID));
         break;
+      default:
+        // No sorting
+        break;
     }
     
     setFilteredTeachers(filtered);
-  };
+  }, [teachers, teacherSearchTerm, teacherEmailStatusFilter, teacherSortBy]);
 
   // Shuttle Staff filter and sort function
-  const filterAndSortShuttleStaff = () => {
+  const filterAndSortShuttleStaff = useCallback(() => {
     let filtered = [...shuttleStaff];
     
     if (shuttleSearchTerm && shuttleSearchTerm.trim()) {
@@ -523,13 +532,16 @@ const AdminDashboard = () => {
       case 'userID':
         filtered.sort((a, b) => a.userID.localeCompare(b.userID));
         break;
+      default:
+        // No sorting
+        break;
     }
     
     setFilteredShuttleStaff(filtered);
-  };
+  }, [shuttleStaff, shuttleSearchTerm, shuttleEmailStatusFilter, shuttleSortBy]);
 
   // Admin filter and sort function
-  const filterAndSortAdmins = () => {
+  const filterAndSortAdmins = useCallback(() => {
     let filtered = [...admins];
     
     if (adminSearchTerm && adminSearchTerm.trim()) {
@@ -568,10 +580,13 @@ const AdminDashboard = () => {
       case 'userID':
         filtered.sort((a, b) => a.userID.localeCompare(b.userID));
         break;
+      default:
+        // No sorting
+        break;
     }
     
     setFilteredAdmins(filtered);
-  };
+  }, [admins, adminSearchTerm, adminEmailStatusFilter, adminSortBy]);
 
   const handleAddStudent = () => {
     setEditingStudent(null);
@@ -873,7 +888,7 @@ const AdminDashboard = () => {
     
     try {
       if (editingTeacher) {
-        const response = await api(`/users/${editingTeacher._id}`, {
+        await api(`/users/${editingTeacher._id}`, {
           method: 'PUT',
           body: teacherForm
         });
@@ -888,12 +903,12 @@ const AdminDashboard = () => {
           try {
             await api('/academic/assign', {
               method: 'POST',
-              body: { userID: response.user?.userID || editingTeacher.userID, grade: Number(teacherForm.grade), class: teacherForm.class || 'A' }
+              body: { userID: editingTeacher.userID, grade: Number(teacherForm.grade), class: teacherForm.class || 'A' }
             });
           } catch (assignErr) {
             // If already assigned, update
             if (assignErr.message && assignErr.message.includes('already assigned')) {
-              await api(`/academic/${response.user?.userID || editingTeacher.userID}`, {
+              await api(`/academic/${editingTeacher.userID}`, {
                 method: 'PUT',
                 body: { grade: Number(teacherForm.grade), class: teacherForm.class || 'A' }
               });
@@ -987,7 +1002,7 @@ const AdminDashboard = () => {
     
     try {
       if (editingShuttle) {
-        const response = await api(`/users/${editingShuttle._id}`, {
+        await api(`/users/${editingShuttle._id}`, {
           method: 'PUT',
           body: shuttleForm
         });
@@ -1057,7 +1072,7 @@ const AdminDashboard = () => {
     
     try {
       if (editingAdmin) {
-        const response = await api(`/users/${editingAdmin._id}`, {
+        await api(`/users/${editingAdmin._id}`, {
           method: 'PUT',
           body: adminForm
         });
@@ -1104,7 +1119,7 @@ const AdminDashboard = () => {
       // Log dashboard access
       logDashboardAccess();
     }
-  }, [activeTab]);
+  }, [activeTab, loadStudents, loadTeachers]);
 
   // Load academic data on component mount
   useEffect(() => {
@@ -1134,19 +1149,19 @@ const AdminDashboard = () => {
   // Filter and sort when filters change
   useEffect(() => {
     filterAndSortStudents();
-  }, [searchTerm, sortBy, emailStatusFilter, students]);
+  }, [searchTerm, sortBy, emailStatusFilter, students, filterAndSortStudents]);
 
   useEffect(() => {
     filterAndSortTeachers();
-  }, [teacherSearchTerm, teacherSortBy, teacherEmailStatusFilter, teachers]);
+  }, [teacherSearchTerm, teacherSortBy, teacherEmailStatusFilter, teachers, filterAndSortTeachers]);
 
   useEffect(() => {
     filterAndSortShuttleStaff();
-  }, [shuttleSearchTerm, shuttleSortBy, shuttleEmailStatusFilter, shuttleStaff]);
+  }, [shuttleSearchTerm, shuttleSortBy, shuttleEmailStatusFilter, shuttleStaff, filterAndSortShuttleStaff]);
 
   useEffect(() => {
     filterAndSortAdmins();
-  }, [adminSearchTerm, adminSortBy, adminEmailStatusFilter, admins]);
+  }, [adminSearchTerm, adminSortBy, adminEmailStatusFilter, admins, filterAndSortAdmins]);
 
   // Debug modal state changes
   useEffect(() => {

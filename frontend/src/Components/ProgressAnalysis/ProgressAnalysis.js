@@ -34,21 +34,21 @@ const ProgressAnalysis = () => {
   const [error, setError] = useState(null);
 
   // Function to determine trend
-  const determineTrend = (term1, term2, term3) => {
-    const values = [term1, term2, term3].filter(v => v !== null && v !== undefined);
-    if (values.length < 2) return "Insufficient Data";
+  // const determineTrend = (term1, term2, term3) => {
+  //   const values = [term1, term2, term3].filter(v => v !== null && v !== undefined);
+  //   if (values.length < 2) return "Insufficient Data";
     
-    if (values[values.length - 1] > values[0]) return "Improving";
-    if (values[values.length - 1] < values[0]) return "Declining";
-    return "Stable";
-  };
+  //   if (values[values.length - 1] > values[0]) return "Improving";
+  //   if (values[values.length - 1] < values[0]) return "Declining";
+  //   return "Stable";
+  // };
 
   // Function to generate recommendation
-  const generateRecommendation = (trend, latestScore) => {
-    if (latestScore < 65) return "Provide extra practice and revision.";
-    if (trend === "Improving" && latestScore >= 75) return "Good progress — continue current strategies.";
-    return "Maintain effort.";
-  };
+  // const generateRecommendation = (trend, latestScore) => {
+  //   if (latestScore < 65) return "Provide extra practice and revision.";
+  //   if (trend === "Improving" && latestScore >= 75) return "Good progress — continue current strategies.";
+  //   return "Maintain effort.";
+  // };
 
   // Function to calculate grade based on marks
   const calculateGrade = (marks) => {

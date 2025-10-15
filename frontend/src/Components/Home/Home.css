@@ -168,6 +168,14 @@
   font-size: 16px;
 }
 
+/* Examination dropdown styling */
+.action-btn.examination { padding: 0; }
+.action-btn.examination .btn-iconless { padding: 8px 12px; color: #00897b; font-weight: 600; }
+.action-btn.examination .btn-iconless:hover { background: rgba(0, 137, 123, 0.06); transform: none; }
+.action-btn.examination button { width: 100%; }
+
+.action-btn.examination div[role="menu"] { min-width: 260px; }
+
 .action-btn-admin-dashboard {
   background: rgba(0, 137, 123, 0.1) !important;
   color: #00897b !important;

@@ -98,10 +98,20 @@ const Home = () => {
     navigate('/login');
   };
 
-  const handleGetStarted = (e) => {
-    e.preventDefault();
-    alert('Thank you for your interest! A representative will contact you soon.');
-  };
+  // Dropdown state for Examination menu
+  const [examMenuOpen, setExamMenuOpen] = useState(false);
+  const examMenuRef = React.useRef(null);
+
+  React.useEffect(() => {
+    function handleClickOutside(e) {
+      if (examMenuRef.current && !examMenuRef.current.contains(e.target)) {
+        setExamMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   const handleAddFeature = () => {
     setEditingFeature(null);
@@ -253,10 +263,19 @@ const Home = () => {
               <i className="fas fa-bullhorn"></i>
               <span>Notices</span>
             </button>
-            <button className="action-btn examination" onClick={(e) => { e.preventDefault(); navigate('/timetable'); }}>
-              <i className="fas fa-file-alt"></i>
-              <span>Examination</span>
-            </button>
+            <div className="action-btn examination" ref={examMenuRef} style={{ position: 'relative' }}>
+              <button className="btn-iconless" onClick={(e) => { e.preventDefault(); setExamMenuOpen(s => !s); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <i className="fas fa-file-alt"></i>
+                <span>Examination</span>
+                <i className="fas fa-caret-down" style={{ marginLeft: 6 }}></i>
+              </button>
+              {examMenuOpen && (
+                <div style={{ position: 'absolute', top: '46px', left: 0, background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 9999 }}>
+                  <button onClick={() => { setExamMenuOpen(false); navigate('/timetable'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: 260, textAlign: 'left', cursor: 'pointer' }}>Timetable & Hall Arrangement</button>
+                  <button onClick={() => { setExamMenuOpen(false); navigate('/exams'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: 260, textAlign: 'left', cursor: 'pointer' }}>Exams</button>
+                </div>
+              )}
+            </div>
             <button className="action-btn shuttle-services" onClick={(e) => { e.preventDefault(); navigate('/shuttle-services'); }}>
               <i className="fas fa-bus"></i>
               <span>Shuttle Services</span>

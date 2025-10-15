@@ -23,6 +23,8 @@ import ReportCardView from './Components/ReportCardView/ReportCardView';
 import ProgressAnalysis from './Components/ProgressAnalysis/ProgressAnalysis';
 import ReportData from './Components/ReportData/ReportData';
 import TimeTableDataEntry from './Components/TimeTableHallArrangementData/TimeTableDataEntry';
+import Examination from './Components/Examination/Examination';
+import ExamOnly from './Components/Examination/ExamOnly';
 import ShuttleServices from './Components/ShuttleServices/ShuttleServices';
 import Students from './Components/AttendanceManagement/Students';
 import Attendance from './Components/AttendanceManagement/Attendance';
@@ -41,7 +43,7 @@ function RequireAuth({ children }) {
       const token = localStorage.getItem("token");
       
       if (!token) {
-        console.log('❌ No token found');
+        // No token is normal for logged-out users - not an error
         setIsAuthenticated(false);
         setIsLoading(false);
         setAuthChecked(true);
@@ -53,21 +55,13 @@ function RequireAuth({ children }) {
         const response = await api('/auth/me', { method: 'GET' });
         
         if (response && response.user) {
-          console.log('✅ Valid authentication');
           setIsAuthenticated(true);
         } else {
-          console.log('❌ Invalid response from backend');
           localStorage.removeItem("token");
           setIsAuthenticated(false);
         }
       } catch (error) {
-        console.log('❌ Backend authentication failed:', error.message);
-        
-        // If it's a network error, show a message about backend not running
-        if (error.message.includes('Network error') || error.message.includes('fetch')) {
-          console.log('🔧 Backend appears to be down');
-        }
-        
+        // Token is invalid or backend is unreachable
         localStorage.removeItem("token");
         setIsAuthenticated(false);
       } finally {
@@ -272,6 +266,22 @@ export default function App() {
         <Route path="/update-teacher-notices" element={<UpdateNoticeTeacher />} />
 
         {/* Examination Management Routes */}
+        <Route 
+          path="/examination" 
+          element={
+            <RequireAuth>
+              <Examination />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/exams"
+          element={
+            <RequireAuth>
+              <ExamOnly />
+            </RequireAuth>
+          }
+        />
         <Route 
           path="/timetable" 
           element={
