@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import Navigation from '../Navigation/Navigation';
+import Footer from '../Footer/Footer';
 import './ProgressAnalysis.css';
 import ProgressAnalysisAPI from '../../services/ProgressAnalysisAPI';
 import {
@@ -208,30 +210,33 @@ const ProgressAnalysis = () => {
   };
 
   return (
-    <div className="container">
-      <div className="page-header">
-        <h2>Student Progress Analysis</h2>
-        <p>Track student progress across multiple terms with detailed analytics</p>
-      </div>
+    <>
+      <Navigation />
+      <div className="progress-analysis-wrapper">
+        <div className="container">
+          <div className="page-header">
+            <h2>Student Progress Analysis</h2>
+            <p>Track student progress across multiple terms with detailed analytics</p>
+          </div>
 
-      {/* Error Display */}
-      {error && (
-        <div style={{
-          background: '#ffebee',
-          border: '1px solid #f44336',
-          borderRadius: '5px',
-          padding: '15px',
-          marginBottom: '20px',
-          color: '#c62828'
-        }}>
-          <strong>Error:</strong> {error}
-        </div>
-      )}
+          {/* Error Display */}
+          {error && (
+            <div style={{
+              background: '#ffebee',
+              border: '1px solid #f44336',
+              borderRadius: '5px',
+              padding: '15px',
+              marginBottom: '20px',
+              color: '#c62828'
+            }}>
+              <strong>Error:</strong> {error}
+            </div>
+          )}
 
-      {/* Search Section */}
-      <div className="search-section">
-        <div className="search-form">
-          <div className="form-group">
+          {/* Search Section */}
+          <div className="search-section">
+            <div className="search-form">
+              <div className="form-group">
             <label htmlFor="student-id">Student ID</label>
             <input 
               type="text" 
@@ -240,23 +245,23 @@ const ProgressAnalysis = () => {
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
             />
-          </div>
-          <div className="form-group">
-            <button 
+              </div>
+              <div className="form-group">
+                <button 
               className="btn btn-primary" 
               onClick={handleSearch}
               disabled={loading}
             >
               {loading ? 'Searching...' : 'Search'}
-            </button>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Progress Analysis */}
-      <div className={`progress-analysis ${showAnalysis ? 'show' : ''}`}>
-        {analysisData && (
-          <>
+          {/* Progress Analysis */}
+          <div className={`progress-analysis ${showAnalysis ? 'show' : ''}`}>
+            {analysisData && (
+              <>
             <div className="student-header">
               <h3>WEBSTER INTERNATIONAL SCHOOL</h3>
               <p>Student Progress Analysis</p>
@@ -602,19 +607,22 @@ const ProgressAnalysis = () => {
               <p>{analysisData.overallRecommendations}</p>
             </div>
 
-            <div style={{textAlign: 'center'}}>
-              <button 
-                className="btn btn-primary" 
-                onClick={handleDownload}
-                disabled={loading}
-              >
-                {loading ? 'Downloading...' : 'Download Progress Analysis (PDF)'}
-              </button>
-            </div>
-          </>
-        )}
+                <div style={{textAlign: 'center'}}>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handleDownload}
+                    disabled={loading}
+                  >
+                    {loading ? 'Downloading...' : 'Download Progress Analysis (PDF)'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 };
 

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Navigation from '../Navigation/Navigation';
+import Footer from '../Footer/Footer';
 import './TimeTableDataEntry.css';
 import TimeTableAPI from '../../services/TimeTableAPI';
 import { useNavigate } from 'react-router-dom';
@@ -1369,9 +1371,11 @@ const TimeTableDataEntry = () => {
   };
 
   return (
-    <div className="container">
+    <>
+      <Navigation />
+      <div className="container">
 
-      {/* Page Content */}
+        {/* Page Content */}
       <div className="container">
         <div className="page-header">
           <h2>Timetable & Hall Arrangements Data Entry</h2>
@@ -2059,7 +2063,9 @@ const TimeTableDataEntry = () => {
           loading={loading}
         />
       )}
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 };
 

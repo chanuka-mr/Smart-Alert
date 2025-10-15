@@ -1,32 +1,60 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Navigation from '../Navigation/Navigation';
+import Footer from '../Footer/Footer';
 import './Examination.css';
 
-const ExamOnly = () => {
-  const links = [
-    { to: '/report-card', label: 'Report Card', subtitle: 'Generate & view' },
-    { to: '/report-data', label: 'Report Data Entry', subtitle: 'Enter marks & details' },
-    { to: '/progress-analysis', label: 'Progress Analysis', subtitle: 'Insights & trends' }
-  ];
-
+const MenuCard = ({ icon, title, subtitle, to }) => {
   return (
-    <div className="examination-container">
-      <div className="examination-header">
-        <h2>Exam</h2>
-        <p className="examination-subtitle">Report cards, data entry and performance analysis</p>
+    <Link to={to} className="menu-card-link">
+      <div className="menu-card">
+        <div className="menu-card-icon">
+          <i className={icon}></i>
+        </div>
+        <div className="menu-card-content">
+          <h3 className="menu-card-title">{title}</h3>
+          <p className="menu-card-subtitle">{subtitle}</p>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+const ExamOnly = () => {
+  return (
+    <>
+      <Navigation />
+      <div className="examination-container">
+        <div className="examination-header">
+        <h1 className="examination-title">Exam</h1>
+        <p className="examination-description">Report cards, data entry and performance analysis</p>
       </div>
 
-      <div className="exam-only-card">
-        {links.map(link => (
-          <Link key={link.to + link.label} to={link.to} className="exam-link">
-            <div className="exam-link-card" style={{ marginBottom: 12 }}>
-              <div className="exam-link-title">{link.label}</div>
-              {link.subtitle ? <div className="exam-link-subtitle">{link.subtitle}</div> : null}
-            </div>
-          </Link>
-        ))}
+      <div className="menu-cards-container">
+        <MenuCard
+          icon="fas fa-file-alt"
+          title="Report Card"
+          subtitle="Generation & view"
+          to="/report-card"
+        />
+        
+        <MenuCard
+          icon="fas fa-keyboard"
+          title="Report Data Entry"
+          subtitle="Enter marks & details"
+          to="/report-data"
+        />
+        
+        <MenuCard
+          icon="fas fa-chart-line"
+          title="Progress Analysis"
+          subtitle="Insights & trends"
+          to="/progress-analysis"
+        />
       </div>
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 };
 

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Navigation from '../Navigation/Navigation';
+import Footer from '../Footer/Footer';
 import './ReportData.css';
 import ReportDataAPI from '../../services/ReportDataAPI';
 import { api } from '../../api/client';
@@ -403,9 +405,11 @@ const ReportData = () => {
   }, [isEditMode, editData]);
 
   return (
-    <div className="container">
+    <>
+      <Navigation />
+      <div className="container">
 
-      {/* Page Content */}
+        {/* Page Content */}
       <div className="container">
         <div className="page-header">
           <h2>{isEditMode ? 'Edit Report Card Data' : 'Report Card Data Entry'}</h2>
@@ -693,7 +697,9 @@ const ReportData = () => {
         </div>
       </div>
 
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 };
 

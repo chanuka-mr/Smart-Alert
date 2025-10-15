@@ -11,6 +11,12 @@ body {
     line-height: 1.6;
 }
 
+.progress-analysis-wrapper {
+    min-height: calc(100vh - 200px);
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%);
+    padding-bottom: 40px;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;

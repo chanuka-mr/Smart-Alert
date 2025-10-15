@@ -1,81 +1,59 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Navigation from '../Navigation/Navigation';
+import Footer from '../Footer/Footer';
 import './Examination.css';
 
-const SectionCard = ({ title, description, links }) => {
+const MenuCard = ({ icon, title, subtitle, to }) => {
   return (
-    <div className="exam-section-card">
-      <div className="exam-section-header">
-        <h3>{title}</h3>
-        {description ? <p className="exam-section-desc">{description}</p> : null}
+    <Link to={to} className="menu-card-link">
+      <div className="menu-card">
+        <div className="menu-card-icon">
+          <i className={icon}></i>
+        </div>
+        <div className="menu-card-content">
+          <h3 className="menu-card-title">{title}</h3>
+          <p className="menu-card-subtitle">{subtitle}</p>
+        </div>
       </div>
-      <div className="exam-links">
-        {links.map(link => (
-          <Link key={link.to} to={link.to} className="exam-link">
-            <div className="exam-link-card">
-              <div className="exam-link-title">{link.label}</div>
-              {link.subtitle ? <div className="exam-link-subtitle">{link.subtitle}</div> : null}
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
+    </Link>
   );
 };
 
 export default function Examination() {
   return (
-    <div className="examination-container">
-      <div className="examination-header">
-        <h2>Examination</h2>
-        <p className="examination-subtitle">Manage timetables, hall arrangements, report cards and analysis</p>
-      </div>
+    <>
+      <Navigation />
+      <div className="examination-container">
+        <div className="examination-header">
+          <h1 className="examination-title">Exam</h1>
+          <p className="examination-description">Report cards, data entry and performance analysis</p>
+        </div>
 
-      <div className="examination-grid">
-        <SectionCard
-          title="Timetable & Hall Arrangement"
-          description="Create, view and download timetables and hall arrangements"
-          links={[
-            { to: '/timetable', label: 'TimeTable & Hall Arrangement', subtitle: 'Browse & download' },
-            { to: '/timetable-data-entry', label: 'TimeTable/Hall Data Entry', subtitle: 'Add & update data' },
-          ]}
+        <div className="menu-cards-container">
+        <MenuCard
+          icon="fas fa-file-alt"
+          title="Report Card"
+          subtitle="Generation & view"
+          to="/report-card"
         />
-
-        <SectionCard
-          title="Exam"
-          description="Report cards, data entry and performance analysis"
-          links={[
-            { to: '/report-card', label: 'Report Card', subtitle: 'Generate & view' },
-            { to: '/report-data', label: 'Report Data Entry', subtitle: 'Enter marks & details' },
-            { to: '/progress-analysis', label: 'Progress Analysis', subtitle: 'Insights & trends' },
-            { to: '/report-card', label: 'Report Card View', subtitle: 'Search & view by student' },
-          ]}
+        
+        <MenuCard
+          icon="fas fa-keyboard"
+          title="Report Data Entry"
+          subtitle="Enter marks & details"
+          to="/report-data"
         />
+        
+        <MenuCard
+          icon="fas fa-chart-line"
+          title="Progress Analysis"
+          subtitle="Insights & trends"
+          to="/progress-analysis"
+        />
+        </div>
       </div>
-
-      <div className="examination-all-pages">
-        <h4>All related pages</h4>
-        <ul>
-          <li>
-            <Link to="/progress-analysis">1. ProgressAnalysis (ProgressAnalysis.css, ProgressAnalysis.js)</Link>
-          </li>
-          <li>
-            <Link to="/report-card">2. ReportCard (ReportCard.css, ReportCard.js)</Link>
-          </li>
-          <li>
-            <Link to="/report-card">3. ReportCardView (ReportCardView.css, ReportCardView.js)</Link>
-          </li>
-          <li>
-            <Link to="/report-data">4. ReportData (ReportData.css, ReportData.js)</Link>
-          </li>
-          <li>
-            <Link to="/timetable">5. TimeTableHallArrangement (README.md, TimeTableHallArrangement.css, TimeTableHallArrangement.js)</Link>
-          </li>
-          <li>
-            <Link to="/timetable-data-entry">6. TimeTableHallArrangementData (TimeTableDataEntry.css, TimeTableDataEntry.js)</Link>
-          </li>
-        </ul>
-      </div>
-    </div>
+      <Footer />
+    </>
   );
 }

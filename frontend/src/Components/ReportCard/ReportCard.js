@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navigation from '../Navigation/Navigation';
+import Footer from '../Footer/Footer';
 import './ReportCard.css';
 import ReportCardAPI from '../../services/ReportCardAPI';
 
@@ -361,7 +363,9 @@ const ReportCard = () => {
   const summary = calculateSummary();
 
   return (
-    <div className="container">
+    <>
+      <Navigation />
+      <div className="container">
         <div className="page-header">
           <h2>Student Report Card</h2>
           <p>View and download student report cards</p>
@@ -725,7 +729,9 @@ const ReportCard = () => {
             loading={operationLoading}
           />
         )}
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 };
 

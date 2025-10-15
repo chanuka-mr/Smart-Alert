@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Navigation from '../Navigation/Navigation';
+import Footer from '../Footer/Footer';
 import './TimeTableHallArrangement.css';
 import TimeTableAPI from '../../services/TimeTableAPI';
 import { useNavigate } from 'react-router-dom';
@@ -233,9 +235,11 @@ const TimeTableHallArrangement = () => {
   }, []);
 
   return (
-    <div className="timetable-hall-container">
-      <div className="container">
-        <div className="page-header">
+    <>
+      <Navigation />
+      <div className="timetable-hall-container">
+        <div className="container">
+          <div className="page-header">
           <h2>All Classes TimeTable & Hall Arrangements</h2>
           <p>View and download timetables and hall arrangements for classes 1-11 (Primary: 1-5, Secondary: 6-11)</p>
           <div style={{ marginTop: '20px', display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -482,8 +486,10 @@ const TimeTableHallArrangement = () => {
             {loading ? 'Downloading...' : 'Download Grade Hall Arrangements (PDF)'}
           </button>
         </div>
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 };
 
