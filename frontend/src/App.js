@@ -23,8 +23,11 @@ import ReportCardView from './components/ReportCardView/ReportCardView';
 import ProgressAnalysis from './components/ProgressAnalysis/ProgressAnalysis';
 import ReportData from './components/ReportData/ReportData';
 import TimeTableDataEntry from './components/TimeTableHallArrangementData/TimeTableDataEntry';
+<<<<<<< Updated upstream
 import Examination from './components/Examination/Examination';
 import ExamOnly from './components/Examination/ExamOnly';
+=======
+>>>>>>> Stashed changes
 import ShuttleServices from './components/ShuttleServices/ShuttleServices';
 import Students from './components/AttendanceManagement/Students';
 import Attendance from './components/AttendanceManagement/Attendance';
