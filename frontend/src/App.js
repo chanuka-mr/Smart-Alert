@@ -24,8 +24,11 @@ import ProgressAnalysis from './components/ProgressAnalysis/ProgressAnalysis';
 import ReportData from './components/ReportData/ReportData';
 import TimeTableDataEntry from './components/TimeTableHallArrangementData/TimeTableDataEntry';
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import Examination from './components/Examination/Examination';
 import ExamOnly from './components/Examination/ExamOnly';
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 import ShuttleServices from './components/ShuttleServices/ShuttleServices';
