@@ -26,8 +26,11 @@ import TimeTableDataEntry from './components/TimeTableHallArrangementData/TimeTa
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import Examination from './components/Examination/Examination';
 import ExamOnly from './components/Examination/ExamOnly';
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
