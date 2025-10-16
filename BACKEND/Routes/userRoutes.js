@@ -9,6 +9,15 @@ router.get("/stats", verifyToken, UserController.getUserStats);
 // Get users by role (accessible to all authenticated users)
 router.get("/role/:role", verifyToken, UserController.getUsersByRole);
 
+// Get users by role (accessible to all authenticated users)
+router.get("/role/:role", verifyToken, UserController.getUsersByRole);
+
+<<<<<<< Updated upstream
+// Search user by userID (accessible to all authenticated users)
+router.get("/search/:userID", verifyToken, UserController.searchByUserID);
+
+=======
+>>>>>>> Stashed changes
 // Admin-only routes
 router.get("/", verifyToken, verifyAdmin, UserController.getAllUsers);
 router.post("/", verifyToken, verifyAdmin, UserController.createUser);

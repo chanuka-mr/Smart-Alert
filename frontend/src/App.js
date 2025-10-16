@@ -23,13 +23,10 @@ import ReportCardView from './Components/ReportCardView/ReportCardView';
 import ProgressAnalysis from './Components/ProgressAnalysis/ProgressAnalysis';
 import ReportData from './Components/ReportData/ReportData';
 import TimeTableDataEntry from './Components/TimeTableHallArrangementData/TimeTableDataEntry';
-import Examination from './Components/Examination/Examination';
-import ExamOnly from './Components/Examination/ExamOnly';
 import ShuttleServices from './Components/ShuttleServices/ShuttleServices';
 import Students from './Components/AttendanceManagement/Students';
 import Attendance from './Components/AttendanceManagement/Attendance';
 import AttendanceRecords from './Components/AttendanceManagement/AttendanceRecords';
-import ParentView from './Components/ParentView/ParentView';
 import { api } from "./utils/api";
 
 // ✅ Enhanced guard: checks token in localStorage and validates it
@@ -335,6 +332,38 @@ export default function App() {
         {/* Shuttle Services Management Routes */}
         <Route 
           path="/shuttle-services" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/parent" 
+          element={
+            <RequireAuth>
+              <ParentShuttleView />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/shuttles" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/students" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/tracking" 
           element={
             <RequireAuth>
               <ShuttleServices />
