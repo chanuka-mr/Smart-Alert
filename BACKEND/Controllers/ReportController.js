@@ -1,10 +1,6 @@
 const Attendance = require("../Model/AttendanceModel");
-<<<<<<< Updated upstream
 const { User, Academic } = require("../Model/userModel");
 const { jsPDF } = require("jspdf");
-=======
-const Student = require("../Model/studentModel");
->>>>>>> Stashed changes
 const PDFDocument = require('pdfkit');
 
 // Helper to get student section from academic info
