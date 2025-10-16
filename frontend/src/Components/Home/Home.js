@@ -265,10 +265,6 @@ const Home = () => {
                 <span>Admin Dashboard</span>
               </button>
             )}
-            <button className="action-btn-admin-dashboard" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
-              <i className="fas fa-tachometer-alt"></i>
-              <span>Admin Dashboard</span>
-            </button>
             {/* Mark Attendance button - changes to "My Attendance" for parents */}
             {user && user.role && user.role.toLowerCase() === 'parent' ? (
               <button className="action-btn mark-attendance" onClick={(e) => { e.preventDefault(); navigate('/parent-view'); }}>

@@ -1456,34 +1456,6 @@ const AdminDashboard = () => {
             <i className="fas fa-user-shield"></i>
             <span>Admins</span>
           </div>
-          <div className={`menu-item ${activeTab === 'assignments' ? 'active' : ''}`} onClick={() => handleMenuClick('assignments')}>
-            <i className="fas fa-tasks"></i>
-            <span>Assignments</span>
-          </div>
-          <div className="menu-item" onClick={() => handleMenuClick('attendance')}>
-            <i className="fas fa-clipboard-check"></i>
-            <span>Attendance</span>
-          </div>
-          <div className="menu-item" onClick={() => handleMenuClick('transportation')}>
-            <i className="fas fa-bus"></i>
-            <span>Transportation</span>
-          </div>
-          <div className="menu-item" onClick={() => handleMenuClick('performance')}>
-            <i className="fas fa-chart-line"></i>
-            <span>Performance</span>
-          </div>
-          <div className="menu-item" onClick={() => handleMenuClick('announcements')}>
-            <i className="fas fa-bullhorn"></i>
-            <span>Announcements</span>
-          </div>
-          <div className="menu-item" onClick={() => handleMenuClick('communication')}>
-            <i className="fas fa-comments"></i>
-            <span>Communication</span>
-          </div>
-          <div className="menu-item" onClick={() => handleMenuClick('settings')}>
-            <i className="fas fa-cog"></i>
-            <span>Settings</span>
-          </div>
           <div className="menu-item" onClick={handleBackToHome}>
             <i className="fas fa-home"></i>
             <span>Back to Home</span>
@@ -1497,54 +1469,6 @@ const AdminDashboard = () => {
       
       {/* Main Content */}
       <div className="main-content">
-        {/* Top Bar */}
-        <div className="top-bar">
-          <div className="search-bar">
-            <i className="fas fa-search"></i>
-            <input type="text" placeholder="Search..." />
-          </div>
-          
-          <div className="user-info">
-            <div className="notifications">
-              <i className="fas fa-bell fa-lg"></i>
-              <span className="notification-badge">5</span>
-            </div>
-            
-            <div 
-              className="user-info-clickable"
-              style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} 
-              onClick={async () => {
-                // Log profile view activity
-                try {
-                  await api('/activities/log', {
-                    method: 'POST',
-                    body: {
-                      action: 'profile_viewed',
-                      targetType: 'profile',
-                      targetId: user?.userID,
-                      targetName: user?.name || 'Admin User',
-                      description: 'Viewed own profile',
-                      details: { role: user?.role }
-                    }
-                  });
-                } catch (error) {
-                  console.error('Failed to log profile view activity:', error);
-                }
-                navigate('/profile');
-              }}
-              title="View Profile"
-            >
-              <div className="user-avatar">
-                <i className="fas fa-user fa-lg"></i>
-              </div>
-              <div className="user-details">
-                <h4>{user?.name || 'Admin User'}</h4>
-                <p>Administrator</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
         {/* Dashboard Content */}
         {activeTab === 'dashboard' && (
           <>
@@ -1619,37 +1543,6 @@ const AdminDashboard = () => {
                   <div className="card-icon announcements">
                     <i className="fas fa-bullhorn"></i>
                   </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Charts Section */}
-            <div className="charts">
-              <div className="chart-container">
-                <div className="chart-header">
-                  <h3>Student Performance Overview</h3>
-                  <select>
-                    <option>Last 7 days</option>
-                    <option>Last 30 days</option>
-                    <option>Last 3 months</option>
-                  </select>
-                </div>
-                <div className="chart-placeholder">
-                  <p><i className="fas fa-chart-bar fa-3x" style={{ color: '#00bfa5', marginBottom: '10px' }}></i><br />Chart visualization would appear here with real data</p>
-                </div>
-              </div>
-              
-              <div className="chart-container">
-                <div className="chart-header">
-                  <h3>Attendance Statistics</h3>
-                  <select>
-                    <option>This Week</option>
-                    <option>This Month</option>
-                    <option>This Year</option>
-                  </select>
-                </div>
-                <div className="chart-placeholder">
-                  <p><i className="fas fa-chart-pie fa-3x" style={{ color: '#00bfa5', marginBottom: '10px' }}></i><br />Attendance Chart Visualization</p>
                 </div>
               </div>
             </div>
