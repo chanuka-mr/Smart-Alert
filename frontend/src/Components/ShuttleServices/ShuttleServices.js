@@ -76,7 +76,8 @@ const ShuttleServices = () => {
         return <ShuttleManagement userRole={userRole} />;
 =======
         return <ShuttleManagement />;
->>>>>>> Stashed changes
+      case 'drivers':
+        return <DriverManagement />;
       case 'students':
         return <StudentManagement userRole={userRole} />;
       case 'tracking':

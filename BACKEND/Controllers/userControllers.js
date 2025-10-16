@@ -269,3 +269,26 @@ module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser, get
 =======
 module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser, getUserStats, getUsersByRole };
 >>>>>>> Stashed changes
+// Get users by role
+const getUsersByRole = async (req, res) => {
+  try {
+    const { role } = req.params;
+    
+    if (!role) {
+      return res.status(400).json({ message: "Role parameter is required" });
+    }
+
+    const users = await User.find({ role: { $regex: new RegExp(role, 'i') } });
+    
+    if (!users || users.length === 0) {
+      return res.status(404).json({ message: `No users found with role: ${role}` });
+    }
+
+    return res.status(200).json({ users });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser, getUserStats, getUsersByRole };

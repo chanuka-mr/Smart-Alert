@@ -160,6 +160,36 @@ export const userAPI = {
     
     console.log('API response status:', response.status);
     
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('API error:', errorData);
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('API response data:', data);
+    return data;
+  }
+};
+
+// User API functions
+export const userAPI = {
+  // Get users by role
+  getUsersByRole: async (role) => {
+    const token = localStorage.getItem('token');
+    console.log('API call - Token:', token ? 'present' : 'missing');
+    console.log('API call - URL:', `${API_BASE_URL}/users/role/${role}`);
+    
+    const response = await fetch(`${API_BASE_URL}/users/role/${role}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    console.log('API response status:', response.status);
+    
 <<<<<<< Updated upstream
     // Handle 404 as empty array (no users found with this role)
     if (response.status === 404) {

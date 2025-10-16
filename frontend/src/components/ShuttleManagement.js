@@ -59,29 +59,6 @@ const ShuttleManagement = ({ userRole = 'admin' }) => {
     }
   };
 
-<<<<<<< Updated upstream
-=======
-  const loadDrivers = async () => {
-    try {
-      console.log('Loading drivers...');
-      const data = await userAPI.getUsersByRole('ShuttleStaff');
-      console.log('Drivers data received:', data);
-      const driversList = data.users || [];
-      setDrivers(driversList);
-      console.log('Drivers set:', driversList);
-      
-      if (driversList.length === 0) {
-        console.warn('No drivers found with ShuttleStaff role');
-      }
-    } catch (err) {
-      console.error('Error loading drivers:', err);
-      setError('Failed to load drivers: ' + err.message);
-      // Set empty array as fallback
-      setDrivers([]);
-    }
-  };
->>>>>>> Stashed changes
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name.includes('.')) {
@@ -100,20 +77,6 @@ const ShuttleManagement = ({ userRole = 'admin' }) => {
       }));
     }
   };
-
-<<<<<<< Updated upstream
-=======
-  const handleDriverChange = (e) => {
-    const selectedDriverName = e.target.value;
-    const selectedDriver = drivers.find(driver => driver.fullName === selectedDriverName);
-    
-    setFormData(prev => ({
-      ...prev,
-      driverName: selectedDriverName,
-      contactNo: selectedDriver ? selectedDriver.email : prev.contactNo // Use email as contact
-    }));
-  };
->>>>>>> Stashed changes
 
   const resetForm = () => {
     setFormData({
@@ -466,12 +429,7 @@ const ShuttleManagement = ({ userRole = 'admin' }) => {
                 <select
                   name="driverName"
                   value={formData.driverName}
-<<<<<<< Updated upstream
                   onChange={handleInputChange}
-                  placeholder="Enter driver name"
-=======
-                  onChange={handleDriverChange}
->>>>>>> Stashed changes
                   required
                 >
                   <option value="">Select a driver</option>
