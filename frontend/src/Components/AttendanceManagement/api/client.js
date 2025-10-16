@@ -8,7 +8,7 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" }
 });
 
-// Students
+// Students (backend mounted at /api/students)
 export const getStudents = () => api.get("/api/students");
 export const addStudent = (payload) => api.post("/api/students", payload);
 export const updateStudent = (id, payload) => api.put(`/api/students/${id}`, payload);

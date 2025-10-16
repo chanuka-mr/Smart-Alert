@@ -1,5 +1,4 @@
-const Student = require("../Model/studentModel");
-const { User, Academic } = require("../Model/userModel");
+const { User, Academic, Parent } = require("../Model/userModel");
 
 // Helper: check if string looks like a Mongo ObjectId
 const looksLikeObjectId = (s) => typeof s === "string" && s.match(/^[0-9a-fA-F]{24}$/);
@@ -42,15 +41,24 @@ const getAllStudents = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 // Add a new student (creates User with role="Parent" + Academic record)
 const addStudent = async (req, res) => {
   const { userId, name, route, guardianName, parentContactNo } = req.body;
 
   if (!userId || !name || !route || !guardianName || !parentContactNo) {
+=======
+// Add a new student (creates User with role=Parent, Academic, and Parent records)
+const addStudent = async (req, res) => {
+  const { userID, fullName, email, birthday, address, phone, grade, classSection, parentName, parentPhoneNum } = req.body;
+
+  if (!userID || !fullName || !email || !birthday || !address || !grade || !classSection || !parentName || !parentPhoneNum) {
+>>>>>>> c8b73b2144c80968665ee7d655743784012ae226
     return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
+<<<<<<< HEAD
     // Check if user already exists
     const existingUser = await User.findOne({ userID: userId });
     if (existingUser) {
@@ -107,6 +115,56 @@ const addStudent = async (req, res) => {
         parentContactNo: parentContactNo
       }
     });
+=======
+    // Create User with role=Parent
+    const user = new User({
+      userID,
+      fullName,
+      email,
+      birthday,
+      address,
+      phone,
+      role: "Parent"
+    });
+    await user.save();
+
+    // Create Academic record
+    const academic = new Academic({
+      userID,
+      grade,
+      class: classSection,
+      assignedBy: "system" // You may want to pass the actual admin userID
+    });
+    await academic.save();
+
+    // Create Parent details
+    const parentDetails = new Parent({
+      userID,
+      parentName,
+      contactNumber: parentPhoneNum,
+      whatsappNumber: parentPhoneNum
+    });
+    await parentDetails.save();
+
+    // Return formatted student data
+    const student = {
+      _id: user._id,
+      userID: user.userID,
+      name: user.fullName,
+      std_index: user.userID,
+      section: `${grade}${classSection}`,
+      grade,
+      class: classSection,
+      email: user.email,
+      phone: user.phone,
+      birthday: user.birthday,
+      address: user.address,
+      parentName,
+      parentPhoneNum
+    };
+
+    return res.status(201).json({ student });
+>>>>>>> c8b73b2144c80968665ee7d655743784012ae226
   } catch (err) {
     if (err.code === 11000) {
       return res.status(409).json({ message: "Student with this ID already exists" });
@@ -116,27 +174,47 @@ const addStudent = async (req, res) => {
   }
 };
 
-// Get student by ID or index (robust lookup)
+// Get student by ID or userID (robust lookup)
 const getStudentByIdOrIndex = async (req, res) => {
   let param = req.params.id;
   if (typeof param === 'string') param = param.trim();
 
   try {
     // Try ObjectId first
-    let student = null;
+    let user = null;
     if (looksLikeObjectId(param)) {
-      student = await Student.findById(param);
+      user = await User.findOne({ _id: param, role: "Parent" });
     }
 
-    // If not found, try case-insensitive full match on std_index
-    if (!student && typeof param === 'string' && param.length > 0) {
+    // If not found, try case-insensitive full match on userID
+    if (!user && typeof param === 'string' && param.length > 0) {
       const safe = param.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
-      student = await Student.findOne({ std_index: { $regex: `^${safe}$`, $options: 'i' } });
+      user = await User.findOne({ userID: { $regex: `^${safe}$`, $options: 'i' }, role: "Parent" });
     }
 
-    if (!student) {
+    if (!user) {
       return res.status(404).json({ message: 'Student not found' });
     }
+
+    // Get academic info
+    const academic = await Academic.findOne({ userID: user.userID });
+    const parentDetails = await Parent.findOne({ userID: user.userID });
+
+    const student = {
+      _id: user._id,
+      userID: user.userID,
+      name: user.fullName,
+      std_index: user.userID,
+      section: academic ? `${academic.grade}${academic.class}` : null,
+      grade: academic ? academic.grade : null,
+      class: academic ? academic.class : null,
+      email: user.email,
+      phone: user.phone,
+      birthday: user.birthday,
+      address: user.address,
+      parentName: parentDetails?.parentName,
+      parentPhoneNum: parentDetails?.whatsappNumber
+    };
 
     return res.status(200).json({ student });
   } catch (err) {
@@ -145,6 +223,7 @@ const getStudentByIdOrIndex = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 // Update student (updates User with role="Parent" + Academic record)
 const updateStudent = async (req, res) => {
   const id = req.params.id;
@@ -158,7 +237,68 @@ const updateStudent = async (req, res) => {
     }
     if (!user) {
       user = await User.findOne({ userID: id });
+=======
+// Update student (updates User, Academic, and Parent records)
+const updateStudent = async (req, res) => {
+  const id = req.params.id;
+  const { fullName, email, birthday, address, phone, grade, classSection, parentName, parentPhoneNum } = req.body;
+
+  try {
+    // Find user
+    const user = await User.findOne({ _id: id, role: "Parent" });
+    if (!user) {
+      return res.status(404).json({ message: "Student not found" });
+>>>>>>> c8b73b2144c80968665ee7d655743784012ae226
     }
+
+    // Update User
+    const userUpdate = {};
+    if (fullName) userUpdate.fullName = fullName;
+    if (email) userUpdate.email = email;
+    if (birthday) userUpdate.birthday = birthday;
+    if (address) userUpdate.address = address;
+    if (phone) userUpdate.phone = phone;
+
+    const updatedUser = await User.findByIdAndUpdate(id, userUpdate, { new: true, runValidators: true });
+
+    // Update Academic if grade or class provided
+    if (grade || classSection) {
+      const academicUpdate = {};
+      if (grade) academicUpdate.grade = grade;
+      if (classSection) academicUpdate.class = classSection;
+      await Academic.findOneAndUpdate({ userID: user.userID }, academicUpdate, { new: true, runValidators: true });
+    }
+
+    // Update Parent details if provided
+    if (parentName || parentPhoneNum) {
+      const parentUpdate = {};
+      if (parentName) parentUpdate.parentName = parentName;
+      if (parentPhoneNum) {
+        parentUpdate.contactNumber = parentPhoneNum;
+        parentUpdate.whatsappNumber = parentPhoneNum;
+      }
+      await Parent.findOneAndUpdate({ userID: user.userID }, parentUpdate, { new: true, runValidators: true });
+    }
+
+    // Get updated data
+    const academic = await Academic.findOne({ userID: user.userID });
+    const parentDetails = await Parent.findOne({ userID: user.userID });
+
+    const student = {
+      _id: updatedUser._id,
+      userID: updatedUser.userID,
+      name: updatedUser.fullName,
+      std_index: updatedUser.userID,
+      section: academic ? `${academic.grade}${academic.class}` : null,
+      grade: academic ? academic.grade : null,
+      class: academic ? academic.class : null,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      birthday: updatedUser.birthday,
+      address: updatedUser.address,
+      parentName: parentDetails?.parentName,
+      parentPhoneNum: parentDetails?.whatsappNumber
+    };
     
     if (!user) {
       return res.status(404).json({ message: "Student not found" });
@@ -233,11 +373,16 @@ const updateStudent = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 // Delete student (from User collection with role="Parent")
+=======
+// Delete student (deletes User, Academic, and Parent records)
+>>>>>>> c8b73b2144c80968665ee7d655743784012ae226
 const deleteStudent = async (req, res) => {
   const id = req.params.id;
   
   try {
+<<<<<<< HEAD
     let deletedUser;
     
     // Try to delete by MongoDB _id first (from User collection)
@@ -269,7 +414,30 @@ const deleteStudent = async (req, res) => {
     }
     if (!student) {
       student = await Student.findOneAndDelete({ userId: id });
+=======
+    let user;
+    if (looksLikeObjectId(id)) {
+      user = await User.findOne({ _id: id, role: "Parent" });
+    } else {
+      user = await User.findOne({ userID: id, role: "Parent" });
     }
+    
+    if (!user) {
+      return res.status(404).json({ message: "Student not found" });
+>>>>>>> c8b73b2144c80968665ee7d655743784012ae226
+    }
+
+    // Delete related records
+    await Academic.findOneAndDelete({ userID: user.userID });
+    await Parent.findOneAndDelete({ userID: user.userID });
+    await User.findByIdAndDelete(user._id);
+    
+    const student = {
+      _id: user._id,
+      userID: user.userID,
+      name: user.fullName,
+      std_index: user.userID
+    };
     
     if (student) {
       return res.status(200).json({ 

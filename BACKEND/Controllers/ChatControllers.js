@@ -22,38 +22,35 @@ const getAllMessages = async (req, res, next) => {
 
 // Add a new chat message to the database, set status to 'delivered' when sent
 const addMessage = async (req, res, next) => {
-  // Support both old and new frontend payloads
-  const { sender, receiver, message, time, fromUserId, toUserId, classId, messageContent } = req.body;
-  let chat;
+  const { fromUserId, toUserId, classId, messageContent } = req.body;
+  
+  // Validate required fields
+  if (!fromUserId || !toUserId || !classId || !messageContent) {
+    return res.status(400).json({ 
+      message: "Missing required fields",
+      required: ["fromUserId", "toUserId", "classId", "messageContent"]
+    });
+  }
+  
   try {
-    // Use new frontend payload if available
-    if (fromUserId && toUserId && classId && messageContent) {
-      chat = new Chat({
-        fromUserId,
-        toUserId,
-        classId,
-        messageContent,
-        status: 'delivered'
-      });
-    } else {
-      // Fallback for old payload
-      chat = new Chat({
-        sender,
-        receiver,
-        message,
-        time,
-        status: 'delivered'
-      });
-    }
+    const chat = new Chat({
+      fromUserId,
+      toUserId,
+      classId,
+      messageContent,
+      status: 'delivered'
+    });
+    
     await chat.save(); // Save new message
+    console.log('Message saved successfully:', chat._id);
+    return res.status(200).json({ chat });
   } catch (err) {
-    console.log(err);
+    console.error('Error saving message:', err);
+    return res.status(500).json({ 
+      message: "Unable to add message",
+      error: err.message 
+    });
   }
-  // If not inserted, return error
-  if (!chat) {
-    return res.status(404).json({ message: "Unable to add message" });
-  }
-  return res.status(200).json({ chat });
 };
 
 // Get messages between two users (sender or receiver)
@@ -63,17 +60,15 @@ const getMessagesByUser = async (req, res, next) => {
   try {
     messages = await Chat.find({
       $or: [
-        { sender: user1, receiver: user2 },
-        { sender: user2, receiver: user1 }
+        { fromUserId: user1, toUserId: user2 },
+        { fromUserId: user2, toUserId: user1 }
       ]
-    }); // Find messages between user1 and user2
+    }).sort({ createdAt: 1 }); // Find messages between user1 and user2, sorted by time
   } catch (err) {
     console.log(err);
+    return res.status(500).json({ message: "Error fetching messages", error: err.message });
   }
-  // If not found, return error
-  if (!messages) {
-    return res.status(404).json({ message: "Messages not found" });
-  }
+  // Return messages (even if empty array)
   return res.status(200).json({ messages });
 };
 

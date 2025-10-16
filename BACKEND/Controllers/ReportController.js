@@ -1,7 +1,30 @@
 const Attendance = require("../Model/AttendanceModel");
-const Student = require("../Model/studentModel");
+const { User, Academic } = require("../Model/userModel");
 const { jsPDF } = require("jspdf");
 const PDFDocument = require('pdfkit');
+
+// Helper to get student section from academic info
+const getStudentSection = async (userID) => {
+  const academic = await Academic.findOne({ userID });
+  return academic ? `${academic.grade}${academic.class}` : 'N/A';
+};
+
+// Helper to enrich attendance records with academic section info
+const enrichRecordsWithSection = async (records) => {
+  const enrichedRecords = await Promise.all(
+    records.map(async (record) => {
+      const recordObj = record.toObject ? record.toObject() : record;
+      if (recordObj.student && recordObj.student.userID) {
+        const academic = await Academic.findOne({ userID: recordObj.student.userID });
+        recordObj.student.section = academic ? `${academic.grade}${academic.class}` : 'N/A';
+        recordObj.student.grade = academic ? academic.grade : null;
+        recordObj.student.class = academic ? academic.class : null;
+      }
+      return recordObj;
+    })
+  );
+  return enrichedRecords;
+};
 
 // Helper function to calculate attendance statistics
 const calculateAttendanceStats = (records) => {
@@ -19,7 +42,8 @@ const calculateAttendanceStats = (records) => {
 
   records.forEach(record => {
     const studentId = record.student._id.toString();
-    const section = record.student.section;
+    // Get section from populated student data (should be added during query)
+    const section = record.student.section || 'N/A';
     const date = new Date(record.date).toISOString().split('T')[0];
     
     // Count by status
@@ -28,9 +52,9 @@ const calculateAttendanceStats = (records) => {
     // Count by student
     if (!stats.byStudent[studentId]) {
       stats.byStudent[studentId] = {
-        name: record.student.name,
-        index: record.student.std_index,
-        section: record.student.section,
+        name: record.student.fullName || record.student.name,
+        index: record.student.userID || record.student.std_index,
+        section: section,
         total: 0,
         present: 0,
         absent: 0,
@@ -235,11 +259,14 @@ const generateAttendanceReport = async (req, res) => {
     }
 
     // Get records
-    const records = await Attendance.find(query).populate('student').sort({ date: -1 });
+    let records = await Attendance.find(query).populate('student').sort({ date: -1 });
     
     if (records.length === 0) {
       return res.status(404).json({ message: "No records found for the specified criteria" });
     }
+
+    // Enrich records with academic section info
+    records = await enrichRecordsWithSection(records);
 
     // Calculate statistics
     const stats = calculateAttendanceStats(records);
@@ -278,7 +305,23 @@ const generateAttendanceReport = async (req, res) => {
 // Get available sections for filtering
 const getAvailableSections = async (req, res) => {
   try {
-    const sections = await Student.distinct('section');
+    // Get all unique grade/class combinations from Academic model
+    const academics = await Academic.find({}).distinct('grade');
+    const classes = await Academic.find({}).distinct('class');
+    
+    // Generate sections like "1A", "1B", "2A", etc.
+    const sections = [];
+    for (const grade of academics) {
+      for (const cls of classes) {
+        const section = `${grade}${cls}`;
+        // Check if this combination actually exists
+        const exists = await Academic.findOne({ grade, class: cls });
+        if (exists) {
+          sections.push(section);
+        }
+      }
+    }
+    
     res.json({ sections: sections.sort() });
   } catch (error) {
     console.error('Error fetching sections:', error);
@@ -306,17 +349,26 @@ const generateMonthlyReport = async (req, res) => {
     
     // Apply section filter if provided
     if (section) {
-      const students = await Student.find({ section });
+      // Find students by section using Academic model
+      const academics = await Academic.find({
+        grade: parseInt(section.charAt(0)),
+        class: section.charAt(1)
+      });
+      const userIDs = academics.map(a => a.userID);
+      const students = await User.find({ userID: { $in: userIDs }, role: "Parent" });
       const studentIds = students.map(s => s._id);
       query.student = { $in: studentIds };
     }
 
     // Get records for the month
-    const records = await Attendance.find(query).populate('student').sort({ date: 1 });
+    let records = await Attendance.find(query).populate('student').sort({ date: 1 });
     
     if (records.length === 0) {
       return res.status(404).json({ message: "No records found for the specified month" });
     }
+
+    // Enrich records with academic section info
+    records = await enrichRecordsWithSection(records);
 
     // Calculate enhanced statistics
     const stats = calculateMonthlyStats(records, year, month);
@@ -385,9 +437,9 @@ const calculateMonthlyStats = (records, year, month) => {
     // Count by student
     if (!stats.byStudent[studentId]) {
       stats.byStudent[studentId] = {
-        name: record.student.name,
-        index: record.student.std_index,
-        section: record.student.section,
+        name: record.student.fullName || record.student.name,
+        index: record.student.userID || record.student.std_index,
+        section: record.student.section || 'N/A',
         total: 0,
         present: 0,
         absent: 0,
@@ -640,26 +692,35 @@ const generateStudentReport = async (req, res) => {
       return res.status(400).json({ message: "Provide studentId or std_index" });
     }
 
-    // Find student
+    // Find student (User with role=Parent)
     let student;
     if (studentId) {
-      student = await Student.findById(studentId);
+      student = await User.findOne({ _id: studentId, role: "Parent" });
     } else {
-      student = await Student.findOne({ std_index });
+      student = await User.findOne({ userID: std_index, role: "Parent" });
     }
     
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
+    // Get academic info
+    const academic = await Academic.findOne({ userID: student.userID });
+    student.section = academic ? `${academic.grade}${academic.class}` : 'N/A';
+    student.std_index = student.userID;
+    student.name = student.fullName;
+
     // Get student's attendance records
-    const records = await Attendance.find({ student: student._id })
+    let records = await Attendance.find({ student: student._id })
       .populate('student')
       .sort({ date: -1 });
 
     if (records.length === 0) {
       return res.status(404).json({ message: "No attendance records found for this student" });
     }
+
+    // Enrich records with academic section info
+    records = await enrichRecordsWithSection(records);
 
     // Calculate statistics for this student
     const stats = calculateAttendanceStats(records);

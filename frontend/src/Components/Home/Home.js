@@ -258,14 +258,25 @@ const Home = () => {
       <section className="main-actions-section">
         <div className="container">
           <div className="main-actions">
-            <button className="action-btn-admin-dashboard" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
-              <i className="fas fa-tachometer-alt"></i>
-              <span>Admin Dashboard</span>
-            </button>
-            <button className="action-btn mark-attendance" onClick={(e) => { e.preventDefault(); navigate('/attendance'); }}>
-              <i className="fas fa-clipboard-check"></i>
-              <span>Mark Attendance</span>
-            </button>
+            {/* Admin Dashboard - Only visible to admins */}
+            {(user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin') && (
+              <button className="action-btn-admin-dashboard" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
+                <i className="fas fa-tachometer-alt"></i>
+                <span>Admin Dashboard</span>
+              </button>
+            )}
+            {/* Mark Attendance button - changes to "My Attendance" for parents */}
+            {user && user.role && user.role.toLowerCase() === 'parent' ? (
+              <button className="action-btn mark-attendance" onClick={(e) => { e.preventDefault(); navigate('/parent-view'); }}>
+                <i className="fas fa-user-graduate"></i>
+                <span>My Attendance</span>
+              </button>
+            ) : (
+              <button className="action-btn mark-attendance" onClick={(e) => { e.preventDefault(); navigate('/attendance'); }}>
+                <i className="fas fa-clipboard-check"></i>
+                <span>Mark Attendance</span>
+              </button>
+            )}
             <div className="action-btn notices" ref={noticesMenuRef} style={{ position: 'relative' }}>
               <button className="btn-iconless" onClick={(e) => { e.preventDefault(); setNoticesMenuOpen(s => !s); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <i className="fas fa-bullhorn"></i>
@@ -276,11 +287,13 @@ const Home = () => {
                 <div style={{ position: 'absolute', top: '46px', left: 0, background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 6, boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 9999, minWidth: '200px' }}>
                   <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=school'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>School Notices</button>
                   <button onClick={() => { setNoticesMenuOpen(false); navigate('/display-notices?filter=class'); }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px' }}>Class Notices</button>
-                  <button onClick={() => { 
-                    setNoticesMenuOpen(false); 
-                    const isAdmin = user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin';
-                    navigate(isAdmin ? '/admin-create-notice' : '/teacher-create-notice'); 
-                  }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px', borderTop: '1px solid #e0e0e0' }}>Create Notice</button>
+                  {(user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin' || user?.userType?.toLowerCase() === 'teacher' || user?.role?.toLowerCase() === 'teacher') && (
+                    <button onClick={() => { 
+                      setNoticesMenuOpen(false); 
+                      const isAdmin = user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin';
+                      navigate(isAdmin ? '/admin-create-notice' : '/teacher-create-notice'); 
+                    }} style={{ display: 'block', padding: '10px 18px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '14px', borderTop: '1px solid #e0e0e0' }}>Create Notice</button>
+                  )}
                 </div>
               )}
             </div>
@@ -301,6 +314,18 @@ const Home = () => {
               <i className="fas fa-bus"></i>
               <span>Shuttle Services</span>
             </button>
+            {(user?.userType?.toLowerCase() === 'teacher' || user?.role?.toLowerCase() === 'teacher') && (
+              <button className="action-btn direct-message" onClick={(e) => { e.preventDefault(); navigate('/direct-message-teacher'); }}>
+                <i className="fas fa-envelope"></i>
+                <span>Direct Message</span>
+              </button>
+            )}
+            {(user?.userType?.toLowerCase() === 'parent' || user?.role?.toLowerCase() === 'parent') && (
+              <button className="action-btn direct-message" onClick={(e) => { e.preventDefault(); navigate('/direct-message-parent'); }}>
+                <i className="fas fa-envelope"></i>
+                <span>Direct Message</span>
+              </button>
+            )}
           </div>
         </div>
       </section>
