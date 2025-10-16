@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/exams';
+const API_BASE_URL = 'http://localhost:5001/exams';
 
 class ProgressAnalysisAPI {
   // Get student progress analysis data from exam data

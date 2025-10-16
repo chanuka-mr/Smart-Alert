@@ -195,7 +195,7 @@ const AttendanceRecords = () => {
         }
       });
 
-      const response = await fetch('http://localhost:5000/reports/generate', {
+      const response = await fetch('http://localhost:5001/reports/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,8 +1,8 @@
 // src/utils/api.js
 // Centralized API helper — JSON by default, supports FormData, timeouts, and JWT auth.
 
-// ✅ Use relative base by default so CRA/Vite proxy forwards to http://localhost:5000
-// If you want to bypass the proxy, set REACT_APP_API_BASE (e.g., http://localhost:5000)
+// ✅ Use relative base by default so CRA/Vite proxy forwards to http://localhost:5001
+// If you want to bypass the proxy, set REACT_APP_API_BASE (e.g., http://localhost:5001)
 export const API_BASE = (process.env.REACT_APP_API_BASE || "").replace(/\/+$/, "");
 
 // --- token helpers ---

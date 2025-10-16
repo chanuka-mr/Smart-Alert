@@ -199,7 +199,7 @@ const AttendanceRecords = () => {
         }
       });
 
-      const response = await fetch('http://localhost:5000/reports/generate', {
+      const response = await fetch('http://localhost:5001/reports/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -743,10 +743,11 @@ const AttendanceRecords = () => {
 
       <style jsx>{`
         .page-header {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          background: white;
+          color: #1f2937;
           padding: 2rem;
           border-radius: 12px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
           margin-bottom: 1.5rem;
           box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
@@ -774,8 +775,8 @@ const AttendanceRecords = () => {
         }
 
         .stat-card {
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
           padding: 1rem;
           border-radius: 8px;
           display: flex;

@@ -27,6 +27,7 @@ const Attendance = () => {
   const [loading, setLoading] = useState(true);
   const [existingIdsForDate, setExistingIdsForDate] = useState(new Set());
   const [loadingExisting, setLoadingExisting] = useState(false);
+  const [showMarkingView, setShowMarkingView] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -189,12 +190,13 @@ const Attendance = () => {
   // Reset section when grade changes
   useEffect(() => {
     setSection("");
+    setShowMarkingView(false);
   }, [grade]);
 
   // --------------------
   // SECTION SELECTION VIEW
   // --------------------
-  if (!fullSection) {
+  if (!fullSection || !showMarkingView) {
     return (
       <Layout>
         <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
@@ -206,8 +208,8 @@ const Attendance = () => {
                 {/* Hero Content */}
                 <div className="text-center sm:text-left flex-1">
                   <div className="flex items-center justify-center sm:justify-start mb-4">
-                    <div className="p-3 bg-blue-100 rounded-2xl shadow-sm">
-                      <FaClipboardList className="text-2xl text-blue-600" />
+                    <div className="p-3 bg-teal-100 rounded-2xl shadow-sm">
+                      <FaClipboardList className="text-2xl text-teal-600" />
                     </div>
                   </div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-3">
@@ -292,8 +294,8 @@ const Attendance = () => {
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
                       Selected Date
                     </label>
-                    <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-lg border border-blue-200 font-medium text-center shadow-sm">
-                      <div className="text-sm font-semibold text-blue-600 mb-1">Today</div>
+                    <div className="bg-teal-50 text-teal-700 px-4 py-3 rounded-lg border border-teal-200 font-medium text-center shadow-sm">
+                      <div className="text-sm font-semibold text-teal-600 mb-1">Today</div>
                       <div className="text-lg font-bold">
                         {dayjs(date).format("MMMM D, YYYY")}
                       </div>
@@ -304,7 +306,12 @@ const Attendance = () => {
                 {/* Action Button */}
                 <div className="mt-8 pt-6 border-t border-gray-200">
                   <button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      if (grade && section) {
+                        setShowMarkingView(true);
+                      }
+                    }}
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!grade || !section}
                   >
                     Start Marking Attendance
@@ -328,8 +335,12 @@ const Attendance = () => {
           {/* Header */}
           <div className="mb-8">
             <button 
-              onClick={() => { setGrade(""); setSection(""); }}
-              className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium mb-6 transition-colors duration-200 group"
+              onClick={() => { 
+                setGrade(""); 
+                setSection(""); 
+                setShowMarkingView(false);
+              }}
+              className="inline-flex items-center text-teal-600 hover:text-teal-700 font-medium mb-6 transition-colors duration-200 group"
             >
               <FaArrowLeft className="mr-2 transform group-hover:-translate-x-1 transition-transform duration-200" />
               Back to Selection
@@ -337,8 +348,8 @@ const Attendance = () => {
             
             <div className="text-center mb-8">
               <div className="flex items-center justify-center mb-3">
-                <div className="p-2 bg-blue-100 rounded-xl mr-3">
-                  <FaClipboardList className="text-blue-600 text-lg" />
+                <div className="p-2 bg-teal-100 rounded-xl mr-3">
+                  <FaClipboardList className="text-teal-600 text-lg" />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900">
                   Attendance - Grade {grade} Class {section}
@@ -353,10 +364,10 @@ const Attendance = () => {
 
           {/* Stats Bar */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto mb-8">
-            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-teal-500">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg mr-4">
-                  <FaUsers className="text-blue-600" />
+                <div className="p-2 bg-teal-100 rounded-lg mr-4">
+                  <FaUsers className="text-teal-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Total Students</p>
@@ -399,23 +410,22 @@ const Attendance = () => {
             {/* Table Container */}
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-white">
                   <tr>
-                    <th colSpan="3" className="px-6 py-6">
+                    <th colSpan="3" className="px-6 py-6 bg-white">
                       <div className="text-center">
                         <div className="text-2xl font-bold text-gray-900">Mark Attendance</div>
-                        <div className="text-sm text-gray-600 mt-1">Choose a section to begin recording today's attendance</div>
                       </div>
                     </th>
                   </tr>
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                  <tr className="bg-white">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-white">
                       Student Name
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-white">
                       Index No.
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-white">
                       Status
                     </th>
                   </tr>
@@ -460,7 +470,7 @@ const Attendance = () => {
                 <button
                   onClick={submit}
                   disabled={submitting || !section || nothingToSubmit}
-                  className="w-full sm:w-auto inline-flex justify-center items-center px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:transform-none disabled:hover:shadow-lg"
+                  className="w-full sm:w-auto inline-flex justify-center items-center px-8 py-3 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:transform-none disabled:hover:shadow-lg"
                 >
                   {submitting ? (
                     <>

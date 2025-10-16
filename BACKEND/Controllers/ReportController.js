@@ -1,6 +1,6 @@
 const Attendance = require("../Model/AttendanceModel");
 const { User, Academic } = require("../Model/userModel");
-const { jsPDF } = require("jspdf");
+const Student = require("../Model/studentModel");
 const PDFDocument = require('pdfkit');
 
 // Helper to get student section from academic info
