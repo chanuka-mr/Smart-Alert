@@ -532,7 +532,7 @@ function getFileName(attachment) {
   return pathStr.split('/').pop().split('\\').pop();
 }
 
-// Helper to download notice as PDF
+// Helper to download notice as PDF with clean formatting
 function downloadNoticeAsPDF(title, notice, publishedAt, createdBy) {
   // Use jsPDF for PDF generation
   const script = document.createElement('script');
@@ -540,23 +540,97 @@ function downloadNoticeAsPDF(title, notice, publishedAt, createdBy) {
   script.onload = () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-  // Header
-  doc.setFontSize(18);
-  doc.setTextColor(22, 119, 210);
-  doc.text('WEBSTER INTERNATIONAL SCHOOL', 10, 15);
-  // Publisher and Date
-  doc.setFontSize(12);
-  const dateStr = publishedAt ? new Date(publishedAt).toLocaleString() : '';
-  doc.text(`Published by: ${createdBy || 'Unknown'}`, 10, 25);
-  doc.text(`Published at: ${dateStr}`, 10, 33);
-  // Title
-  doc.setFontSize(16);
-  doc.setTextColor(0, 0, 0);
-  doc.text(title, 10, 45);
-  // Notice
-  doc.setFontSize(12);
-  doc.text(notice, 10, 60);
-  doc.save(`${title}-notice.pdf`);
+    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const maxWidth = pageWidth - (margin * 2);
+    let yPosition = margin;
+    
+    // Helper function to add text with word wrap
+    const addWrappedText = (text, x, y, maxWidth, fontSize, isBold = false) => {
+      doc.setFontSize(fontSize);
+      const lines = doc.splitTextToSize(text, maxWidth);
+      lines.forEach((line, index) => {
+        if (y + (index * fontSize * 0.5) > pageHeight - margin) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(line, x, y + (index * fontSize * 0.5));
+      });
+      return y + (lines.length * fontSize * 0.5);
+    };
+    
+    // Header - School Name
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(22, 119, 210);
+    doc.text('WEBSTER INTERNATIONAL SCHOOL', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    // Divider line
+    doc.setDrawColor(22, 119, 210);
+    doc.setLineWidth(0.5);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 10;
+    
+    // Publisher and Date info
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(100, 100, 100);
+    const dateStr = publishedAt ? new Date(publishedAt).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : '';
+    doc.text(`Published by: ${createdBy || 'Unknown'}`, margin, yPosition);
+    yPosition += 6;
+    doc.text(`Date: ${dateStr}`, margin, yPosition);
+    yPosition += 15;
+    
+    // Title
+    doc.setFontSize(16);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(0, 0, 0);
+    yPosition = addWrappedText(title, margin, yPosition, maxWidth, 16);
+    yPosition += 10;
+    
+    // Divider line
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 10;
+    
+    // Notice content with proper line breaks
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(50, 50, 50);
+    
+    // Split notice by paragraphs (double line breaks or single line breaks)
+    const paragraphs = notice.split(/\n\n|\n/).filter(p => p.trim());
+    
+    paragraphs.forEach((paragraph, index) => {
+      if (yPosition > pageHeight - margin - 20) {
+        doc.addPage();
+        yPosition = margin;
+      }
+      
+      yPosition = addWrappedText(paragraph.trim(), margin, yPosition, maxWidth, 11);
+      yPosition += 8; // Space between paragraphs
+    });
+    
+    // Footer
+    const footerY = pageHeight - 15;
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Generated from Smart Alert System', pageWidth / 2, footerY, { align: 'center' });
+    doc.text(`Page ${doc.internal.getNumberOfPages()}`, pageWidth - margin, footerY, { align: 'right' });
+    
+    // Save with clean filename
+    const cleanTitle = title.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
+    doc.save(`${cleanTitle}_notice.pdf`);
   };
   document.body.appendChild(script);
 }
