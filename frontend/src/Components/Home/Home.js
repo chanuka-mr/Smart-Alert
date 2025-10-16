@@ -258,7 +258,6 @@ const Home = () => {
       <section className="main-actions-section">
         <div className="container">
           <div className="main-actions">
-<<<<<<< Updated upstream
             {/* Admin Dashboard - Only visible to admins */}
             {(user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin') && (
               <button className="action-btn-admin-dashboard" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
@@ -266,15 +265,10 @@ const Home = () => {
                 <span>Admin Dashboard</span>
               </button>
             )}
-=======
             <button className="action-btn-admin-dashboard" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
               <i className="fas fa-tachometer-alt"></i>
               <span>Admin Dashboard</span>
             </button>
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
             {/* Mark Attendance button - changes to "My Attendance" for parents */}
             {user && user.role && user.role.toLowerCase() === 'parent' ? (
               <button className="action-btn mark-attendance" onClick={(e) => { e.preventDefault(); navigate('/parent-view'); }}>
