@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { shuttleAPI, userAPI } from '../services/api';
+import { shuttleAPI } from '../services/api';
 import './ShuttleManagement.css';
 
-const ShuttleManagement = () => {
+const ShuttleManagement = ({ userRole = 'admin' }) => {
   const [shuttles, setShuttles] = useState([]);
-  const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -14,6 +13,9 @@ const ShuttleManagement = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchingLocation, setSearchingLocation] = useState(false);
   const [activeSearchField, setActiveSearchField] = useState('');
+  
+  // Check if user has edit permissions
+  const canEdit = userRole === 'admin' || userRole === 'administrator';
 
   // Form data for adding/editing shuttles
   const [formData, setFormData] = useState({
@@ -36,10 +38,9 @@ const ShuttleManagement = () => {
     }
   });
 
-  // Load shuttles and drivers on component mount
+  // Load shuttles on component mount
   useEffect(() => {
     loadShuttles();
-    loadDrivers();
   }, []);
 
   const loadShuttles = async () => {
@@ -56,25 +57,6 @@ const ShuttleManagement = () => {
     }
   };
 
-  const loadDrivers = async () => {
-    try {
-      console.log('Loading drivers...');
-      const data = await userAPI.getUsersByRole('ShuttleStaff');
-      console.log('Drivers data received:', data);
-      const driversList = data.users || [];
-      setDrivers(driversList);
-      console.log('Drivers set:', driversList);
-      
-      if (driversList.length === 0) {
-        console.warn('No drivers found with ShuttleStaff role');
-      }
-    } catch (err) {
-      console.error('Error loading drivers:', err);
-      setError('Failed to load drivers: ' + err.message);
-      // Set empty array as fallback
-      setDrivers([]);
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -95,16 +77,6 @@ const ShuttleManagement = () => {
     }
   };
 
-  const handleDriverChange = (e) => {
-    const selectedDriverName = e.target.value;
-    const selectedDriver = drivers.find(driver => driver.fullName === selectedDriverName);
-    
-    setFormData(prev => ({
-      ...prev,
-      driverName: selectedDriverName,
-      contactNo: selectedDriver ? selectedDriver.email : prev.contactNo // Use email as contact
-    }));
-  };
 
   const resetForm = () => {
     setFormData({
@@ -366,21 +338,45 @@ const ShuttleManagement = () => {
 
   return (
     <div className="shuttle-management">
+      {/* Hero Banner */}
+      <div style={{ position: 'relative', width: '100%', marginBottom: '20px', borderRadius: '16px', overflow: 'hidden' }}>
+        <img
+          src="https://images.unsplash.com/photo-1532634896-26909d0d4b6a?auto=format&fit=crop&w=1600&q=70"
+          alt="Shuttle Management"
+          loading="lazy"
+          style={{ width: '100%', height: '240px', objectFit: 'cover' }}
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            const fb = document.createElement('div');
+            fb.style.width = '100%';
+            fb.style.height = '240px';
+            fb.style.background = 'linear-gradient(135deg, #0ea5e9, #22c55e)';
+            e.currentTarget.parentElement && e.currentTarget.parentElement.appendChild(fb);
+          }}
+        />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 100%)' }} />
+        <div style={{ position: 'absolute', bottom: 16, left: 16, color: '#fff' }}>
+          <div style={{ fontSize: 24, fontWeight: 800 }}>Shuttle Management</div>
+          <div style={{ fontSize: 14, opacity: 0.9 }}>Manage routes, schedules, and drivers</div>
+        </div>
+      </div>
       <div className="page-header">
         <div className="header-content">
           <div className="header-text">
             <h1>Shuttle Management</h1>
-            <p>Manage your shuttle fleet, routes, and schedules efficiently</p>
+            <p>{canEdit ? 'Manage your shuttle fleet, routes, and schedules efficiently' : 'View shuttle fleet, routes, and schedules'}</p>
           </div>
-          <div className="header-actions">
-            <button 
-              className="btn btn-primary"
-              onClick={() => setShowAddForm(true)}
-            >
-              <span>➕</span>
-              Add New Shuttle
-            </button>
-          </div>
+          {canEdit && (
+            <div className="header-actions">
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowAddForm(true)}
+              >
+                <span>➕</span>
+                Add New Shuttle
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -412,7 +408,7 @@ const ShuttleManagement = () => {
         </div>
       </div>
 
-      {showAddForm && (
+      {canEdit && showAddForm && (
         <div className="form-container slide-up">
           <h3>{editingId ? 'Edit Shuttle' : 'Add New Shuttle'}</h3>
           <form onSubmit={handleSubmit} className="shuttle-form">
@@ -430,23 +426,14 @@ const ShuttleManagement = () => {
             <div className="form-row">
               <div className="form-group">
                 <label>Driver Name *</label>
-                <select
+                <input
+                  type="text"
                   name="driverName"
                   value={formData.driverName}
-                  onChange={handleDriverChange}
+                  onChange={handleInputChange}
+                  placeholder="Enter driver name"
                   required
-                >
-                  <option value="">Select a driver</option>
-                  {drivers.length > 0 ? (
-                    drivers.map((driver) => (
-                      <option key={driver._id} value={driver.fullName}>
-                        {driver.fullName} ({driver.userID})
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>No drivers available</option>
-                  )}
-                </select>
+                />
               </div>
               <div className="form-group">
                 <label>Contact Number *</label>
@@ -685,6 +672,7 @@ const ShuttleManagement = () => {
       )}
 
       <div className="table-container">
+         <div className="table-scroll">
          <table className="shuttle-table">
            <thead>
              <tr>
@@ -696,7 +684,7 @@ const ShuttleManagement = () => {
                <th>Ending Location</th>
                <th>Waypoints</th>
                <th>Schedule</th>
-               <th>Actions</th>
+               {canEdit && <th>Actions</th>}
              </tr>
            </thead>
           <tbody>
@@ -712,7 +700,7 @@ const ShuttleManagement = () => {
                   <td>{shuttle.contactNo || shuttle.contactNumber || 'N/A'}</td>
                   <td>
                     <div className="route-info">
-                      <div className="route-text">{shuttle.route || 'N/A'}</div>
+                      <div className="route-text" title={shuttle.route || 'N/A'}>{shuttle.route || 'N/A'}</div>
                     </div>
                   </td>
                   <td>
@@ -770,17 +758,20 @@ const ShuttleManagement = () => {
                       )}
                     </div>
                   </td>
-                  <td className="actions">
-                    <div className="action-buttons">
-                      <button className="btn-sm btn-primary" onClick={() => handleEdit(shuttle)}>Edit</button>
-                      <button className="btn-sm btn-danger" onClick={() => handleDelete(shuttle._id)}>Delete</button>
-                    </div>
-                  </td>
+                  {canEdit && (
+                    <td className="actions">
+                      <div className="action-buttons">
+                        <button className="btn-sm btn-primary" onClick={() => handleEdit(shuttle)}>Edit</button>
+                        <button className="btn-sm btn-danger" onClick={() => handleDelete(shuttle._id)}>Delete</button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

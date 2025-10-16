@@ -2005,6 +2005,41 @@ const AdminDashboard = () => {
         {/* Shuttle Staff Management Content */}
         {activeTab === 'shuttle-staff' && (
           <>
+            {/* Shuttle Staff Hero */}
+            <div style={{ position: 'relative', width: '100%', marginBottom: '20px', borderRadius: '16px', overflow: 'hidden' }}>
+              <img
+                src="https://images.unsplash.com/photo-1599982982646-38e0411b27f5?auto=format&fit=crop&w=1600&q=70"
+                alt="Shuttle Staff"
+                loading="lazy"
+                style={{
+                  width: '100%',
+                  height: '260px',
+                  objectFit: 'cover'
+                }}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = document.createElement('div');
+                  fallback.style.width = '100%';
+                  fallback.style.height = '260px';
+                  fallback.style.background = 'linear-gradient(135deg, #0ea5e9, #22c55e)';
+                  e.currentTarget.parentElement && e.currentTarget.parentElement.appendChild(fallback);
+                }}
+              />
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 100%)'
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: 16,
+                left: 16,
+                color: '#fff'
+              }}>
+                <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: 0.3 }}>Shuttle Staff</div>
+                <div style={{ fontSize: 14, opacity: 0.9 }}>Manage drivers, verify contacts, keep your fleet organized</div>
+              </div>
+            </div>
             {/* Page Header */}
             <div className="page-header">
               <h1 className="page-title">Shuttle Staff Management</h1>

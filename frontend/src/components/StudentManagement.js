@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { studentAPI, shuttleAPI } from '../services/api';
+import { api } from '../utils/api';
 import './StudentManagement.css';
 
-const StudentManagement = () => {
+const StudentManagement = ({ userRole: propUserRole = '' }) => {
   const [students, setStudents] = useState([]);
   const [shuttleRoutes, setShuttleRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,6 +13,29 @@ const StudentManagement = () => {
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewStudent, setIsNewStudent] = useState(true);
+  const [userRole, setUserRole] = useState(propUserRole);
+  
+  // Fetch user role if not provided as prop
+  useEffect(() => {
+    if (!propUserRole) {
+      const fetchRole = async () => {
+        try {
+          const response = await api('/auth/me', { method: 'GET' });
+          const role = response?.user?.role || response?.role || 'admin';
+          setUserRole(role.toLowerCase());
+        } catch (error) {
+          console.error('Failed to fetch role:', error);
+          setUserRole('admin'); // Default to admin if fetch fails
+        }
+      };
+      fetchRole();
+    } else {
+      setUserRole(propUserRole);
+    }
+  }, [propUserRole]);
+  
+  // Check if user has edit permissions
+  const canEdit = userRole === 'admin' || userRole === 'administrator';
 
   // Form data for adding/editing students
   const [formData, setFormData] = useState({
@@ -55,12 +79,45 @@ const StudentManagement = () => {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // If Student ID field is being changed, fetch user details
+    if (name === 'userId' && value.trim()) {
+      try {
+        // Fetch user details from users database by userID
+        const response = await api(`/users/search/${value}`, { method: 'GET' });
+        
+        if (response && response.user) {
+          // Auto-fill the name field
+          setFormData(prev => ({
+            ...prev,
+            userId: value,
+            name: response.user.fullName || response.user.name || ''
+          }));
+          setError('');
+        } else {
+          // User not found, just update userId
+          setFormData(prev => ({
+            ...prev,
+            userId: value
+          }));
+        }
+      } catch (err) {
+        // If user not found or error, just update the field normally
+        console.log('User not found or error:', err.message);
+        setFormData(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
+    } else {
+      // For other fields, update normally
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleStudentIdChange = (e) => {
@@ -150,11 +207,19 @@ const StudentManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
       try {
-        await studentAPI.deleteStudent(id);
+        console.log('Deleting student with ID:', id);
+        const result = await studentAPI.deleteStudent(id);
+        console.log('Delete result:', result);
         setSuccess('Student deleted successfully!');
-        loadStudents();
+        setError('');
+        // Reload students list
+        await loadStudents();
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(''), 3000);
       } catch (err) {
-        setError(err.message);
+        console.error('Delete error:', err);
+        setError('Failed to delete student: ' + (err.message || 'Unknown error'));
+        setSuccess('');
       }
     }
   };
@@ -172,6 +237,119 @@ const StudentManagement = () => {
     return <div className="loading">Loading students...</div>;
   }
 
+  // For parents, show simplified view
+  if (userRole === 'parent') {
+    return (
+      <div className="student-management">
+        <div className="page-header">
+          <div className="header-content">
+            <div className="header-text">
+              <h1>Register Your Child</h1>
+              <p>Register your child for shuttle service</p>
+            </div>
+          </div>
+        </div>
+
+        {error && <div className="alert alert-error fade-in">{error}</div>}
+        {success && <div className="alert alert-success fade-in">{success}</div>}
+
+        {/* Always show form for parents */}
+        <div className="form-container slide-up">
+          <h3>Child Registration Form</h3>
+          <form onSubmit={handleSubmit} className="student-form">
+            <div className="form-group">
+              <label>Child's Student ID *</label>
+              <input
+                type="text"
+                name="userId"
+                value={formData.userId}
+                onChange={handleInputChange}
+                placeholder="Enter student ID (e.g., STU001)"
+                required
+              />
+              <small style={{ color: '#666', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                Enter the student ID to auto-fill the name
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label>Child's Name *</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Name will auto-fill from student ID"
+                required
+                style={{ backgroundColor: formData.name && formData.userId ? '#f0f9ff' : 'white' }}
+              />
+              {formData.name && formData.userId && (
+                <small style={{ color: '#00897b', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                  ✓ Student found
+                </small>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label>Select Shuttle Route *</label>
+              <select
+                name="route"
+                value={formData.route}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="">Select a route</option>
+                {shuttleRoutes.map((route, index) => (
+                  <option key={index} value={route}>{route}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Guardian Name *</label>
+              <input
+                type="text"
+                name="guardianName"
+                value={formData.guardianName}
+                onChange={handleInputChange}
+                placeholder="Enter guardian name"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Contact Number *</label>
+              <input
+                type="tel"
+                name="parentContactNo"
+                value={formData.parentContactNo}
+                onChange={handleInputChange}
+                placeholder="Enter contact number"
+                pattern="[0-9]{10}"
+                required
+              />
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">
+                <span>✅</span>
+                Register Child
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-secondary"
+                onClick={resetForm}
+              >
+                Clear Form
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Admin/Teacher view with full table
   return (
     <div className="student-management">
       <div className="page-header">
@@ -189,13 +367,15 @@ const StudentManagement = () => {
               <span>🔄</span>
               Refresh Routes
             </button>
-            <button 
-              className="btn btn-primary"
-              onClick={() => setShowAddForm(true)}
-            >
-              <span>👨‍🎓</span>
-              Register New Student
-            </button>
+            {canEdit && (
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowAddForm(true)}
+              >
+                <span>👨‍🎓</span>
+                Register New Student
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -228,7 +408,7 @@ const StudentManagement = () => {
         </div>
       </div>
 
-      {showAddForm && (
+      {canEdit && showAddForm && (
         <div className="form-container slide-up">
           <h3>{isNewStudent ? 'Register New Student' : 'Edit Student'}</h3>
           <form onSubmit={handleSubmit} className="student-form">
@@ -357,7 +537,7 @@ const StudentManagement = () => {
                   <th>Route</th>
                   <th>Guardian Name</th>
                   <th>Contact Number</th>
-                  <th>Actions</th>
+                  {canEdit && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -368,22 +548,24 @@ const StudentManagement = () => {
                     <td>{student.route || 'N/A'}</td>
                     <td>{student.guardianName || 'N/A'}</td>
                     <td>{student.parentContactNo || 'N/A'}</td>
-                    <td>
-                      <div className="action-buttons">
-                        <button 
-                          className="btn btn-sm btn-edit"
-                          onClick={() => handleEdit(student)}
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          className="btn btn-sm btn-delete"
-                          onClick={() => handleDelete(student._id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+                    {canEdit && (
+                      <td className="actions">
+                        <div className="action-buttons">
+                          <button 
+                            className="btn btn-sm btn-edit"
+                            onClick={() => handleEdit(student)}
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-delete"
+                            onClick={() => handleDelete(student._id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

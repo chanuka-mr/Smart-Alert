@@ -242,4 +242,26 @@ const getUsersByRole = async (req, res) => {
   }
 };
 
-module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser, getUserStats, getUsersByRole };
+// Search user by userID
+const searchByUserID = async (req, res) => {
+  try {
+    const { userID } = req.params;
+    
+    if (!userID) {
+      return res.status(400).json({ message: "UserID parameter is required" });
+    }
+
+    const user = await User.findOne({ userID: userID });
+    
+    if (!user) {
+      return res.status(404).json({ message: `User not found with ID: ${userID}` });
+    }
+
+    return res.status(200).json({ user });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser, getUserStats, getUsersByRole, searchByUserID };

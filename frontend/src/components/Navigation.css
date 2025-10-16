@@ -1,13 +1,13 @@
 /* Navigation.css - Modern Design */
 .navigation {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(90deg, var(--primary-700), var(--primary-500));
+  border-bottom: none;
   padding: var(--space-4) 0;
   position: sticky;
   top: 0;
   z-index: 100;
   box-shadow: var(--shadow-lg);
+  color: #ffffff;
 }
 
 .nav-container {
@@ -33,7 +33,7 @@
 }
 
 .brand-content h1 {
-  color: var(--primary-700);
+  color: #ffffff;
   margin: 0;
   font-size: var(--text-2xl);
   font-weight: 700;
@@ -41,7 +41,7 @@
 }
 
 .brand-content p {
-  color: var(--gray-600);
+  color: rgba(255,255,255,0.85);
   margin: 0;
   font-size: var(--text-sm);
   font-weight: 500;
@@ -58,9 +58,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  background: transparent;
-  color: var(--gray-600);
-  border: 2px solid transparent;
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.35);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
   cursor: pointer;
@@ -87,17 +87,17 @@
 }
 
 .nav-tab:hover {
-  color: var(--primary-700);
-  border-color: var(--primary-200);
-  background: var(--primary-50);
+  color: #ffffff;
+  border-color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.25);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
 .nav-tab.active {
-  color: white;
-  border-color: var(--primary-600);
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  color: var(--primary-700);
+  border-color: #ffffff;
+  background: #ffffff;
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
 }

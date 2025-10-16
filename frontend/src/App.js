@@ -23,21 +23,10 @@ import ReportCardView from './components/ReportCardView/ReportCardView';
 import ProgressAnalysis from './components/ProgressAnalysis/ProgressAnalysis';
 import ReportData from './components/ReportData/ReportData';
 import TimeTableDataEntry from './components/TimeTableHallArrangementData/TimeTableDataEntry';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 import Examination from './components/Examination/Examination';
 import ExamOnly from './components/Examination/ExamOnly';
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 import ShuttleServices from './components/ShuttleServices/ShuttleServices';
+import ParentShuttleView from './components/ParentShuttleView';
 import Students from './components/AttendanceManagement/Students';
 import Attendance from './components/AttendanceManagement/Attendance';
 import AttendanceRecords from './components/AttendanceManagement/AttendanceRecords';
@@ -346,6 +335,38 @@ export default function App() {
         {/* Shuttle Services Management Routes */}
         <Route 
           path="/shuttle-services" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/parent" 
+          element={
+            <RequireAuth>
+              <ParentShuttleView />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/shuttles" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/students" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/tracking" 
           element={
             <RequireAuth>
               <ShuttleServices />

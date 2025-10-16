@@ -160,6 +160,12 @@ export const userAPI = {
     
     console.log('API response status:', response.status);
     
+    // Handle 404 as empty array (no users found with this role)
+    if (response.status === 404) {
+      console.log(`No users found with role: ${role}`);
+      return { users: [] };
+    }
+    
     if (!response.ok) {
       const errorData = await response.json();
       console.error('API error:', errorData);
