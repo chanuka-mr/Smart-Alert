@@ -229,8 +229,12 @@ const AdminDashboard = () => {
 
   // Check if user is admin, if not redirect to home
   useEffect(() => {
-    if (user && user.role && user.role.toLowerCase() !== 'admin') {
-      navigate('/');
+    if (user) {
+      const isAdmin = user.role?.toLowerCase() === 'admin' || user.userType?.toLowerCase() === 'admin';
+      if (!isAdmin) {
+        alert('Access Denied: Only administrators can access the Admin Dashboard.');
+        navigate('/');
+      }
     }
   }, [user, navigate]);
 

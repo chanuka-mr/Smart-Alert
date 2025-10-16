@@ -9,10 +9,10 @@ export const api = axios.create({
 });
 
 // Students
-export const getStudents = () => api.get("/students");
-export const addStudent = (payload) => api.post("/students", payload);
-export const updateStudent = (id, payload) => api.put(`/students/${id}`, payload);
-export const deleteStudent = (idOrIndex) => api.delete(`/students/${idOrIndex}`);
+export const getStudents = () => api.get("/api/students");
+export const addStudent = (payload) => api.post("/api/students", payload);
+export const updateStudent = (id, payload) => api.put(`/api/students/${id}`, payload);
+export const deleteStudent = (idOrIndex) => api.delete(`/api/students/${idOrIndex}`);
 
 // Attendance
 export const getAllAttendance = () => api.get("/attendance");

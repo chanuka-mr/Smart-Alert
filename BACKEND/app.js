@@ -45,6 +45,12 @@ app.use(express.json()); // Parse JSON request bodies
 app.use(express.urlencoded({ extended: true })); // Parse form data
 app.use('/uploads', express.static(__dirname + '/uploads')); // Serve uploaded files statically
 
+// Log all incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.path}`);
+  next();
+});
+
 // Add io to request object for use in controllers
 app.use((req, res, next) => {
   req.io = io;
@@ -82,7 +88,10 @@ mongoose
   .then(() => {
     console.log("Connected to MongoDB");
 
-    // Start server with automatic port fallback if the desired port is busy
+    // Start server. By default the server will try to auto-increment if the
+    // desired port is busy (existing behavior). If STRICT_PORT=true is set in
+    // the environment, the server will fail fast instead to enforce a fixed
+    // port for development (so CRA proxy and other tooling have a stable target).
     let currentPort = Number(PORT);
     const maxRetries = 10;
     let attempts = 0;
@@ -94,23 +103,33 @@ mongoose
       });
     };
 
+    const strictPort = String(process.env.STRICT_PORT).toLowerCase() === 'true';
+
     server.on('error', (err) => {
-      if (err && err.code === 'EADDRINUSE' && attempts < maxRetries) {
-        attempts += 1;
-        const nextPort = currentPort + 1;
-        console.warn(`Port ${currentPort} in use. Retrying on ${nextPort} (attempt ${attempts}/${maxRetries})...`);
-        currentPort = nextPort;
-        setTimeout(() => {
-          try {
-            server.close(() => startListening());
-          } catch (_) {
-            startListening();
-          }
-        }, 500);
-      } else {
-        console.error('Server failed to start:', err);
-        process.exit(1);
+      if (err && err.code === 'EADDRINUSE') {
+        if (strictPort) {
+          console.error(`Port ${currentPort} already in use and STRICT_PORT=true. Exiting.`);
+          process.exit(1);
+        }
+
+        if (attempts < maxRetries) {
+          attempts += 1;
+          const nextPort = currentPort + 1;
+          console.warn(`Port ${currentPort} in use. Retrying on ${nextPort} (attempt ${attempts}/${maxRetries})...`);
+          currentPort = nextPort;
+          setTimeout(() => {
+            try {
+              server.close(() => startListening());
+            } catch (_) {
+              startListening();
+            }
+          }, 500);
+          return;
+        }
       }
+
+      console.error('Server failed to start:', err);
+      process.exit(1);
     });
 
     startListening();

@@ -141,15 +141,20 @@ const Attendance = () => {
 
       const payloads = toSubmit.map((s) => {
         const status = rows[s._id]?.status || "Present";
+        console.log("📋 Student data:", { id: s._id, name: s.name, userID: s.userID || s.std_index });
         return {
           studentId: s._id,
+          userID: s.userID || s.std_index, // Use userID as fallback identifier
           date,
           status,
           notifiedParent: false
         };
       });
 
+      console.log("📤 Sending payloads:", payloads);
+
       for (const p of payloads) {
+        console.log("🚀 Marking attendance for:", p);
         await markAttendance(p);
       }
 
@@ -161,7 +166,20 @@ const Attendance = () => {
 
       alert("Attendance marked successfully");
     } catch (e) {
-      alert(e?.response?.data?.message || "Failed to mark attendance");
+      const errorMsg = e?.response?.data?.message || "Failed to mark attendance";
+      console.error("❌ Attendance error:", e?.response?.data);
+      
+      if (errorMsg === "Student not found") {
+        alert(
+          "Student not found in database!\n\n" +
+          "This usually means the student list is outdated.\n" +
+          "Please refresh the page to reload current students."
+        );
+        // Optionally auto-reload students
+        await load();
+      } else {
+        alert(errorMsg);
+      }
     } finally {
       setSubmitting(false);
     }

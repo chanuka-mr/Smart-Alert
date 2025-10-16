@@ -29,6 +29,7 @@ import ShuttleServices from './Components/ShuttleServices/ShuttleServices';
 import Students from './Components/AttendanceManagement/Students';
 import Attendance from './Components/AttendanceManagement/Attendance';
 import AttendanceRecords from './Components/AttendanceManagement/AttendanceRecords';
+import ParentView from './Components/ParentView/ParentView';
 import { api } from "./utils/api";
 
 // ✅ Enhanced guard: checks token in localStorage and validates it
@@ -363,6 +364,16 @@ export default function App() {
           element={
             <RequireAuth>
               <AttendanceRecords />
+            </RequireAuth>
+          } 
+        />
+
+        {/* Parent View - Only for Parents/Students */}
+        <Route 
+          path="/parent-view" 
+          element={
+            <RequireAuth>
+              <ParentView />
             </RequireAuth>
           } 
         />

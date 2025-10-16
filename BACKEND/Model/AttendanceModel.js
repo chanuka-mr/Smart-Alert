@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const attendanceSchema = new Schema({
   student: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "StudentModel",
+    ref: "User",
     required: true
   },
   // IMPORTANT: store date normalized to midnight to ensure uniqueness works

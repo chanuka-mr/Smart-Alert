@@ -1,6 +1,6 @@
 const Location = require("../Model/locationModel");
 const Shuttle = require("../Model/shuttleModel");
-const Student = require("../Model/studentModel");
+const { User } = require("../Model/userModel");
 
 // Get current location of a shuttle
 exports.getShuttleLocation = async (req, res) => {
@@ -130,8 +130,8 @@ exports.updateStudentLocation = async (req, res) => {
     const { studentId } = req.params;
     const { latitude, longitude, address } = req.body;
     
-    // Verify student exists
-    const student = await Student.findById(studentId);
+    // Verify student exists (User with role="Parent")
+    const student = await User.findOne({ _id: studentId, role: "Parent" });
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }

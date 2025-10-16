@@ -1,5 +1,5 @@
 const Attendance = require("../Model/AttendanceModel");
-const Student = require("../Model/studentModel");
+const { User, Academic, Parent } = require("../Model/userModel");
 
 // Helper: check if string looks like a Mongo ObjectId
 const looksLikeObjectId = (s) => typeof s === "string" && s.match(/^[0-9a-fA-F]{24}$/);
@@ -11,34 +11,82 @@ const normalizeToMidnight = (d) => {
   return dt;
 };
 
+// Helper to enrich a single attendance record with student info
+const enrichRecordWithStudentInfo = async (record) => {
+  const recordObj = record.toObject ? record.toObject() : record;
+  
+  if (recordObj.student && recordObj.student.userID) {
+    // Get academic info
+    const academic = await Academic.findOne({ userID: recordObj.student.userID });
+    
+    // Map User fields to expected Student fields for frontend compatibility
+    recordObj.student.name = recordObj.student.fullName;
+    recordObj.student.std_index = recordObj.student.userID;
+    recordObj.student.section = academic ? `${academic.grade}${academic.class}` : 'N/A';
+  }
+  
+  return recordObj;
+};
+
 // Get all attendance (sorted newest first)
 const getAllAttendance = async (req, res) => {
   try {
     const records = await Attendance.find().populate("student").sort({ date: -1, _id: -1 });
-    return res.status(200).json({ records });
+    
+    // Enrich records with academic section info and map field names for frontend compatibility
+    const enrichedRecords = await Promise.all(
+      records.map(record => enrichRecordWithStudentInfo(record))
+    );
+    
+    return res.status(200).json({ records: enrichedRecords });
   } catch (err) {
     console.error(err.message);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
-// Mark attendance by studentId or std_index
+// Mark attendance by studentId (User._id) or userID
 const markAttendance = async (req, res) => {
-  const { studentId, std_index, date, status, notifiedParent } = req.body;
+  const { studentId, userID, date, status, notifiedParent } = req.body;
 
-  if (!studentId && !std_index) {
-    return res.status(400).json({ message: "Provide studentId or std_index" });
+  console.log("📝 Mark Attendance Request:", { studentId, userID, date, status });
+
+  if (!studentId && !userID) {
+    return res.status(400).json({ message: "Provide studentId (User._id) or userID" });
   }
 
   try {
     let student;
     if (studentId) {
-      if (!looksLikeObjectId(studentId)) return res.status(400).json({ message: "Invalid studentId" });
-      student = await Student.findById(studentId);
+      console.log("🔍 Searching by studentId (User._id):", studentId);
+      if (!looksLikeObjectId(studentId)) {
+        console.log("❌ Invalid studentId format:", studentId);
+        return res.status(400).json({ message: "Invalid studentId" });
+      }
+      student = await User.findOne({ _id: studentId, role: "Parent" });
+      console.log("👤 Student found by ID:", student ? student.fullName : "NOT FOUND");
     } else {
-      student = await Student.findOne({ std_index });
+      console.log("🔍 Searching by userID:", userID);
+      student = await User.findOne({ userID, role: "Parent" });
+      console.log("👤 Student found by userID:", student ? student.fullName : "NOT FOUND");
     }
-    if (!student) return res.status(404).json({ message: "Student not found" });
+    if (!student) {
+      console.log("❌ Student not found in database. StudentId:", studentId, "userID:", userID);
+      
+      // Debug: Show all students (users with role=Parent) in database
+      const allStudents = await User.find({ role: "Parent" }).limit(10);
+      console.log("📊 Total students in database:", await User.countDocuments({ role: "Parent" }));
+      console.log("📋 Sample students:", allStudents.map(s => ({ id: s._id.toString(), name: s.fullName, userID: s.userID })));
+      
+      return res.status(404).json({ 
+        message: "Student not found", 
+        debug: {
+          searchedId: studentId,
+          searchedUserID: userID,
+          totalStudentsInDb: await User.countDocuments({ role: "Parent" })
+        }
+      });
+    }
 
     const day = normalizeToMidnight(date);
 
@@ -57,7 +105,8 @@ const markAttendance = async (req, res) => {
 
     await record.save();
     const populated = await Attendance.findById(record._id).populate("student");
-    return res.status(200).json({ record: populated });
+    const enriched = await enrichRecordWithStudentInfo(populated);
+    return res.status(200).json({ record: enriched });
   } catch (err) {
     // Handle duplicate-key errors from the unique index
     if (err && err.code === 11000) {
@@ -68,20 +117,23 @@ const markAttendance = async (req, res) => {
   }
 };
 
-// Get attendance by studentId or std_index
+// Get attendance by studentId (User._id) or userID
 const getAttendanceByStudent = async (req, res) => {
   const param = req.params.studentId;
   try {
     let student;
     if (looksLikeObjectId(param)) {
-      student = await Student.findById(param);
+      student = await User.findOne({ _id: param, role: "Parent" });
     } else {
-      student = await Student.findOne({ std_index: param });
+      student = await User.findOne({ userID: param, role: "Parent" });
     }
     if (!student) return res.status(404).json({ message: "Student not found" });
 
     const records = await Attendance.find({ student: student._id }).populate("student").sort({ date: -1, _id: -1 });
-    return res.status(200).json({ records });
+    const enrichedRecords = await Promise.all(
+      records.map(record => enrichRecordWithStudentInfo(record))
+    );
+    return res.status(200).json({ records: enrichedRecords });
   } catch (err) {
     console.error(err.message);
     return res.status(500).json({ message: "Server error" });
@@ -103,7 +155,8 @@ const updateAttendance = async (req, res) => {
     // If date is being changed, we rely on the unique index to prevent collisions
     const record = await Attendance.findByIdAndUpdate(id, update, { new: true, runValidators: true }).populate("student");
     if (!record) return res.status(404).json({ message: "Attendance not found" });
-    return res.status(200).json({ record });
+    const enriched = await enrichRecordWithStudentInfo(record);
+    return res.status(200).json({ record: enriched });
   } catch (err) {
     if (err && err.code === 11000) {
       return res.status(409).json({ message: "Another record already exists for this student and date" });
@@ -166,9 +219,9 @@ const notifyParentsForAbsents = async (req, res) => {
   }
 
   try {
-    // Fetch students in one go
+    // Fetch students (users with role=Parent) in one go
     const ids = items.map((i) => i.studentId).filter(Boolean);
-    const students = await Student.find({ _id: { $in: ids } });
+    const students = await User.find({ _id: { $in: ids }, role: "Parent" });
 
     const idToStudent = new Map(students.map((s) => [String(s._id), s]));
     const results = await Promise.allSettled(
@@ -176,8 +229,13 @@ const notifyParentsForAbsents = async (req, res) => {
         const student = idToStudent.get(String(i.studentId));
         if (!student) throw new Error("Student not found");
         
-        const phone = normalizeParentNumber(student.parentPhoneNum);
+        // Get parent details from Parent schema
+        const parentDetails = await Parent.findOne({ userID: student.userID });
+        const phone = normalizeParentNumber(parentDetails?.whatsappNumber || student.phone);
         if (!phone) throw new Error("Invalid parent phone number");
+
+        // Get academic info for grade/class
+        const academic = await Academic.findOne({ userID: student.userID });
 
         const day = new Date(i.date || Date.now());
         const formattedDate = new Date(day.getTime() - (day.getTimezoneOffset() * 60000))
@@ -187,9 +245,9 @@ const notifyParentsForAbsents = async (req, res) => {
         const message =
           `🎓 CMB International College - Smart Alert\n\n` +
           `📅 Date: ${formattedDate}\n` +
-          `👤 Student: ${student.name}\n` +
-          `🆔 Index: ${student.std_index}\n` +
-          `📚 Class: ${student.section}\n` +
+          `👤 Student: ${student.fullName}\n` +
+          `🆔 ID: ${student.userID}\n` +
+          `📚 Class: ${academic ? `Grade ${academic.grade}${academic.class}` : 'N/A'}\n` +
           `📊 Status: ${i.status}\n\n` +
           `This is an automated notification from the school attendance system.`;
 
@@ -216,12 +274,92 @@ const notifyParentsForAbsents = async (req, res) => {
   }
 };
 
+// Get attendance for currently logged-in parent (from req.user)
+const getMyAttendance = async (req, res) => {
+  try {
+    console.log("📋 My Attendance Request received");
+    console.log("   Headers:", req.headers.authorization ? "Token present" : "No token");
+    console.log("   User from token:", req.user);
+
+    // req.user should be set by auth middleware (contains { id: userID, role: role })
+    if (!req.user || !req.user.id) {
+      console.log("❌ No user in request");
+      return res.status(401).json({ 
+        message: "Unauthorized - User not authenticated",
+        debug: "No user found in request. Please log in again."
+      });
+    }
+
+    console.log("   UserID:", req.user.id);
+    console.log("   Role:", req.user.role);
+
+    // Check if user is a parent
+    if (req.user.role !== "Parent") {
+      console.log("❌ Access denied - User role is:", req.user.role);
+      return res.status(403).json({ 
+        message: `Access denied - Only parents/students can view this page. Your role: ${req.user.role}` 
+      });
+    }
+
+    // Find the user by userID (req.user.id is the userID from JWT)
+    const student = await User.findOne({ userID: req.user.id, role: "Parent" });
+    if (!student) {
+      console.log("❌ Student not found for userID:", req.user.id);
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    console.log("✅ Student found:", student.fullName);
+
+    // Get attendance records for this student
+    const records = await Attendance.find({ student: student._id })
+      .populate("student")
+      .sort({ date: -1 });
+
+    // Enrich records with student info
+    const enrichedRecords = await Promise.all(
+      records.map(record => enrichRecordWithStudentInfo(record))
+    );
+
+    // Get academic info
+    const academic = await Academic.findOne({ userID: student.userID });
+    const section = academic ? `${academic.grade}${academic.class}` : 'N/A';
+
+    // Calculate statistics
+    const stats = {
+      total: records.length,
+      present: records.filter(r => r.status === "Present").length,
+      absent: records.filter(r => r.status === "Absent").length,
+      late: records.filter(r => r.status === "Late").length,
+      excused: records.filter(r => r.status === "Excused").length
+    };
+
+    stats.attendancePercentage = stats.total > 0 
+      ? ((stats.present + stats.excused) / stats.total * 100).toFixed(2) 
+      : 0;
+
+    return res.status(200).json({ 
+      student: {
+        userID: student.userID,
+        name: student.fullName,
+        email: student.email,
+        section: section
+      },
+      records: enrichedRecords,
+      stats
+    });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   getAllAttendance,
   markAttendance,
   getAttendanceByStudent,
   updateAttendance,
   deleteAttendance,
-  notifyParentsForAbsents
+  notifyParentsForAbsents,
+  getMyAttendance
 };
 
