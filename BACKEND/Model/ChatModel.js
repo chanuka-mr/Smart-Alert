@@ -5,18 +5,17 @@ const mongoose = require('mongoose');
 const ChatSchema = new mongoose.Schema(
   {
     fromUserId: {
-      type: mongoose.Schema.Types.ObjectId, // Sender's user ID
+      type: String, // Sender's user ID (e.g., T250001, S250004)
       ref: 'User',
       required: [true, 'Sender (fromUserId) is required']
     },
     toUserId: {
-      type: mongoose.Schema.Types.ObjectId, // Recipient's user ID
+      type: String, // Recipient's user ID (e.g., T250001, S250004)
       ref: 'User',
       required: [true, 'Recipient (toUserId) is required']
     },
     classId: {
-      type: mongoose.Schema.Types.ObjectId, // Class/group ID for the chat
-      ref: 'Class',
+      type: String, // Class ID (e.g., "3B" for Grade 3 Class B)
       required: [true, 'ClassId is required']
     },
     messageContent: {

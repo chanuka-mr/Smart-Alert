@@ -52,6 +52,173 @@
   margin-top: 2px;
 }
 
+/* WhatsApp-style container with sidebar and chat */
+.dm-whatsapp-container {
+  display: flex;
+  height: 700px;
+  max-width: 1200px;
+  margin: 40px auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  overflow: hidden;
+  border: 1.5px solid #1976d2;
+}
+
+/* Left sidebar - Parent list */
+.dm-sidebar {
+  width: 350px;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+}
+
+/* Search bar at top of sidebar */
+.dm-search-bar {
+  padding: 16px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.dm-search-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.dm-search-input:focus {
+  border-color: #1976d2;
+}
+
+/* Parent list scrollable area */
+.dm-parent-list {
+  flex: 1;
+  overflow-y: auto;
+  background: #fff;
+}
+
+.dm-no-parents {
+  text-align: center;
+  padding: 40px 20px;
+  color: #888;
+}
+
+/* Individual parent item */
+.dm-parent-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+}
+
+.dm-parent-item:hover {
+  background: #f5f5f5;
+}
+
+.dm-parent-item.active {
+  background: #e8f4f8;
+  border-left: 4px solid #1976d2;
+}
+
+/* Parent avatar circle */
+.dm-parent-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1976d2;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+/* Parent info */
+.dm-parent-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dm-parent-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #222;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-parent-id {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.dm-parent-class {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* Right side - Chat area */
+.dm-chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #e5ddd5;
+}
+
+/* No chat selected placeholder */
+.dm-no-chat-selected {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 1.1rem;
+}
+
+/* Chat header */
+.dm-chat-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f0f0f0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.dm-header-info {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.dm-header-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #222;
+}
+
+.dm-header-id {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.dm-header-class {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 2px;
+}
+
 /* Container for chat and input bar */
 .dm-container {
   max-width: 700px;
