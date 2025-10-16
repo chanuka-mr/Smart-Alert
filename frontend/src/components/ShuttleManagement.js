@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { shuttleAPI } from '../services/api';
+import { shuttleAPI, userAPI } from '../services/api';
 import './ShuttleManagement.css';
 
 const ShuttleManagement = ({ userRole = 'admin' }) => {
   const [shuttles, setShuttles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -38,9 +39,10 @@ const ShuttleManagement = ({ userRole = 'admin' }) => {
     }
   });
 
-  // Load shuttles on component mount
+  // Load shuttles and drivers on component mount
   useEffect(() => {
     loadShuttles();
+    loadDrivers();
   }, []);
 
   const loadShuttles = async () => {
@@ -57,6 +59,28 @@ const ShuttleManagement = ({ userRole = 'admin' }) => {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  const loadDrivers = async () => {
+    try {
+      console.log('Loading drivers...');
+      const data = await userAPI.getUsersByRole('ShuttleStaff');
+      console.log('Drivers data received:', data);
+      const driversList = data.users || [];
+      setDrivers(driversList);
+      console.log('Drivers set:', driversList);
+      
+      if (driversList.length === 0) {
+        console.warn('No drivers found with ShuttleStaff role');
+      }
+    } catch (err) {
+      console.error('Error loading drivers:', err);
+      setError('Failed to load drivers: ' + err.message);
+      // Set empty array as fallback
+      setDrivers([]);
+    }
+  };
+>>>>>>> Stashed changes
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,6 +101,19 @@ const ShuttleManagement = ({ userRole = 'admin' }) => {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  const handleDriverChange = (e) => {
+    const selectedDriverName = e.target.value;
+    const selectedDriver = drivers.find(driver => driver.fullName === selectedDriverName);
+    
+    setFormData(prev => ({
+      ...prev,
+      driverName: selectedDriverName,
+      contactNo: selectedDriver ? selectedDriver.email : prev.contactNo // Use email as contact
+    }));
+  };
+>>>>>>> Stashed changes
 
   const resetForm = () => {
     setFormData({
@@ -426,14 +463,28 @@ const ShuttleManagement = ({ userRole = 'admin' }) => {
             <div className="form-row">
               <div className="form-group">
                 <label>Driver Name *</label>
-                <input
-                  type="text"
+                <select
                   name="driverName"
                   value={formData.driverName}
+<<<<<<< Updated upstream
                   onChange={handleInputChange}
                   placeholder="Enter driver name"
+=======
+                  onChange={handleDriverChange}
+>>>>>>> Stashed changes
                   required
-                />
+                >
+                  <option value="">Select a driver</option>
+                  {drivers.length > 0 ? (
+                    drivers.map((driver) => (
+                      <option key={driver._id} value={driver.fullName}>
+                        {driver.fullName} ({driver.userID})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>No drivers available</option>
+                  )}
+                </select>
               </div>
               <div className="form-group">
                 <label>Contact Number *</label>

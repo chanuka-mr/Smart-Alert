@@ -3,7 +3,10 @@ import './App.css';
 import './theme.css';
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+<<<<<<< Updated upstream
 <<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
 import Home from "./components/Home/Home";
 import Login from "./components/Login/Login";
 import Profile from "./components/Profile/Profile";
@@ -24,6 +27,7 @@ import ReportCardView from './components/ReportCardView/ReportCardView';
 import ProgressAnalysis from './components/ProgressAnalysis/ProgressAnalysis';
 import ReportData from './components/ReportData/ReportData';
 import TimeTableDataEntry from './components/TimeTableHallArrangementData/TimeTableDataEntry';
+<<<<<<< Updated upstream
 import Examination from './components/Examination/Examination';
 import ExamOnly from './components/Examination/ExamOnly';
 import ShuttleServices from './components/ShuttleServices/ShuttleServices';
@@ -60,6 +64,12 @@ import Attendance from './Components/AttendanceManagement/Attendance';
 import AttendanceRecords from './Components/AttendanceManagement/AttendanceRecords';
 import ParentView from './Components/ParentView/ParentView';
 >>>>>>> c8b73b2144c80968665ee7d655743784012ae226
+=======
+import ShuttleServices from './components/ShuttleServices/ShuttleServices';
+import Students from './components/AttendanceManagement/Students';
+import Attendance from './components/AttendanceManagement/Attendance';
+import AttendanceRecords from './components/AttendanceManagement/AttendanceRecords';
+>>>>>>> Stashed changes
 import { api } from "./utils/api";
 
 // ✅ Enhanced guard: checks token in localStorage and validates it

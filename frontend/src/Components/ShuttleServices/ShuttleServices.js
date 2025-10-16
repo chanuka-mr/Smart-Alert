@@ -72,7 +72,11 @@ const ShuttleServices = () => {
     
     switch (activeTab) {
       case 'shuttles':
+<<<<<<< Updated upstream
         return <ShuttleManagement userRole={userRole} />;
+=======
+        return <ShuttleManagement />;
+>>>>>>> Stashed changes
       case 'students':
         return <StudentManagement userRole={userRole} />;
       case 'tracking':

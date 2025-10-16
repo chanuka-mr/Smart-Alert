@@ -242,6 +242,7 @@ const getUsersByRole = async (req, res) => {
   }
 };
 
+<<<<<<< Updated upstream
 // Search user by userID
 const searchByUserID = async (req, res) => {
   try {
@@ -265,3 +266,6 @@ const searchByUserID = async (req, res) => {
 };
 
 module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser, getUserStats, getUsersByRole, searchByUserID };
+=======
+module.exports = { getAllUsers, createUser, getById, updateUser, deleteUser, getUserStats, getUsersByRole };
+>>>>>>> Stashed changes
