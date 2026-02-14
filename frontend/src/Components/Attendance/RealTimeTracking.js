@@ -188,7 +188,7 @@ const RealTimeTracking = () => {
   };
 
   const initializeSocket = () => {
-    const socketInstance = io('http://localhost:5000');
+    const socketInstance = io('http://localhost:5001');
     
     socketInstance.on('locationUpdate', (data) => {
       updateShuttleLocation(data);
@@ -280,7 +280,7 @@ const RealTimeTracking = () => {
     const lng = 79.8612 + (Math.random() - 0.5) * 0.01;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/locations/shuttle/${shuttleId}`, {
+      const response = await fetch(`http://localhost:5001/api/locations/shuttle/${shuttleId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

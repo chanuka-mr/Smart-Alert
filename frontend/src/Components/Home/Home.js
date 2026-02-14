@@ -258,14 +258,25 @@ const Home = () => {
       <section className="main-actions-section">
         <div className="container">
           <div className="main-actions">
-            <button className="action-btn-admin-dashboard" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
-              <i className="fas fa-tachometer-alt"></i>
-              <span>Admin Dashboard</span>
-            </button>
-            <button className="action-btn mark-attendance" onClick={(e) => { e.preventDefault(); navigate('/attendance'); }}>
-              <i className="fas fa-clipboard-check"></i>
-              <span>Mark Attendance</span>
-            </button>
+            {/* Admin Dashboard - Only visible to admins */}
+            {(user?.userType?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'admin') && (
+              <button className="action-btn-admin-dashboard" onClick={(e) => { e.preventDefault(); navigate('/admin-dashboard'); }}>
+                <i className="fas fa-tachometer-alt"></i>
+                <span>Admin Dashboard</span>
+              </button>
+            )}
+            {/* Mark Attendance button - changes to "My Attendance" for parents */}
+            {user && user.role && user.role.toLowerCase() === 'parent' ? (
+              <button className="action-btn mark-attendance" onClick={(e) => { e.preventDefault(); navigate('/parent-view'); }}>
+                <i className="fas fa-user-graduate"></i>
+                <span>My Attendance</span>
+              </button>
+            ) : (
+              <button className="action-btn mark-attendance" onClick={(e) => { e.preventDefault(); navigate('/attendance'); }}>
+                <i className="fas fa-clipboard-check"></i>
+                <span>Mark Attendance</span>
+              </button>
+            )}
             <div className="action-btn notices" ref={noticesMenuRef} style={{ position: 'relative' }}>
               <button className="btn-iconless" onClick={(e) => { e.preventDefault(); setNoticesMenuOpen(s => !s); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <i className="fas fa-bullhorn"></i>

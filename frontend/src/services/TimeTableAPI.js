@@ -1,5 +1,5 @@
 // API service for TimeTable and Hall Arrangements
-const API_BASE_URL = 'http://localhost:5000/timetable';
+const API_BASE_URL = 'http://localhost:5001/timetable';
 
 class TimeTableAPI {
   // Get all timetables

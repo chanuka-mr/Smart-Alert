@@ -239,6 +239,85 @@
   border-radius: 0 0 6px 6px;
 }
 
+/* Shuttle Services Dropdown (same styling as exam dropdown) */
+.action-btn-shuttle {
+  padding: 0;
+  position: relative;
+  z-index: 1000;
+}
+
+.action-btn-shuttle .btn-iconless {
+  padding: 8px 12px;
+  color: #00897b;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.action-btn-shuttle .btn-iconless:hover {
+  background: rgba(0, 137, 123, 0.06);
+}
+
+.action-btn-shuttle .btn-iconless i:last-child {
+  margin-left: 6px;
+}
+
+/* Nav Item for Shuttle Services */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 137, 123, 0.1);
+  color: #00897b;
+  border: 2px solid rgba(0, 137, 123, 0.2);
+  padding: 0;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  position: relative;
+  z-index: 1000;
+}
+
+.nav-item:hover {
+  background: rgba(0, 137, 123, 0.2);
+  border-color: rgba(0, 137, 123, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 137, 123, 0.2);
+}
+
+.nav-item .btn-iconless {
+  padding: 8px 12px;
+  color: #00897b;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.nav-item .btn-iconless:hover {
+  background: rgba(0, 137, 123, 0.06);
+}
+
+.nav-item .btn-iconless i:last-child {
+  margin-left: 6px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .nav-content {

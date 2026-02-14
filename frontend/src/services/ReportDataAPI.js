@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/reportcard';
+const API_BASE_URL = 'http://localhost:5001/reportcard';
 
 class ReportDataAPI {
   // Add new report card

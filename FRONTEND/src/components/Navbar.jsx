@@ -1,25 +1,49 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import "./Navbar.css";
 
 const Navbar = () => {
   const { pathname } = useLocation();
-  const active = (path) => (pathname === path ? 'active' : '');
+  const isActive = (path) => pathname === path;
 
   return (
-    <div className="navbar" style={{ background: '#ffffff', color: '#000000' }}>
-      <div className="container">
-        <div className="top-row">
-          <div className="logo">
-            <div className="logo-icon">🎓</div>
-            <h1>WEBSTAR INTERNATIONAL COLLEGE</h1>
+    <nav className="smart-alert-navbar">
+      <div className="navbar-container">
+        <div className="navbar-logo">
+          <div className="logo-circle">
+            <span className="logo-icon">🎓</span>
           </div>
+          <span className="logo-text">Smart Alert</span>
         </div>
-
-        <div className="subtitle">
-          Smart Alert
+        
+        <div className="navbar-links">
+          <Link 
+            to="/" 
+            className={`nav-link ${isActive('/') ? 'active' : ''}`}
+          >
+            Home
+          </Link>
+          <Link 
+            to="/features" 
+            className={`nav-link ${isActive('/features') ? 'active' : ''}`}
+          >
+            Features
+          </Link>
+          <Link 
+            to="/about" 
+            className={`nav-link ${isActive('/about') ? 'active' : ''}`}
+          >
+            About
+          </Link>
+          <Link 
+            to="/contact" 
+            className={`nav-link ${isActive('/contact') ? 'active' : ''}`}
+          >
+            Contact
+          </Link>
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 

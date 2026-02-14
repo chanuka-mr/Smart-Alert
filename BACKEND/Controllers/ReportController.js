@@ -1,7 +1,30 @@
 const Attendance = require("../Model/AttendanceModel");
+const { User, Academic } = require("../Model/userModel");
 const Student = require("../Model/studentModel");
-const { jsPDF } = require("jspdf");
 const PDFDocument = require('pdfkit');
+
+// Helper to get student section from academic info
+const getStudentSection = async (userID) => {
+  const academic = await Academic.findOne({ userID });
+  return academic ? `${academic.grade}${academic.class}` : 'N/A';
+};
+
+// Helper to enrich attendance records with academic section info
+const enrichRecordsWithSection = async (records) => {
+  const enrichedRecords = await Promise.all(
+    records.map(async (record) => {
+      const recordObj = record.toObject ? record.toObject() : record;
+      if (recordObj.student && recordObj.student.userID) {
+        const academic = await Academic.findOne({ userID: recordObj.student.userID });
+        recordObj.student.section = academic ? `${academic.grade}${academic.class}` : 'N/A';
+        recordObj.student.grade = academic ? academic.grade : null;
+        recordObj.student.class = academic ? academic.class : null;
+      }
+      return recordObj;
+    })
+  );
+  return enrichedRecords;
+};
 
 // Helper function to calculate attendance statistics
 const calculateAttendanceStats = (records) => {
@@ -19,7 +42,8 @@ const calculateAttendanceStats = (records) => {
 
   records.forEach(record => {
     const studentId = record.student._id.toString();
-    const section = record.student.section;
+    // Get section from populated student data (should be added during query)
+    const section = record.student.section || 'N/A';
     const date = new Date(record.date).toISOString().split('T')[0];
     
     // Count by status
@@ -28,9 +52,9 @@ const calculateAttendanceStats = (records) => {
     // Count by student
     if (!stats.byStudent[studentId]) {
       stats.byStudent[studentId] = {
-        name: record.student.name,
-        index: record.student.std_index,
-        section: record.student.section,
+        name: record.student.fullName || record.student.name,
+        index: record.student.userID || record.student.std_index,
+        section: section,
         total: 0,
         present: 0,
         absent: 0,
@@ -90,120 +114,131 @@ const calculateAttendanceStats = (records) => {
   return stats;
 };
 
-// Generate PDF report
+// Generate PDF report using PDFKit
 const generatePDFReport = (records, stats, filters = {}) => {
-  try {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    let yPosition = 20;
-
-    // Title
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("Attendance Report", pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 15;
-
-    // Report info
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    const reportDate = new Date().toLocaleDateString();
-    doc.text(`Generated on: ${reportDate}`, pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 10;
-
-    // Filters applied
-    if (filters.section || filters.date || filters.status) {
-      doc.setFontSize(10);
-      doc.text("Filters Applied:", 20, yPosition);
-      yPosition += 5;
-      if (filters.section) doc.text(`Section: ${filters.section}`, 25, yPosition);
-      if (filters.date) doc.text(`Date: ${filters.date}`, 25, yPosition + 5);
-      if (filters.status) doc.text(`Status: ${filters.status}`, 25, yPosition + 10);
-      yPosition += 20;
-    }
-
-    // Overall Statistics
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Overall Statistics", 20, yPosition);
-    yPosition += 10;
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Total Records: ${stats.totalRecords}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Present: ${stats.present}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Absent: ${stats.absent}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Late: ${stats.late}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Excused: ${stats.excused}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Attendance Rate: ${stats.attendancePercentage}%`, 20, yPosition);
-    yPosition += 15;
-
-    // Section-wise Statistics
-    if (Object.keys(stats.bySection).length > 1) {
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Section-wise Statistics", 20, yPosition);
-      yPosition += 10;
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      Object.keys(stats.bySection).forEach(section => {
-        const sectionStats = stats.bySection[section];
-        doc.text(`Section ${section}:`, 20, yPosition);
-        yPosition += 5;
-        doc.text(`  Total: ${sectionStats.total}, Present: ${sectionStats.present}, Absent: ${sectionStats.absent}, Rate: ${sectionStats.attendancePercentage}%`, 25, yPosition);
-        yPosition += 8;
-      });
-      yPosition += 5;
-    }
-
-    // Individual Student Performance
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Student Performance", 20, yPosition);
-    yPosition += 10;
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    
-    // Table headers
-    doc.text("Name", 20, yPosition);
-    doc.text("Index", 60, yPosition);
-    doc.text("Section", 90, yPosition);
-    doc.text("Present", 120, yPosition);
-    doc.text("Absent", 140, yPosition);
-    doc.text("Late", 160, yPosition);
-    doc.text("Rate %", 180, yPosition);
-    yPosition += 5;
-
-    // Student rows
-    Object.keys(stats.byStudent).forEach(studentId => {
-      const student = stats.byStudent[studentId];
-      if (yPosition > pageHeight - 20) {
-        doc.addPage();
-        yPosition = 20;
-      }
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers = [];
       
-      doc.text(student.name.substring(0, 15), 20, yPosition);
-      doc.text(student.index, 60, yPosition);
-      doc.text(student.section, 90, yPosition);
-      doc.text(student.present.toString(), 120, yPosition);
-      doc.text(student.absent.toString(), 140, yPosition);
-      doc.text(student.late.toString(), 160, yPosition);
-      doc.text(student.attendancePercentage + "%", 180, yPosition);
-      yPosition += 5;
-    });
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => {
+        const pdfData = Buffer.concat(buffers);
+        resolve(pdfData);
+      });
+      doc.on('error', reject);
 
-    return doc;
-  } catch (error) {
-    console.error('PDF generation error:', error);
-    throw new Error('Failed to generate PDF: ' + error.message);
-  }
+      let yPosition = 50;
+
+      // Title
+      doc.fontSize(20).font('Helvetica-Bold').fillColor('black');
+      doc.text("Attendance Report", { align: "center" });
+      yPosition += 30;
+
+      // Report info
+      doc.fontSize(12).font('Helvetica');
+      const reportDate = new Date().toLocaleDateString();
+      doc.text(`Generated on: ${reportDate}`, { align: "center" });
+      yPosition += 20;
+
+      // Filters applied
+      if (filters.section || filters.date || filters.status) {
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text("Filters Applied:", 50, yPosition);
+        yPosition += 15;
+        doc.font('Helvetica');
+        if (filters.section) {
+          doc.text(`Section: ${filters.section}`, 60, yPosition);
+          yPosition += 12;
+        }
+        if (filters.date) {
+          doc.text(`Date: ${filters.date}`, 60, yPosition);
+          yPosition += 12;
+        }
+        if (filters.status) {
+          doc.text(`Status: ${filters.status}`, 60, yPosition);
+          yPosition += 12;
+        }
+        yPosition += 10;
+      }
+
+      // Overall Statistics
+      doc.fontSize(14).font('Helvetica-Bold');
+      doc.text("Overall Statistics", 50, yPosition);
+      yPosition += 20;
+
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Total Records: ${stats.totalRecords}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Present: ${stats.present}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Absent: ${stats.absent}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Late: ${stats.late}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Excused: ${stats.excused}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Attendance Rate: ${stats.attendancePercentage}%`, 50, yPosition);
+      yPosition += 25;
+
+      // Section-wise Statistics
+      if (Object.keys(stats.bySection).length > 1) {
+        doc.fontSize(14).font('Helvetica-Bold');
+        doc.text("Section-wise Statistics", 50, yPosition);
+        yPosition += 20;
+
+        doc.fontSize(10).font('Helvetica');
+        Object.keys(stats.bySection).forEach(section => {
+          const sectionStats = stats.bySection[section];
+          doc.text(`Section ${section}:`, 50, yPosition);
+          yPosition += 15;
+          doc.text(`  Total: ${sectionStats.total}, Present: ${sectionStats.present}, Absent: ${sectionStats.absent}, Rate: ${sectionStats.attendancePercentage}%`, 60, yPosition);
+          yPosition += 18;
+        });
+        yPosition += 10;
+      }
+
+      // Individual Student Performance
+      doc.fontSize(14).font('Helvetica-Bold');
+      doc.text("Student Performance", 50, yPosition);
+      yPosition += 20;
+
+      doc.fontSize(8).font('Helvetica');
+      
+      // Table headers
+      doc.text("Name", 50, yPosition);
+      doc.text("Index", 150, yPosition);
+      doc.text("Section", 220, yPosition);
+      doc.text("Present", 280, yPosition);
+      doc.text("Absent", 330, yPosition);
+      doc.text("Late", 380, yPosition);
+      doc.text("Rate %", 430, yPosition);
+      yPosition += 15;
+
+      // Student rows
+      Object.keys(stats.byStudent).forEach(studentId => {
+        const student = stats.byStudent[studentId];
+        if (yPosition > 700) {
+          doc.addPage();
+          yPosition = 50;
+        }
+        
+        doc.text(student.name.substring(0, 20), 50, yPosition);
+        doc.text(student.index, 150, yPosition);
+        doc.text(student.section, 220, yPosition);
+        doc.text(student.present.toString(), 280, yPosition);
+        doc.text(student.absent.toString(), 330, yPosition);
+        doc.text(student.late.toString(), 380, yPosition);
+        doc.text(student.attendancePercentage + "%", 430, yPosition);
+        yPosition += 15;
+      });
+
+      doc.end();
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      reject(new Error('Failed to generate PDF: ' + error.message));
+    }
+  });
 };
 
 // Main report generation endpoint
@@ -235,11 +270,14 @@ const generateAttendanceReport = async (req, res) => {
     }
 
     // Get records
-    const records = await Attendance.find(query).populate('student').sort({ date: -1 });
+    let records = await Attendance.find(query).populate('student').sort({ date: -1 });
     
     if (records.length === 0) {
       return res.status(404).json({ message: "No records found for the specified criteria" });
     }
+
+    // Enrich records with academic section info
+    records = await enrichRecordsWithSection(records);
 
     // Calculate statistics
     const stats = calculateAttendanceStats(records);
@@ -247,12 +285,11 @@ const generateAttendanceReport = async (req, res) => {
     // Generate report based on format
     if (format === 'pdf') {
       try {
-        const doc = generatePDFReport(records, stats, { section, date, status });
-        const pdfBuffer = doc.output('arraybuffer');
+        const pdfBuffer = await generatePDFReport(records, stats, { section, date, status });
         
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="attendance-report-${new Date().toISOString().split('T')[0]}.pdf"`);
-        res.send(Buffer.from(pdfBuffer));
+        res.send(pdfBuffer);
       } catch (pdfError) {
         console.error('PDF generation failed:', pdfError);
         return res.status(500).json({ 
@@ -278,7 +315,23 @@ const generateAttendanceReport = async (req, res) => {
 // Get available sections for filtering
 const getAvailableSections = async (req, res) => {
   try {
-    const sections = await Student.distinct('section');
+    // Get all unique grade/class combinations from Academic model
+    const academics = await Academic.find({}).distinct('grade');
+    const classes = await Academic.find({}).distinct('class');
+    
+    // Generate sections like "1A", "1B", "2A", etc.
+    const sections = [];
+    for (const grade of academics) {
+      for (const cls of classes) {
+        const section = `${grade}${cls}`;
+        // Check if this combination actually exists
+        const exists = await Academic.findOne({ grade, class: cls });
+        if (exists) {
+          sections.push(section);
+        }
+      }
+    }
+    
     res.json({ sections: sections.sort() });
   } catch (error) {
     console.error('Error fetching sections:', error);
@@ -306,17 +359,26 @@ const generateMonthlyReport = async (req, res) => {
     
     // Apply section filter if provided
     if (section) {
-      const students = await Student.find({ section });
+      // Find students by section using Academic model
+      const academics = await Academic.find({
+        grade: parseInt(section.charAt(0)),
+        class: section.charAt(1)
+      });
+      const userIDs = academics.map(a => a.userID);
+      const students = await User.find({ userID: { $in: userIDs }, role: "Parent" });
       const studentIds = students.map(s => s._id);
       query.student = { $in: studentIds };
     }
 
     // Get records for the month
-    const records = await Attendance.find(query).populate('student').sort({ date: 1 });
+    let records = await Attendance.find(query).populate('student').sort({ date: 1 });
     
     if (records.length === 0) {
       return res.status(404).json({ message: "No records found for the specified month" });
     }
+
+    // Enrich records with academic section info
+    records = await enrichRecordsWithSection(records);
 
     // Calculate enhanced statistics
     const stats = calculateMonthlyStats(records, year, month);
@@ -324,12 +386,11 @@ const generateMonthlyReport = async (req, res) => {
     // Generate report based on format
     if (format === 'pdf') {
       try {
-        const doc = generateMonthlyPDFReport(records, stats, { year, month, section });
-        const pdfBuffer = doc.output('arraybuffer');
+        const pdfBuffer = await generateMonthlyPDFReport(records, stats, { year, month, section });
         
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="monthly-report-${year}-${month.toString().padStart(2, '0')}.pdf"`);
-        res.send(Buffer.from(pdfBuffer));
+        res.send(pdfBuffer);
       } catch (pdfError) {
         console.error('PDF generation failed:', pdfError);
         return res.status(500).json({ 
@@ -385,9 +446,9 @@ const calculateMonthlyStats = (records, year, month) => {
     // Count by student
     if (!stats.byStudent[studentId]) {
       stats.byStudent[studentId] = {
-        name: record.student.name,
-        index: record.student.std_index,
-        section: record.student.section,
+        name: record.student.fullName || record.student.name,
+        index: record.student.userID || record.student.std_index,
+        section: record.student.section || 'N/A',
         total: 0,
         present: 0,
         absent: 0,
@@ -504,131 +565,136 @@ const calculateMonthlyStats = (records, year, month) => {
   return stats;
 };
 
-// Generate monthly PDF report
+// Generate monthly PDF report using PDFKit
 const generateMonthlyPDFReport = (records, stats, filters = {}) => {
-  try {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    let yPosition = 20;
-
-    // Title
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("Monthly Attendance Report", pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 15;
-
-    // Month and year
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"];
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "normal");
-    doc.text(`${monthNames[stats.month - 1]} ${stats.year}`, pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 10;
-
-    // Report info
-    doc.setFontSize(10);
-    const reportDate = new Date().toLocaleDateString();
-    doc.text(`Generated on: ${reportDate}`, pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 15;
-
-    // Filters applied
-    if (filters.section) {
-      doc.setFontSize(10);
-      doc.text(`Section: ${filters.section}`, 20, yPosition);
-      yPosition += 10;
-    }
-
-    // Overall Statistics
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Monthly Statistics", 20, yPosition);
-    yPosition += 10;
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Total Records: ${stats.totalRecords}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Present: ${stats.present}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Absent: ${stats.absent}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Late: ${stats.late}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Excused: ${stats.excused}`, 20, yPosition);
-    yPosition += 5;
-    doc.text(`Overall Attendance Rate: ${stats.attendancePercentage}%`, 20, yPosition);
-    yPosition += 15;
-
-    // Weekly Trends
-    if (stats.weeklyTrends.length > 0) {
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Weekly Trends", 20, yPosition);
-      yPosition += 10;
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      stats.weeklyTrends.forEach(week => {
-        doc.text(`Week ${week.week}: ${week.averageAttendanceRate}% average attendance`, 20, yPosition);
-        yPosition += 5;
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers = [];
+      
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => {
+        const pdfData = Buffer.concat(buffers);
+        resolve(pdfData);
       });
-      yPosition += 10;
+      doc.on('error', reject);
+
+      let yPosition = 50;
+
+      // Title
+      doc.fontSize(20).font('Helvetica-Bold').fillColor('black');
+      doc.text("Monthly Attendance Report", { align: "center" });
+      yPosition += 25;
+
+      // Month and year
+      const monthNames = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+      doc.fontSize(16).font('Helvetica');
+      doc.text(`${monthNames[stats.month - 1]} ${stats.year}`, { align: "center" });
+      yPosition += 20;
+
+      // Report info
+      doc.fontSize(10);
+      const reportDate = new Date().toLocaleDateString();
+      doc.text(`Generated on: ${reportDate}`, { align: "center" });
+      yPosition += 25;
+
+      // Filters applied
+      if (filters.section) {
+        doc.fontSize(10);
+        doc.text(`Section: ${filters.section}`, 50, yPosition);
+        yPosition += 20;
+      }
+
+      // Overall Statistics
+      doc.fontSize(14).font('Helvetica-Bold');
+      doc.text("Monthly Statistics", 50, yPosition);
+      yPosition += 20;
+
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Total Records: ${stats.totalRecords}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Present: ${stats.present}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Absent: ${stats.absent}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Late: ${stats.late}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Excused: ${stats.excused}`, 50, yPosition);
+      yPosition += 15;
+      doc.text(`Overall Attendance Rate: ${stats.attendancePercentage}%`, 50, yPosition);
+      yPosition += 25;
+
+      // Weekly Trends
+      if (stats.weeklyTrends.length > 0) {
+        doc.fontSize(14).font('Helvetica-Bold');
+        doc.text("Weekly Trends", 50, yPosition);
+        yPosition += 20;
+
+        doc.fontSize(10).font('Helvetica');
+        stats.weeklyTrends.forEach(week => {
+          doc.text(`Week ${week.week}: ${week.averageAttendanceRate}% average attendance`, 50, yPosition);
+          yPosition += 15;
+        });
+        yPosition += 10;
+      }
+
+      // Top Performers
+      if (stats.topPerformers.length > 0) {
+        doc.fontSize(14).font('Helvetica-Bold');
+        doc.text("Top Performers (100% Attendance)", 50, yPosition);
+        yPosition += 20;
+
+        doc.fontSize(10).font('Helvetica');
+        stats.topPerformers.slice(0, 10).forEach(student => {
+          doc.text(`${student.name} (${student.index}) - ${student.attendanceDays} days`, 50, yPosition);
+          yPosition += 15;
+        });
+        yPosition += 10;
+      }
+
+      // Attendance Issues
+      if (stats.attendanceIssues.length > 0) {
+        if (yPosition > 650) {
+          doc.addPage();
+          yPosition = 50;
+        }
+        doc.fontSize(14).font('Helvetica-Bold');
+        doc.text("Students Needing Attention (< 80% Attendance)", 50, yPosition);
+        yPosition += 20;
+
+        doc.fontSize(10).font('Helvetica');
+        stats.attendanceIssues.slice(0, 10).forEach(student => {
+          doc.text(`${student.name} (${student.index}) - ${student.attendancePercentage}%`, 50, yPosition);
+          yPosition += 15;
+        });
+        yPosition += 10;
+      }
+
+      // Section-wise Statistics
+      if (Object.keys(stats.bySection).length > 1) {
+        if (yPosition > 650) {
+          doc.addPage();
+          yPosition = 50;
+        }
+        doc.fontSize(14).font('Helvetica-Bold');
+        doc.text("Section-wise Performance", 50, yPosition);
+        yPosition += 20;
+
+        doc.fontSize(10).font('Helvetica');
+        Object.keys(stats.bySection).forEach(section => {
+          const sectionStats = stats.bySection[section];
+          doc.text(`Section ${section}: ${sectionStats.attendancePercentage}% (${sectionStats.present}/${sectionStats.total})`, 50, yPosition);
+          yPosition += 15;
+        });
+      }
+
+      doc.end();
+    } catch (error) {
+      console.error('Monthly PDF generation error:', error);
+      reject(new Error('Failed to generate monthly PDF: ' + error.message));
     }
-
-    // Top Performers
-    if (stats.topPerformers.length > 0) {
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Top Performers (100% Attendance)", 20, yPosition);
-      yPosition += 10;
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      stats.topPerformers.slice(0, 10).forEach(student => {
-        doc.text(`${student.name} (${student.index}) - ${student.attendanceDays} days`, 20, yPosition);
-        yPosition += 5;
-      });
-      yPosition += 10;
-    }
-
-    // Attendance Issues
-    if (stats.attendanceIssues.length > 0) {
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Students Needing Attention (< 80% Attendance)", 20, yPosition);
-      yPosition += 10;
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      stats.attendanceIssues.slice(0, 10).forEach(student => {
-        doc.text(`${student.name} (${student.index}) - ${student.attendancePercentage}%`, 20, yPosition);
-        yPosition += 5;
-      });
-      yPosition += 10;
-    }
-
-    // Section-wise Statistics
-    if (Object.keys(stats.bySection).length > 1) {
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Section-wise Performance", 20, yPosition);
-      yPosition += 10;
-
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      Object.keys(stats.bySection).forEach(section => {
-        const sectionStats = stats.bySection[section];
-        doc.text(`Section ${section}: ${sectionStats.attendancePercentage}% (${sectionStats.present}/${sectionStats.total})`, 20, yPosition);
-        yPosition += 5;
-      });
-    }
-
-    return doc;
-  } catch (error) {
-    console.error('Monthly PDF generation error:', error);
-    throw new Error('Failed to generate monthly PDF: ' + error.message);
-  }
+  });
 };
 
 // Generate individual student report
@@ -640,20 +706,26 @@ const generateStudentReport = async (req, res) => {
       return res.status(400).json({ message: "Provide studentId or std_index" });
     }
 
-    // Find student
+    // Find student (User with role=Parent)
     let student;
     if (studentId) {
-      student = await Student.findById(studentId);
+      student = await User.findOne({ _id: studentId, role: "Parent" });
     } else {
-      student = await Student.findOne({ std_index });
+      student = await User.findOne({ userID: std_index, role: "Parent" });
     }
     
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
+    // Get academic info
+    const academic = await Academic.findOne({ userID: student.userID });
+    student.section = academic ? `${academic.grade}${academic.class}` : 'N/A';
+    student.std_index = student.userID;
+    student.name = student.fullName;
+
     // Get student's attendance records
-    const records = await Attendance.find({ student: student._id })
+    let records = await Attendance.find({ student: student._id })
       .populate('student')
       .sort({ date: -1 });
 
@@ -661,17 +733,19 @@ const generateStudentReport = async (req, res) => {
       return res.status(404).json({ message: "No attendance records found for this student" });
     }
 
+    // Enrich records with academic section info
+    records = await enrichRecordsWithSection(records);
+
     // Calculate statistics for this student
     const stats = calculateAttendanceStats(records);
     
     // Generate PDF report
     try {
-      const doc = generateStudentPDFReport(student, records, stats);
-      const pdfBuffer = doc.output('arraybuffer');
+      const pdfBuffer = await generateStudentPDFReport(student, records, stats);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="student-report-${student.std_index}-${new Date().toISOString().split('T')[0]}.pdf"`);
-      res.send(Buffer.from(pdfBuffer));
+      res.send(pdfBuffer);
     } catch (pdfError) {
       console.error('PDF generation failed:', pdfError);
       return res.status(500).json({ 
@@ -685,104 +759,106 @@ const generateStudentReport = async (req, res) => {
   }
 };
 
-// Generate individual student PDF report
+// Generate individual student PDF report using PDFKit
 const generateStudentPDFReport = (student, records, stats) => {
-  try {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    let yPosition = 20;
-
-    // Title
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("Student Attendance Report", pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 15;
-
-    // Student info
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Student Information", 20, yPosition);
-    yPosition += 10;
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Name: ${student.name}`, 20, yPosition);
-    yPosition += 8;
-    doc.text(`Index: ${student.std_index}`, 20, yPosition);
-    yPosition += 8;
-    doc.text(`Section: ${student.section}`, 20, yPosition);
-    yPosition += 8;
-    doc.text(`Parent: ${student.parentName}`, 20, yPosition);
-    yPosition += 8;
-    doc.text(`Parent Phone: ${student.parentPhoneNum}`, 20, yPosition);
-    yPosition += 15;
-
-    // Report info
-    doc.setFontSize(10);
-    const reportDate = new Date().toLocaleDateString();
-    doc.text(`Generated on: ${reportDate}`, pageWidth / 2, yPosition, { align: "center" });
-    yPosition += 15;
-
-    // Attendance Statistics
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Attendance Statistics", 20, yPosition);
-    yPosition += 10;
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Total Records: ${stats.totalRecords}`, 20, yPosition);
-    yPosition += 6;
-    doc.text(`Present: ${stats.present}`, 20, yPosition);
-    yPosition += 6;
-    doc.text(`Absent: ${stats.absent}`, 20, yPosition);
-    yPosition += 6;
-    doc.text(`Late: ${stats.late}`, 20, yPosition);
-    yPosition += 6;
-    doc.text(`Excused: ${stats.excused}`, 20, yPosition);
-    yPosition += 6;
-    doc.text(`Attendance Rate: ${stats.attendancePercentage}%`, 20, yPosition);
-    yPosition += 15;
-
-    // Attendance Records Table
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Attendance Records", 20, yPosition);
-    yPosition += 10;
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    
-    // Table headers
-    doc.text("Date", 20, yPosition);
-    doc.text("Status", 80, yPosition);
-    doc.text("Notified", 120, yPosition);
-    yPosition += 5;
-
-    // Draw line under headers
-    doc.line(20, yPosition, 180, yPosition);
-    yPosition += 5;
-
-    // Records rows
-    records.forEach(record => {
-      if (yPosition > pageHeight - 20) {
-        doc.addPage();
-        yPosition = 20;
-      }
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers = [];
       
-      const date = new Date(record.date).toLocaleDateString();
-      doc.text(date, 20, yPosition);
-      doc.text(record.status, 80, yPosition);
-      doc.text(record.notifiedParent ? "Yes" : "No", 120, yPosition);
-      yPosition += 6;
-    });
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => {
+        const pdfData = Buffer.concat(buffers);
+        resolve(pdfData);
+      });
+      doc.on('error', reject);
 
-    return doc;
-  } catch (error) {
-    console.error('Student PDF generation error:', error);
-    throw new Error('Failed to generate student PDF: ' + error.message);
-  }
+      let yPosition = 50;
+
+      // Title
+      doc.fontSize(20).font('Helvetica-Bold').fillColor('black');
+      doc.text("Student Attendance Report", { align: "center" });
+      yPosition += 30;
+
+      // Student info
+      doc.fontSize(14).font('Helvetica-Bold');
+      doc.text("Student Information", 50, yPosition);
+      yPosition += 20;
+
+      doc.fontSize(12).font('Helvetica');
+      doc.text(`Name: ${student.name}`, 50, yPosition);
+      yPosition += 18;
+      doc.text(`Index: ${student.std_index}`, 50, yPosition);
+      yPosition += 18;
+      doc.text(`Section: ${student.section}`, 50, yPosition);
+      yPosition += 18;
+      doc.text(`Parent: ${student.parentName || 'N/A'}`, 50, yPosition);
+      yPosition += 18;
+      doc.text(`Parent Phone: ${student.parentPhoneNum || 'N/A'}`, 50, yPosition);
+      yPosition += 25;
+
+      // Report info
+      doc.fontSize(10);
+      const reportDate = new Date().toLocaleDateString();
+      doc.text(`Generated on: ${reportDate}`, { align: "center" });
+      yPosition += 25;
+
+      // Attendance Statistics
+      doc.fontSize(14).font('Helvetica-Bold');
+      doc.text("Attendance Statistics", 50, yPosition);
+      yPosition += 20;
+
+      doc.fontSize(12).font('Helvetica');
+      doc.text(`Total Records: ${stats.totalRecords}`, 50, yPosition);
+      yPosition += 16;
+      doc.text(`Present: ${stats.present}`, 50, yPosition);
+      yPosition += 16;
+      doc.text(`Absent: ${stats.absent}`, 50, yPosition);
+      yPosition += 16;
+      doc.text(`Late: ${stats.late}`, 50, yPosition);
+      yPosition += 16;
+      doc.text(`Excused: ${stats.excused}`, 50, yPosition);
+      yPosition += 16;
+      doc.text(`Attendance Rate: ${stats.attendancePercentage}%`, 50, yPosition);
+      yPosition += 25;
+
+      // Attendance Records Table
+      doc.fontSize(14).font('Helvetica-Bold');
+      doc.text("Attendance Records", 50, yPosition);
+      yPosition += 20;
+
+      doc.fontSize(10).font('Helvetica');
+      
+      // Table headers
+      doc.text("Date", 50, yPosition);
+      doc.text("Status", 150, yPosition);
+      doc.text("Notified", 250, yPosition);
+      yPosition += 15;
+
+      // Draw line under headers
+      doc.moveTo(50, yPosition).lineTo(350, yPosition).stroke();
+      yPosition += 10;
+
+      // Records rows
+      records.forEach(record => {
+        if (yPosition > 700) {
+          doc.addPage();
+          yPosition = 50;
+        }
+        
+        const date = new Date(record.date).toLocaleDateString();
+        doc.text(date, 50, yPosition);
+        doc.text(record.status, 150, yPosition);
+        doc.text(record.notifiedParent ? "Yes" : "No", 250, yPosition);
+        yPosition += 16;
+      });
+
+      doc.end();
+    } catch (error) {
+      console.error('Student PDF generation error:', error);
+      reject(new Error('Failed to generate student PDF: ' + error.message));
+    }
+  });
 };
 
 // Generate detailed student report with individual records and parent info

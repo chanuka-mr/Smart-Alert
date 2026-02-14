@@ -23,8 +23,6 @@ import ReportCardView from './Components/ReportCardView/ReportCardView';
 import ProgressAnalysis from './Components/ProgressAnalysis/ProgressAnalysis';
 import ReportData from './Components/ReportData/ReportData';
 import TimeTableDataEntry from './Components/TimeTableHallArrangementData/TimeTableDataEntry';
-import Examination from './Components/Examination/Examination';
-import ExamOnly from './Components/Examination/ExamOnly';
 import ShuttleServices from './Components/ShuttleServices/ShuttleServices';
 import Students from './Components/AttendanceManagement/Students';
 import Attendance from './Components/AttendanceManagement/Attendance';
@@ -340,6 +338,38 @@ export default function App() {
             </RequireAuth>
           } 
         />
+        <Route 
+          path="/shuttle-services/parent" 
+          element={
+            <RequireAuth>
+              <ParentShuttleView />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/shuttles" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/students" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
+        <Route 
+          path="/shuttle-services/tracking" 
+          element={
+            <RequireAuth>
+              <ShuttleServices />
+            </RequireAuth>
+          } 
+        />
 
         {/* Attendance Management Routes */}
         <Route 
@@ -363,6 +393,16 @@ export default function App() {
           element={
             <RequireAuth>
               <AttendanceRecords />
+            </RequireAuth>
+          } 
+        />
+
+        {/* Parent View - Only for Parents/Students */}
+        <Route 
+          path="/parent-view" 
+          element={
+            <RequireAuth>
+              <ParentView />
             </RequireAuth>
           } 
         />

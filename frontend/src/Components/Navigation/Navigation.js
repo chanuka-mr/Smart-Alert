@@ -2,11 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../../logo.png';
 import './Navigation.css';
+import { api } from '../../utils/api';
 
 const Navigation = () => {
   const navigate = useNavigate();
   const [examMenuOpen, setExamMenuOpen] = useState(false);
+  const [shuttleMenuOpen, setShuttleMenuOpen] = useState(false);
   const examMenuRef = useRef(null);
+  const shuttleMenuRef = useRef(null);
+  const [userRole, setUserRole] = useState('');
+  const [roleLoading, setRoleLoading] = useState(true);
 
   const handleProfileClick = (e) => {
     e.preventDefault();
@@ -43,9 +48,29 @@ const Navigation = () => {
       if (examMenuRef.current && !examMenuRef.current.contains(e.target)) {
         setExamMenuOpen(false);
       }
+      if (shuttleMenuRef.current && !shuttleMenuRef.current.contains(e.target)) {
+        setShuttleMenuOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  
+  // Fetch user role
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const response = await api('/auth/me', { method: 'GET' });
+        const role = response?.user?.role || response?.role || '';
+        setUserRole(role.toLowerCase());
+      } catch (error) {
+        console.error('Failed to fetch role:', error);
+        setUserRole('');
+      } finally {
+        setRoleLoading(false);
+      }
+    };
+    fetchRole();
   }, []);
 
   return (
@@ -108,10 +133,29 @@ const Navigation = () => {
                 </div>
               )}
             </div>
-            <button className="action-btn action-btn-shuttle" onClick={(e) => { e.preventDefault(); navigate('/shuttle-services'); }}>
-              <i className="fas fa-bus"></i>
-              <span>Shuttle Services</span>
-            </button>
+            {userRole === 'parent' ? (
+              <div className="nav-item">
+                <button className="btn-iconless" onClick={(e) => { e.preventDefault(); navigate('/shuttle-services/parent'); }}>
+                  <i className="fas fa-bus"></i>
+                  <span>Shuttle Services</span>
+                </button>
+              </div>
+            ) : (
+              <div className="nav-item" ref={shuttleMenuRef}>
+                <button className="btn-iconless" onClick={(e) => { e.preventDefault(); setShuttleMenuOpen(s => !s); }}>
+                  <i className="fas fa-bus"></i>
+                  <span>Shuttle Services</span>
+                  <i className="fas fa-caret-down"></i>
+                </button>
+                {shuttleMenuOpen && (
+                  <div className="exam-dropdown">
+                    <button onClick={() => { setShuttleMenuOpen(false); navigate('/shuttle-services/shuttles'); }}>Shuttle Management</button>
+                    <button onClick={() => { setShuttleMenuOpen(false); navigate('/shuttle-services/students'); }}>Student Registration</button>
+                    <button onClick={() => { setShuttleMenuOpen(false); navigate('/shuttle-services/tracking'); }}>Live Tracking</button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
