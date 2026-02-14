@@ -51,6 +51,15 @@ const login = async (req, res) => {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       loginRecord.otp = otp;
       loginRecord.otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+      
+      // FIX: Ensure username exists before saving, to backfill old records
+      if (!loginRecord.username) {
+        const user = await User.findOne({ userID: loginRecord.userID });
+        if (user) {
+          loginRecord.username = user.email;
+        }
+      }
+
       await loginRecord.save();
 
       const user = await User.findOne({ userID: loginRecord.userID });
